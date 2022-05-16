@@ -1,5 +1,7 @@
 rootProject.name = "wikilinks"
 
+include("application")
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
