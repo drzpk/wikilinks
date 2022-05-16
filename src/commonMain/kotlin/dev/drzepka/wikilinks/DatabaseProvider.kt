@@ -1,7 +1,7 @@
-package dev.drzepka.wiki6d
+package dev.drzepka.wikilinks
 
 import com.squareup.sqldelight.db.SqlDriver
-import dev.drzepka.wiki6d.db.Database
+import dev.drzepka.wikilinks.db.Database
 
 object DatabaseProvider {
     fun getDatabase(): Database = Database.invoke(getDriver("database.db"))

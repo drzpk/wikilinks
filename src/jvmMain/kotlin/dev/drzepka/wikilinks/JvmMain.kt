@@ -1,4 +1,4 @@
-package dev.drzepka.wiki6d
+package dev.drzepka.wikilinks
 
 fun main() {
     commonMain()

@@ -1,4 +1,4 @@
-rootProject.name = "wikipedia-6deg"
+rootProject.name = "wikilinks"
 
 pluginManagement {
     repositories {
