@@ -1,0 +1,7 @@
+CREATE TABLE Links (
+    `from` TEXT NOT NULL,
+    `to` TEXT NOT NULL
+);
+
+insert:
+INSERT INTO Links VALUES (?, ?);
