@@ -3,13 +3,6 @@ plugins {
     id("com.squareup.sqldelight")
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
-}
-
 kotlin {
     /* Targets configuration omitted. 
     *  To find out how to configure the targets, please follow the link:

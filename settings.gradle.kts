@@ -1,6 +1,6 @@
 rootProject.name = "wikilinks"
 
-include("application")
+include("application", "generator")
 
 pluginManagement {
     repositories {
