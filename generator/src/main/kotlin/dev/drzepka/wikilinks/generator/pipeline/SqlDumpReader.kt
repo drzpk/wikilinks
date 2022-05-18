@@ -63,7 +63,7 @@ class SqlDumpReader(fileStream: InputStream) : Iterator<String>, Closeable {
     }
 
     private fun readNextValueFromInsertStatement() {
-        while (!valueBuffer.endsWith(VALUE_EOL) && !valueBuffer.endsWith(VALUE_SEPARATOR)) {
+        while (!valueBufferEndsWith(VALUE_EOL) && !valueBufferEndsWith(VALUE_SEPARATOR)) {
             val c = currentChar()
             valueBuffer.append(c)
 
@@ -71,7 +71,7 @@ class SqlDumpReader(fileStream: InputStream) : Iterator<String>, Closeable {
                 throw IllegalStateException("Unexpected end of file while reading values from the INSERT statement")
         }
 
-        if (valueBuffer.endsWith(VALUE_EOL)) {
+        if (valueBufferEndsWith(VALUE_EOL)) {
             value = valueBuffer.substring(0, valueBuffer.length - VALUE_EOL.length)
             readingValues = false
         } else {
@@ -79,6 +79,18 @@ class SqlDumpReader(fileStream: InputStream) : Iterator<String>, Closeable {
         }
 
         valueBuffer.delete(0, valueBuffer.length)
+    }
+
+    private fun valueBufferEndsWith(str: String): Boolean {
+        if (valueBuffer.length < str.length)
+            return false
+
+        for (i in 1..str.length) {
+            if (valueBuffer[valueBuffer.length - i] != str[str.length - i])
+                return false
+        }
+
+        return true
     }
 
     private fun consumeUntilInsertStatement(): Boolean = consumeUntilString(INSERT_STATEMENT, true)

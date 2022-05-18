@@ -44,6 +44,7 @@ fun main() {
     }
 
     reader.close()
+    writer.flush()
     println()
 
     val endTime = Instant.now()

@@ -20,7 +20,7 @@ class PageWriter(private val db: Database) {
         }
     }
 
-    private fun flush() {
+    fun flush() {
         db.transaction {
             buffer.forEach { insert(it) }
         }
@@ -36,6 +36,6 @@ class PageWriter(private val db: Database) {
     }
 
     companion object {
-        private const val BUFFER_SIZE = 100_000
+        private const val BUFFER_SIZE = 1_000_000
     }
 }
