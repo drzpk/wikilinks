@@ -122,10 +122,9 @@ class SqlDumpReader(fileStream: InputStream) : Iterator<String>, Closeable {
     private fun currentChar(): Char = streamBuffer[bufferPos]
 
     private fun nextChar(): Boolean {
-        if (!endOfBufferReached()) {
-            bufferPos++
+        bufferPos++
+        if (!endOfBufferReached())
             return true
-        }
 
         bufferSize = reader.read(streamBuffer)
         if (bufferSize == -1)
@@ -135,7 +134,7 @@ class SqlDumpReader(fileStream: InputStream) : Iterator<String>, Closeable {
         return true
     }
 
-    private fun endOfBufferReached(): Boolean = bufferPos == bufferSize
+    private fun endOfBufferReached(): Boolean = bufferPos >= bufferSize
 
     companion object {
         private const val INSERT_STATEMENT = "INSERT INTO "

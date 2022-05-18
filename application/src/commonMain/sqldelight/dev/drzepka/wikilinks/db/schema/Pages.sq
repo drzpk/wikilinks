@@ -1,0 +1,10 @@
+CREATE TABLE Pages (
+    id INTEGER NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    is_redirect INTEGER NOT NULL
+);
+
+CREATE INDEX idx_articles_title ON Pages(title);
+
+insert:
+INSERT INTO Pages VALUES (?, ?, ?);

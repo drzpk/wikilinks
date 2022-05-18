@@ -2,5 +2,5 @@ package dev.drzepka.wikilinks
 
 fun commonMain() {
     val db = DatabaseProvider.getDatabase()
-    db.linksQueries.insert("a", "b")
+    db.linksQueries.insert(1, "a", "b")
 }

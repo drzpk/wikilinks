@@ -26,4 +26,13 @@ internal class ValueParserTest {
         assertEquals("wikitext", values[11])
         assertNull(values[12])
     }
+
+    @Test
+    fun `should parse escaped strings`() {
+        val source = "0,'\\'Ndrangheta','C：\\\\',123"
+        val values = ValueParser(source).parse()
+
+        assertEquals("'Ndrangheta", values[1])
+        assertEquals("C：\\", values[2])
+    }
 }

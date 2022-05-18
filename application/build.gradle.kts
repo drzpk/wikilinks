@@ -38,7 +38,7 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
-                implementation("com.squareup.sqldelight:sqlite-driver:1.5.3")
+                api("com.squareup.sqldelight:sqlite-driver:1.5.3")
             }
         }
     }

@@ -36,13 +36,21 @@ class ValueParser(private val source: String) {
             endIndex++
 
         val raw = source.substring(pos, endIndex)
-        val number = if (raw.contains(DECIMAL_SEPARATOR))
-            raw.toDouble()
-        else
-            raw.toInt()
+        val number = parseNumber(raw)
 
         values.add(number)
         pos = endIndex
+    }
+
+    private fun parseNumber(input: String): Number {
+        return try {
+            if (input.contains(DECIMAL_SEPARATOR))
+                input.toDouble()
+            else
+                input.toInt()
+        } catch (e: NumberFormatException) {
+            throw IllegalStateException("Error while parsing source: $source", e)
+        }
     }
 
     private fun readString() {
@@ -50,13 +58,25 @@ class ValueParser(private val source: String) {
         pos++
 
         var endIndex = pos
-        while (endIndex + 1 < source.length && (source[endIndex] != APOSTROPHE || source[endIndex - 1] == APOSTROPHE && endIndex - 1 > pos))
+        while (endIndex + 1 < source.length && source[endIndex] != APOSTROPHE) {
+            if (source[endIndex] == ESCAPE_CHARACTER)
+                endIndex++
             endIndex++
+        }
 
         if (source[endIndex] != APOSTROPHE)
             throwSyntaxError(endIndex, "unexpected end of string")
 
-        values.add(source.substring(pos, endIndex))
+
+        val builder = StringBuilder(endIndex - pos)
+        var i = pos
+        while (i < endIndex) {
+            if (source[i] == ESCAPE_CHARACTER)
+                i++
+            builder.append(source[i++])
+        }
+
+        values.add(builder.toString())
 
         // Also skip the closing apostrophe
         pos = endIndex + 1
@@ -69,11 +89,12 @@ class ValueParser(private val source: String) {
 
     private fun throwSyntaxError(at: Int, additionalInfo: String? = null): Nothing {
         val suffix = if (additionalInfo != null) ": $additionalInfo" else ""
-        throw IllegalStateException("Syntax error at $at$suffix")
+        throw IllegalStateException("Syntax error at $at$suffix. Source: $source")
     }
 
     companion object {
         private const val APOSTROPHE = '\''
+        private const val ESCAPE_CHARACTER = '\\'
         private const val DIGIT_ZERO = '0'
         private const val DIGIT_NINE = '9'
         private const val NULL = "NULL"

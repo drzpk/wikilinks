@@ -1,7 +1,8 @@
 CREATE TABLE Links (
-    `from` TEXT NOT NULL,
-    `to` TEXT NOT NULL
+    page_id INTEGER NOT NULL PRIMARY KEY,
+    in_links TEXT NOT NULL,
+    out_links TEXT NOT NULL
 );
 
 insert:
-INSERT INTO Links VALUES (?, ?);
+INSERT INTO Links VALUES (?, ?, ?);
