@@ -1,10 +1,17 @@
 package dev.drzepka.wikilinks.generator.pipeline
 
-class ValueParser(private val source: String) {
+import dev.drzepka.wikilinks.generator.model.Value
+
+class ValueParser {
     private val values = mutableListOf<Any?>()
+    private lateinit var source: String
     private var pos = 0
 
-    fun parse(): List<Any?> {
+    fun parse(source: String): Value {
+        this.source = source
+        pos = 0
+        values.clear()
+
         while (pos < source.length) {
             if (isNumber())
                 readNumber()
@@ -18,7 +25,7 @@ class ValueParser(private val source: String) {
                 throwSyntaxError(pos)
         }
 
-        return values
+        return values.toList()
     }
 
     private fun isNumber(): Boolean = source[pos] in DIGIT_ZERO..DIGIT_NINE

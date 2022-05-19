@@ -9,7 +9,7 @@ internal class ValueParserTest {
     @Test
     fun `should parse source`() {
         val source = "10,0,'AccessibleComputing','',1,0,0.33167112649574004,'20220430060236','20220430080215',1002250816,111,'wikitext',NULL"
-        val values = ValueParser(source).parse()
+        val values = ValueParser().parse(source)
 
         assertEquals(13, values.size)
         assertEquals(10, values[0])
@@ -30,7 +30,7 @@ internal class ValueParserTest {
     @Test
     fun `should parse escaped strings`() {
         val source = "0,'\\'Ndrangheta','C：\\\\',123"
-        val values = ValueParser(source).parse()
+        val values = ValueParser().parse(source)
 
         assertEquals("'Ndrangheta", values[1])
         assertEquals("C：\\", values[2])

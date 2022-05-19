@@ -4,6 +4,7 @@ CREATE TABLE Pages (
     is_redirect INTEGER NOT NULL
 );
 
+createIndex:
 CREATE INDEX idx_articles_title ON Pages(title);
 
 insert:
