@@ -1,16 +1,14 @@
-package dev.drzepka.wikilinks.generator.pipeline
+package dev.drzepka.wikilinks.generator.pipeline.writer
 
 import dev.drzepka.wikilinks.db.Database
 import dev.drzepka.wikilinks.generator.model.Value
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-class PageWriter(private val db: Database) {
+abstract class AbstractWriter(protected val db: Database) {
     private var activeBuffer = ArrayList<Value>()
     private var inactiveBuffer = ArrayList<Value>()
     private val writingLock = ReentrantLock()
-
-    val pages = HashMap<Int, String>()
 
     fun write(value: Value) {
         // Only store pages with namespace == 0
@@ -23,9 +21,8 @@ class PageWriter(private val db: Database) {
             flush()
     }
 
-    fun finalizeWriting() {
+    open fun finalizeWriting() {
         flush()
-        db.pagesQueries.createIndex()
     }
 
     private fun flush() {
@@ -41,6 +38,8 @@ class PageWriter(private val db: Database) {
         Thread(InsertExecutor(inactiveBuffer)).start()
     }
 
+    abstract fun insert(value: List<Any?>)
+
     private inner class InsertExecutor(private val buffer: MutableList<Value>) : Runnable {
 
         override fun run() {
@@ -51,15 +50,6 @@ class PageWriter(private val db: Database) {
 
                 buffer.clear()
             }
-        }
-
-        private fun insert(value: List<Any?>) {
-            val id = value[0] as Int
-            val title = value[2] as String
-            val isRedirect = value[4] as Int
-
-            db.pagesQueries.insert(id.toLong(), title, isRedirect.toLong())
-            pages[id] = title
         }
     }
 

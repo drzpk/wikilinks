@@ -2,7 +2,7 @@ package dev.drzepka.wikilinks.generator
 
 import com.google.common.io.CountingInputStream
 import dev.drzepka.wikilinks.generator.model.Value
-import dev.drzepka.wikilinks.generator.pipeline.PageWriter
+import dev.drzepka.wikilinks.generator.pipeline.writer.AbstractWriter
 import dev.drzepka.wikilinks.generator.pipeline.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.worker.SqlWorker
 import dev.drzepka.wikilinks.generator.pipeline.worker.WriterWorker
@@ -17,7 +17,7 @@ import kotlin.math.floor
 class PipelineManager(
     private val fileName: String,
     private val description: String,
-    private val writer: PageWriter
+    private val writer: AbstractWriter
 ) {
     private val fileSizeMB: Int
     private val sqlWorkerCount = Runtime.getRuntime().availableProcessors()
