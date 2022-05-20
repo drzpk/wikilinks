@@ -2,10 +2,10 @@ package dev.drzepka.wikilinks.generator
 
 import com.google.common.io.CountingInputStream
 import dev.drzepka.wikilinks.generator.model.Value
-import dev.drzepka.wikilinks.generator.pipeline.writer.AbstractWriter
-import dev.drzepka.wikilinks.generator.pipeline.SqlDumpReader
+import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.worker.SqlWorker
 import dev.drzepka.wikilinks.generator.pipeline.worker.WriterWorker
+import dev.drzepka.wikilinks.generator.pipeline.writer.Writer
 import java.io.File
 import java.io.FileInputStream
 import java.time.Duration
@@ -17,10 +17,11 @@ import kotlin.math.floor
 class PipelineManager(
     private val fileName: String,
     private val description: String,
-    private val writer: AbstractWriter
+    private val writer: Writer,
+    parallelismFactor: Float = 1.0f
 ) {
     private val fileSizeMB: Int
-    private val sqlWorkerCount = Runtime.getRuntime().availableProcessors()
+    private val sqlWorkerCount = (Runtime.getRuntime().availableProcessors() * parallelismFactor).toInt()
     private val statementQueue = ArrayBlockingQueue<String>(sqlWorkerCount * 3)
     private val valueQueue = ArrayBlockingQueue<List<Value>>(10)
 

@@ -9,7 +9,7 @@ object DatabaseProvider {
         val driver = getDriver(databaseName)
 
         // Optimize insert speed
-        driver.execute(null, "PRAGMA journal_mode = MEMORY", 0)
+        driver.execute(null, "PRAGMA journal_mode = OFF", 0)
         driver.execute(null, "PRAGMA synchronous = OFF", 0)
 
         return Database.invoke(driver)

@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.generator.pipeline
+package dev.drzepka.wikilinks.generator.pipeline.reader
 
 import java.io.Closeable
 import java.io.InputStream

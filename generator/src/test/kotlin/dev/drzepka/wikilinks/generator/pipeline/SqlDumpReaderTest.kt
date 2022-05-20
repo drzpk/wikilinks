@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.generator.pipeline
 
+import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream

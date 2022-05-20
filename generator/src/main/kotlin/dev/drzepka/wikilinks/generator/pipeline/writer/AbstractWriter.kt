@@ -5,23 +5,24 @@ import dev.drzepka.wikilinks.generator.model.Value
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-abstract class AbstractWriter(protected val db: Database) {
+abstract class AbstractWriter(protected val db: Database, private val bufferSize: Int) : Writer {
     private var activeBuffer = ArrayList<Value>()
     private var inactiveBuffer = ArrayList<Value>()
     private val writingLock = ReentrantLock()
 
-    fun write(value: Value) {
-        // Only store pages with namespace == 0
-        if (value[1] != 0)
+    override fun write(value: Value) {
+        if (!filter(value))
             return
 
         activeBuffer.add(value)
 
-        if (activeBuffer.size == BUFFER_SIZE)
+        if (activeBuffer.size == bufferSize)
             flush()
     }
 
-    open fun finalizeWriting() {
+    open fun filter(value: Value): Boolean = true
+
+    override fun finalizeWriting() {
         flush()
     }
 
@@ -40,20 +41,19 @@ abstract class AbstractWriter(protected val db: Database) {
 
     abstract fun insert(value: List<Any?>)
 
+    open fun onInsertComplete() = Unit
+
     private inner class InsertExecutor(private val buffer: MutableList<Value>) : Runnable {
 
         override fun run() {
             writingLock.withLock {
                 db.transaction {
                     buffer.forEach { insert(it) }
+                    onInsertComplete()
                 }
 
                 buffer.clear()
             }
         }
-    }
-
-    companion object {
-        private const val BUFFER_SIZE = 1_000_000
     }
 }
