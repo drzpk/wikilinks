@@ -4,52 +4,42 @@ import com.google.common.io.CountingInputStream
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
 import java.io.*
 import java.util.*
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executors
 import java.util.zip.GZIPInputStream
-import java.util.zip.GZIPOutputStream
 import kotlin.math.floor
 
 @Suppress("UnstableApiUsage")
 class LinksFileSorter(private val file: File) {
     private val executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2)
-    private val entries = ArrayList<Entry>(getLinksPerBlock())
-    private val tmpFiles = ArrayList<File>()
+    private val blockFileSorters = mutableListOf<BlockFileSorter>()
 
     private val sourceFileSizeMB = file.length() / 1024 / 1024
     private val parentDirectory = file.parentFile
-    private val tmpDirectory = File(parentDirectory, "tmpSort")
     private var totalLinks = 0L
 
-    init {
-        if (!tmpDirectory.isDirectory)
-            tmpDirectory.mkdir()
-        else
-            tmpDirectory.listFiles()!!.forEach { it.delete() }
-    }
-
     fun sort() {
-        println("Sorting by source link")
-        sort(0, "id_links_sorted_source.txt.gz")
+        if (executor.isShutdown)
+            throw IllegalStateException("Instance cannot be reused")
 
-        println("Sorting by target link")
-        sort(1, "id_links_sorted_target.txt.gz")
+        try {
+            println("Sorting by source link")
+            sort(0, "id_links_sorted_source.txt.gz")
 
-        executor.shutdown()
+            println("Sorting by target link")
+            sort(1, "id_links_sorted_target.txt.gz")
+        } finally {
+            executor.shutdown()
+        }
     }
 
     private fun sort(sortColumn: Int, outputFileName: String) {
+        blockFileSorters.clear()
+        totalLinks = 0L
+
         createBlocks(sortColumn)
-
-        val outFile = File(parentDirectory, outputFileName)
-        if (outFile.isFile)
-            outFile.delete()
-
-        val outStream = FileOutputStream(outFile, false)
-        val gzipOutStream = ParallelGZIPOutputStream(outStream, executor)
-        val writer = BufferedWriter(OutputStreamWriter(gzipOutStream), FILE_BUFFER_SIZE)
-
-        mergeBlocks(sortColumn, writer)
-        writer.close()
+        mergeBlocks(sortColumn, outputFileName)
     }
 
     private fun createBlocks(sortColumn: Int) {
@@ -58,26 +48,57 @@ class LinksFileSorter(private val file: File) {
         val countingStream = CountingInputStream(FileInputStream(file))
         val gzipInStream = GZIPInputStream(countingStream, FILE_BUFFER_SIZE)
         val reader = BufferedReader(InputStreamReader(gzipInStream))
-        val entriesPerBlock = getLinksPerBlock()
+        val linksPerBlock = getLinksPerBlock()
+
+        val blockSortQueue = ArrayBlockingQueue<ArrayList<String>>(getBlockSortingThreads() + 1)
+        val sorterThreads = createSorterThreads(sortColumn, blockSortQueue)
 
         var counter = 0L
+        var linkBuffer = ArrayList<String>(linksPerBlock)
+
         while (true) {
             val line = reader.readLine() ?: break
-            entries.add(convertToEntry(sortColumn, line))
+            linkBuffer.add(line)
             totalLinks++
 
             if (++counter % 10000 == 0L)
                 printBlocksProgress(countingStream.count)
 
-            if (entries.size == entriesPerBlock)
-                sortAndFlushEntries()
+            if (linkBuffer.size == linksPerBlock) {
+                val oldBuffer = linkBuffer
+                linkBuffer = ArrayList(linksPerBlock)
+                blockSortQueue.put(oldBuffer)
+            }
         }
-
-        if (entries.isNotEmpty())
-            sortAndFlushEntries()
 
         reader.close()
         println()
+
+        if (linkBuffer.isNotEmpty())
+            blockSortQueue.put(linkBuffer)
+
+        while (blockSortQueue.isNotEmpty())
+            Thread.sleep(200)
+
+        blockFileSorters.forEach { it.stop() }
+        sorterThreads.forEach { it.join() }
+    }
+
+    private fun createSorterThreads(sortColumn: Int, blockSortQueue: BlockingQueue<ArrayList<String>>): List<Thread> {
+        val tmpSortDirectory = File(parentDirectory, "tmpSort")
+
+        if (!tmpSortDirectory.isDirectory)
+            tmpSortDirectory.mkdir()
+        else
+            tmpSortDirectory.listFiles()!!.forEach { it.delete() }
+
+        val sorterThreads = (0 until getBlockSortingThreads()).map {
+            val sorter = BlockFileSorter(sortColumn, blockSortQueue, executor, tmpSortDirectory)
+            blockFileSorters.add(sorter)
+            Thread(sorter).apply { start() }
+        }
+
+        return sorterThreads
     }
 
     private fun printBlocksProgress(readBytes: Long) {
@@ -86,29 +107,11 @@ class LinksFileSorter(private val file: File) {
         print("\rProgress: $readMB/$sourceFileSizeMB MB   ($percentage%)    ")
     }
 
-    private fun sortAndFlushEntries() {
-        val tmpFile = File.createTempFile("sort-", null, tmpDirectory)
-        tmpFile.deleteOnExit()
-        tmpFiles.add(tmpFile)
-
-        val stream = GZIPOutputStream(FileOutputStream(tmpFile), FILE_BUFFER_SIZE)
-        val writer = BufferedWriter(OutputStreamWriter(stream))
-
-        entries.sort()
-        entries.forEach { writer.appendLine(it.line) }
-
-        writer.close()
-        entries.clear()
-    }
-
-    private fun convertToEntry(column: Int, line: String): Entry {
-        val parts = line.split(",")
-        return Entry(parts[column].toInt(), line)
-    }
-
-    private fun mergeBlocks(sortColumn: Int, writer: BufferedWriter) {
+    private fun mergeBlocks(sortColumn: Int, outputFileName: String) {
         println("Merging blocks")
 
+        val tmpFiles = blockFileSorters.flatMap { it.getFiles() }
+        val writer = createSortedFileWriter(outputFileName)
         val queue = PriorityQueue<BlockFile>(tmpFiles.size)
         queue.addAll(tmpFiles.map { BlockFile(it, sortColumn) })
 
@@ -125,6 +128,19 @@ class LinksFileSorter(private val file: File) {
             if (++counter % 10_000 == 0L)
                 printMergeProgress(counter)
         }
+
+        writer.close()
+        println()
+    }
+
+    private fun createSortedFileWriter(outputFileName: String): BufferedWriter {
+        val outFile = File(parentDirectory, outputFileName)
+        if (outFile.isFile)
+            outFile.delete()
+
+        val outStream = FileOutputStream(outFile, false)
+        val gzipOutStream = ParallelGZIPOutputStream(outStream, executor)
+        return BufferedWriter(OutputStreamWriter(gzipOutStream), FILE_BUFFER_SIZE)
     }
 
     private fun printMergeProgress(count: Long) {
@@ -136,6 +152,8 @@ class LinksFileSorter(private val file: File) {
 
     // Total links (20220501): 963_013_717
     private fun getLinksPerBlock(): Int = 10_000_000
+
+    private fun getBlockSortingThreads(): Int = 2
 
     companion object {
         private const val FILE_BUFFER_SIZE = 16 * 1024 * 1024

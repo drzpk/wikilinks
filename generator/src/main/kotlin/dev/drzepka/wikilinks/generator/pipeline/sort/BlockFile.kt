@@ -16,7 +16,7 @@ class BlockFile(file: File, private val sortColumn: Int) : Comparable<BlockFile>
 
     init {
         val gzipStream = GZIPInputStream(FileInputStream(file))
-        reader = BufferedReader(InputStreamReader(gzipStream), 16 * 1024)
+        reader = BufferedReader(InputStreamReader(gzipStream), 16 * 1024 * 1024)
 
         if (!next())
             throw IllegalStateException("File is empty")
