@@ -1,7 +1,6 @@
 package dev.drzepka.wikilinks.generator
 
 import dev.drzepka.wikilinks.DatabaseProvider
-import dev.drzepka.wikilinks.DatabaseProvider.databaseName
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
@@ -77,6 +76,9 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
         val writer = LinksWriter(store.pages)
         val manager = PipelineManager(dumpFile, writer)
         manager.start(logger)
+
+        // Save some memory
+        store.pages = mutableMapOf()
     }
 }
 
