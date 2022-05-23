@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.generator
 
 import com.google.common.io.CountingInputStream
+import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Value
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.worker.SqlWorker
@@ -8,15 +9,11 @@ import dev.drzepka.wikilinks.generator.pipeline.worker.WriterWorker
 import dev.drzepka.wikilinks.generator.pipeline.writer.Writer
 import java.io.File
 import java.io.FileInputStream
-import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.ArrayBlockingQueue
-import kotlin.math.floor
 
 @Suppress("UnstableApiUsage")
 class PipelineManager(
     private val fileName: String,
-    private val description: String,
     private val writer: Writer,
     parallelismFactor: Float = 1.0f
 ) {
@@ -27,23 +24,19 @@ class PipelineManager(
 
     private val sqlWorkerThreads = mutableListOf<Thread>()
     private lateinit var writerWorkerThread: Thread
+    private lateinit var logger: ProgressLogger
 
     init {
         val file = File(fileName)
         fileSizeMB = (file.length() / 1024 / 1024).toInt()
     }
 
-    fun start() {
-        println("Starting pipeline: $description")
+    fun start(logger: ProgressLogger) {
+        this.logger = logger
         startWorkers()
 
-        val startTime = Instant.now()
         readFile()
         waitForWorkers()
-
-        val endTime = Instant.now()
-        val duration = Duration.between(startTime, endTime).seconds
-        println("\nPipeline has finished. The process took $duration seconds")
 
         destroyWorkers()
     }
@@ -85,16 +78,13 @@ class PipelineManager(
             val next = reader.next()
             statementQueue.put(next)
 
+            if (readStatements == 1000)
+                break
+
             if (readStatements++ % 10 == 0)
-                printProgress(countingStream.count)
+                logger.updateProgress((countingStream.count / 1024 / 1024).toInt(), fileSizeMB, "MB")
         }
 
         reader.close()
-    }
-
-    private fun printProgress(readBytes: Long) {
-        val readMB = readBytes / 1024 / 1024
-        val percentage = floor(readMB.toFloat() / fileSizeMB * 1000) / 10
-        print("\rProgress: $readMB/$fileSizeMB MB   ($percentage%)    ")
     }
 }

@@ -1,6 +1,9 @@
 package dev.drzepka.wikilinks.generator.pipeline.sort
 
 import com.google.common.io.CountingInputStream
+import dev.drzepka.wikilinks.generator.flow.FlowSegment
+import dev.drzepka.wikilinks.generator.flow.Logger
+import dev.drzepka.wikilinks.generator.model.Store
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
 import java.io.*
 import java.util.*
@@ -8,43 +11,45 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executors
 import java.util.zip.GZIPInputStream
-import kotlin.math.floor
 
 @Suppress("UnstableApiUsage")
-class LinksFileSorter(private val file: File) {
+class LinksFileSorter(private val file: File) : FlowSegment<Store> {
     private val executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2)
     private val blockFileSorters = mutableListOf<BlockFileSorter>()
 
-    private val sourceFileSizeMB = file.length() / 1024 / 1024
+    private val sourceFileSizeMB = (file.length() / 1024 / 1024).toInt()
     private val parentDirectory = file.parentFile
     private var totalLinks = 0L
 
-    fun sort() {
+    override val numberOfSteps = 4
+    private lateinit var logger: Logger
+
+    override fun run(store: Store, logger: Logger) {
         if (executor.isShutdown)
             throw IllegalStateException("Instance cannot be reused")
 
-        try {
-            println("Sorting by source link")
-            sort(0, "id_links_sorted_source.txt.gz")
+        this.logger = logger
 
-            println("Sorting by target link")
-            sort(1, "id_links_sorted_target.txt.gz")
+        try {
+            sort(0, "id_links_sorted_source.txt.gz", "source")
+            sort(1, "id_links_sorted_target.txt.gz", "target")
         } finally {
             executor.shutdown()
         }
     }
 
-    private fun sort(sortColumn: Int, outputFileName: String) {
+    private fun sort(sortColumn: Int, outputFileName: String, progressDescription: String) {
         blockFileSorters.clear()
         totalLinks = 0L
 
+        logger.startNextStep("Creating blocks sorted by $progressDescription link")
         createBlocks(sortColumn)
+
+        logger.startNextStep("Merging blocks")
         mergeBlocks(sortColumn, outputFileName)
     }
 
     private fun createBlocks(sortColumn: Int) {
-        println("Creating blocks")
-
         val countingStream = CountingInputStream(FileInputStream(file))
         val gzipInStream = GZIPInputStream(countingStream, FILE_BUFFER_SIZE)
         val reader = BufferedReader(InputStreamReader(gzipInStream))
@@ -62,7 +67,7 @@ class LinksFileSorter(private val file: File) {
             totalLinks++
 
             if (++counter % 10000 == 0L)
-                printBlocksProgress(countingStream.count)
+                logger.updateProgress((countingStream.count / 1024 / 1024).toInt(), sourceFileSizeMB, "MB")
 
             if (linkBuffer.size == linksPerBlock) {
                 val oldBuffer = linkBuffer
@@ -72,7 +77,6 @@ class LinksFileSorter(private val file: File) {
         }
 
         reader.close()
-        println()
 
         if (linkBuffer.isNotEmpty())
             blockSortQueue.put(linkBuffer)
@@ -101,15 +105,7 @@ class LinksFileSorter(private val file: File) {
         return sorterThreads
     }
 
-    private fun printBlocksProgress(readBytes: Long) {
-        val readMB = readBytes / 1024 / 1024
-        val percentage = floor(readMB.toFloat() / sourceFileSizeMB * 1000) / 10
-        print("\rProgress: $readMB/$sourceFileSizeMB MB   ($percentage%)    ")
-    }
-
     private fun mergeBlocks(sortColumn: Int, outputFileName: String) {
-        println("Merging blocks")
-
         val tmpFiles = blockFileSorters.flatMap { it.getFiles() }
         val writer = createSortedFileWriter(outputFileName)
         val queue = PriorityQueue<BlockFile>(tmpFiles.size)
@@ -126,11 +122,10 @@ class LinksFileSorter(private val file: File) {
                 blockFile.close()
 
             if (++counter % 10_000 == 0L)
-                printMergeProgress(counter)
+                logger.updateProgress((counter / 1000).toInt(), (totalLinks / 1000).toInt(), "k")
         }
 
         writer.close()
-        println()
     }
 
     private fun createSortedFileWriter(outputFileName: String): BufferedWriter {
@@ -141,13 +136,6 @@ class LinksFileSorter(private val file: File) {
         val outStream = FileOutputStream(outFile, false)
         val gzipOutStream = ParallelGZIPOutputStream(outStream, executor)
         return BufferedWriter(OutputStreamWriter(gzipOutStream), FILE_BUFFER_SIZE)
-    }
-
-    private fun printMergeProgress(count: Long) {
-        val countThousands = count / 1000
-        val totalThousands = totalLinks / 1000
-        val percentage = floor(countThousands.toFloat() / totalThousands * 1000) / 10
-        print("\rProgress: ${countThousands}k/${totalThousands}k   ($percentage%)    ")
     }
 
     // Total links (20220501): 963_013_717

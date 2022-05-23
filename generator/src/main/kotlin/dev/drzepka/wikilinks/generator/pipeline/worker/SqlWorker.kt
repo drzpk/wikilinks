@@ -27,6 +27,8 @@ class SqlWorker(
     private fun processStatement(stmt: String) {
         try {
             doProcessStatement(stmt)
+        } catch (e: InterruptedException) {
+            throw e
         } catch (e: Exception) {
             println("Error while processing statement")
             e.printStackTrace()
@@ -37,8 +39,6 @@ class SqlWorker(
         val values = extractor
             .extractFromStatement(stmt)
             .map {
-                if (it.startsWith("40435962,0,'Bhongir_(Lok_Sabha_constituency"))
-                    println("gotcha")
                 parser.parse(it)
             }
 
