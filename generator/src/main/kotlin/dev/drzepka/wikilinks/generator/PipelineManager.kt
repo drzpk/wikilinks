@@ -22,8 +22,8 @@ class PipelineManager(
     private val statementQueue = ArrayBlockingQueue<String>(sqlWorkerCount * 3)
     private val valueQueue = ArrayBlockingQueue<List<Value>>(10)
 
-    private val sqlWorkerThreads = mutableListOf<Thread>()
-    private lateinit var writerWorkerThread: Thread
+    private val sqlWorkers = mutableListOf<SqlWorker>()
+    private lateinit var writerWorker: WriterWorker
     private lateinit var logger: ProgressLogger
 
     init {
@@ -33,24 +33,24 @@ class PipelineManager(
 
     fun start(logger: ProgressLogger) {
         this.logger = logger
-        startWorkers()
 
+        startWorkers()
         readFile()
         waitForWorkers()
-
-        destroyWorkers()
     }
 
     private fun startWorkers() {
         repeat(sqlWorkerCount) {
-            val thread = Thread(SqlWorker(statementQueue, valueQueue))
+            val worker = SqlWorker(statementQueue, valueQueue)
+            sqlWorkers.add(worker)
+
+            val thread = Thread(worker)
             thread.name = "sql-worker-$it"
             thread.start()
-            sqlWorkerThreads.add(thread)
         }
 
-        val writerWorker = WriterWorker(valueQueue, writer)
-        writerWorkerThread = Thread(writerWorker).apply {
+        writerWorker = WriterWorker(valueQueue, writer)
+        Thread(writerWorker).apply {
             name = "writer-worker"
             start()
         }
@@ -60,13 +60,8 @@ class PipelineManager(
         while (statementQueue.isNotEmpty())
             Thread.sleep(200)
 
-        while (valueQueue.isNotEmpty())
-            Thread.sleep(200)
-    }
-
-    private fun destroyWorkers() {
-        sqlWorkerThreads.forEach { it.interrupt() }
-        writerWorkerThread.interrupt()
+        sqlWorkers.forEach { it.stop() }
+        writerWorker.stop()
     }
 
     private fun readFile() {

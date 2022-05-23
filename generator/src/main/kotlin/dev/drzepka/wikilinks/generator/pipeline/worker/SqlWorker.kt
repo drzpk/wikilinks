@@ -4,6 +4,8 @@ import dev.drzepka.wikilinks.generator.model.Value
 import dev.drzepka.wikilinks.generator.pipeline.SqlValueExtractor
 import dev.drzepka.wikilinks.generator.pipeline.ValueParser
 import java.util.concurrent.BlockingQueue
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 class SqlWorker(
     private val insertStatementQueue: BlockingQueue<String>,
@@ -12,23 +14,23 @@ class SqlWorker(
 
     private val extractor = SqlValueExtractor()
     private val parser = ValueParser()
+    private val working = AtomicBoolean(true)
 
     override fun run() {
-        try {
-            while (true) {
-                val statement = insertStatementQueue.take()
+        while (working.get()) {
+            val statement = insertStatementQueue.poll(1, TimeUnit.SECONDS)
+            if (statement != null)
                 processStatement(statement)
-            }
-        } catch (ignored: InterruptedException) {
-            // All done
         }
+    }
+
+    fun stop() {
+        working.set(false)
     }
 
     private fun processStatement(stmt: String) {
         try {
             doProcessStatement(stmt)
-        } catch (e: InterruptedException) {
-            throw e
         } catch (e: Exception) {
             println("Error while processing statement")
             e.printStackTrace()
