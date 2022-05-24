@@ -73,9 +73,6 @@ class PipelineManager(
             val next = reader.next()
             statementQueue.put(next)
 
-            if (readStatements == 1000)
-                break
-
             if (readStatements++ % 10 == 0)
                 logger.updateProgress((countingStream.count / 1024 / 1024).toInt(), fileSizeMB, "MB")
         }
