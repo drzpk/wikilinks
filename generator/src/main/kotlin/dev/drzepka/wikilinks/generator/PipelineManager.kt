@@ -3,17 +3,19 @@ package dev.drzepka.wikilinks.generator
 import com.google.common.io.CountingInputStream
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Value
-import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
+import dev.drzepka.wikilinks.generator.pipeline.reader.Reader
 import dev.drzepka.wikilinks.generator.pipeline.worker.SqlWorker
 import dev.drzepka.wikilinks.generator.pipeline.worker.WriterWorker
 import dev.drzepka.wikilinks.generator.pipeline.writer.Writer
 import java.io.File
 import java.io.FileInputStream
+import java.io.InputStream
 import java.util.concurrent.ArrayBlockingQueue
 
 @Suppress("UnstableApiUsage")
 class PipelineManager(
     private val fileName: String,
+    private val readerFactory: (stream: InputStream) -> Reader,
     private val writer: Writer,
     parallelismFactor: Float = 1.0f
 ) {
@@ -66,7 +68,7 @@ class PipelineManager(
 
     private fun readFile() {
         val countingStream = CountingInputStream(FileInputStream(fileName))
-        val reader = SqlDumpReader(countingStream)
+        val reader = readerFactory.invoke(countingStream)
         var readStatements = 0
 
         while (reader.hasNext()) {

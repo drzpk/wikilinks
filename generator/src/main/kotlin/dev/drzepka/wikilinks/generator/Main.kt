@@ -5,6 +5,7 @@ import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
+import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.PageWriter
@@ -41,7 +42,7 @@ private object PopulatePageTable : FlowStep<Store> {
     override fun run(store: Store, logger: ProgressLogger) {
         val writer = PageWriter(store.db)
         val dumpFile = getDumpFileName("page")
-        val manager = PipelineManager(dumpFile, writer)
+        val manager = PipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
 
         manager.start(logger)
         store.pages = writer.pages
@@ -74,7 +75,7 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
     override fun run(store: Store, logger: ProgressLogger) {
         val dumpFile = getDumpFileName("pagelinks")
         val writer = LinksWriter(store.pages)
-        val manager = PipelineManager(dumpFile, writer)
+        val manager = PipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
         manager.start(logger)
 
         // Save some memory
