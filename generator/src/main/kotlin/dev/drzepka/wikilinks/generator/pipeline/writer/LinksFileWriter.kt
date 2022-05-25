@@ -23,6 +23,10 @@ class LinksFileWriter(private val pages: Map<String, Int>) : Writer<Value> {
     }
 
     override fun write(value: Value) {
+        // Check the namespace
+        if (value[1] != 0)
+            return
+
         val from = value[0] as Int
         val to = pages[value[2] as String] ?: return
 
