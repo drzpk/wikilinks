@@ -7,7 +7,8 @@ import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
-import dev.drzepka.wikilinks.generator.pipeline.writer.LinksWriter
+import dev.drzepka.wikilinks.generator.pipeline.writer.LinksDbWriter
+import dev.drzepka.wikilinks.generator.pipeline.writer.LinksFileWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.PageWriter
 import java.io.File
 
@@ -42,10 +43,22 @@ private object PopulatePageTable : FlowStep<Store> {
     override fun run(store: Store, logger: ProgressLogger) {
         val writer = PageWriter(store.db)
         val dumpFile = getDumpFileName("page")
-        val manager = PipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
+        val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
 
         manager.start(logger)
         store.pages = writer.pages
+    }
+}
+
+private object PopulateLinksTableStep : FlowStep<Store> {
+    override val name = "Populating the links table"
+
+    override fun run(store: Store, logger: ProgressLogger) {
+        val writer = LinksDbWriter(store.db)
+        val sourceFile = "dumps/${LinksFileSorter.SORTED_SOURCE_FILE_NAME}"
+        val targetFile = "dumps/${LinksFileSorter.SORTED_TARGET_FILE_NAME}"
+        val manager = LinksPipelineManager(writer, sourceFile, targetFile)
+        manager.start(logger)
     }
 }
 
@@ -74,8 +87,8 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
 
     override fun run(store: Store, logger: ProgressLogger) {
         val dumpFile = getDumpFileName("pagelinks")
-        val writer = LinksWriter(store.pages)
-        val manager = PipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
+        val writer = LinksFileWriter(store.pages)
+        val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
         manager.start(logger)
 
         // Save some memory

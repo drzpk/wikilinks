@@ -31,8 +31,8 @@ class LinksFileSorter(private val file: File) : FlowSegment<Store> {
         this.logger = logger
 
         try {
-            sort(0, "id_links_sorted_source.txt.gz", "source")
-            sort(1, "id_links_sorted_target.txt.gz", "target")
+            sort(0, SORTED_SOURCE_FILE_NAME, "source")
+            sort(1, SORTED_TARGET_FILE_NAME, "target")
         } finally {
             executor.shutdown()
         }
@@ -145,5 +145,7 @@ class LinksFileSorter(private val file: File) : FlowSegment<Store> {
 
     companion object {
         private const val FILE_BUFFER_SIZE = 16 * 1024 * 1024
+        const val SORTED_SOURCE_FILE_NAME = "id_links_sorted_source.txt.gz"
+        const val SORTED_TARGET_FILE_NAME = "id_links_sorted_target.txt.gz"
     }
 }

@@ -1,8 +1,6 @@
 package dev.drzepka.wikilinks.generator.pipeline.writer
 
-import dev.drzepka.wikilinks.generator.model.Value
-
-interface Writer {
-    fun write(value: Value)
+interface Writer<T> {
+    fun write(value: T)
     fun finalizeWriting()
 }

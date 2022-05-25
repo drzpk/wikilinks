@@ -1,16 +1,15 @@
 package dev.drzepka.wikilinks.generator.pipeline.writer
 
 import dev.drzepka.wikilinks.db.Database
-import dev.drzepka.wikilinks.generator.model.Value
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-abstract class AbstractWriter(protected val db: Database, private val bufferSize: Int) : Writer {
-    private var activeBuffer = ArrayList<Value>()
-    private var inactiveBuffer = ArrayList<Value>()
+abstract class AbstractWriter<T>(protected val db: Database, private val bufferSize: Int) : Writer<T> {
+    private var activeBuffer = ArrayList<T>()
+    private var inactiveBuffer = ArrayList<T>()
     private val writingLock = ReentrantLock()
 
-    override fun write(value: Value) {
+    override fun write(value: T) {
         if (!filter(value))
             return
 
@@ -20,7 +19,7 @@ abstract class AbstractWriter(protected val db: Database, private val bufferSize
             flush()
     }
 
-    open fun filter(value: Value): Boolean = true
+    open fun filter(value: T): Boolean = true
 
     override fun finalizeWriting() {
         flush()
@@ -39,11 +38,11 @@ abstract class AbstractWriter(protected val db: Database, private val bufferSize
         Thread(InsertExecutor(inactiveBuffer)).start()
     }
 
-    abstract fun insert(value: List<Any?>)
+    abstract fun insert(value: T)
 
     open fun onInsertComplete() = Unit
 
-    private inner class InsertExecutor(private val buffer: MutableList<Value>) : Runnable {
+    private inner class InsertExecutor(private val buffer: MutableList<T>) : Runnable {
 
         override fun run() {
             writingLock.withLock {

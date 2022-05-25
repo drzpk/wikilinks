@@ -13,10 +13,10 @@ import java.io.InputStream
 import java.util.concurrent.ArrayBlockingQueue
 
 @Suppress("UnstableApiUsage")
-class PipelineManager(
+class SqlPipelineManager(
     private val fileName: String,
     private val readerFactory: (stream: InputStream) -> Reader,
-    private val writer: Writer,
+    private val writer: Writer<Value>,
     parallelismFactor: Float = 1.0f
 ) {
     private val fileSizeMB: Int
@@ -25,7 +25,7 @@ class PipelineManager(
     private val valueQueue = ArrayBlockingQueue<List<Value>>(10)
 
     private val sqlWorkers = mutableListOf<SqlWorker>()
-    private lateinit var writerWorker: WriterWorker
+    private lateinit var writerWorker: WriterWorker<Value>
     private lateinit var logger: ProgressLogger
 
     init {

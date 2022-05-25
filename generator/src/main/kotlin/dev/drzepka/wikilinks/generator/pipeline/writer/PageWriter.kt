@@ -3,7 +3,7 @@ package dev.drzepka.wikilinks.generator.pipeline.writer
 import dev.drzepka.wikilinks.db.Database
 import dev.drzepka.wikilinks.generator.model.Value
 
-class PageWriter(db: Database) : AbstractWriter(db, 1_000_000) {
+class PageWriter(db: Database) : AbstractWriter<Value>(db, 1_000_000) {
     val pages = HashMap<String, Int>()
 
     override fun filter(value: Value): Boolean {
