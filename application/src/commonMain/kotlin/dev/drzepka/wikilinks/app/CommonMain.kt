@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks
+package dev.drzepka.wikilinks.app
 
 fun commonMain() {
     val db = DatabaseProvider.getDatabase()

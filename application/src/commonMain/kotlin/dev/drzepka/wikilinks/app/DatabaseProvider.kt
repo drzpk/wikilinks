@@ -1,10 +1,11 @@
-package dev.drzepka.wikilinks
+package dev.drzepka.wikilinks.app
 
 import com.squareup.sqldelight.db.SqlDriver
 import dev.drzepka.wikilinks.db.Database
 
 object DatabaseProvider {
-    val databaseName = "database.db"
+    const val databaseName = "database.db"
+
     fun getDatabase(): Database {
         val driver = getDriver(databaseName)
 
