@@ -6,3 +6,6 @@ CREATE TABLE Links (
 
 insert:
 INSERT INTO Links VALUES (?, ?, ?);
+
+getOutLinks:
+SELECT out_links FROM Links WHERE page_id = ?;

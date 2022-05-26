@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app
+package dev.drzepka.wikilinks.app.db
 
 import com.squareup.sqldelight.db.SqlDriver
 import dev.drzepka.wikilinks.db.Database

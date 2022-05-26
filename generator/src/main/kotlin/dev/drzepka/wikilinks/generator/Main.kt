@@ -1,7 +1,8 @@
 package dev.drzepka.wikilinks.generator
 
 import com.google.common.collect.HashBiMap
-import dev.drzepka.wikilinks.DatabaseProvider
+import dev.drzepka.wikilinks.app.db.DatabaseProvider
+import dev.drzepka.wikilinks.app.db.DatabaseProvider.databaseName
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
