@@ -1,10 +1,12 @@
 package dev.drzepka.wikilinks.generator
 
+import com.google.common.collect.HashBiMap
 import dev.drzepka.wikilinks.DatabaseProvider
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
+import dev.drzepka.wikilinks.generator.pipeline.filter.LinksFilter
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksDbWriter
@@ -68,13 +70,13 @@ private object ExtractPagesFromDbStep : FlowStep<Store> {
     override val name = "Extracting pages from the database"
 
     override fun run(store: Store, logger: ProgressLogger) {
-        val pages = HashMap<String, Int>()
+        val pages = HashBiMap.create<Int, String>()
         val cursor = store.db.pagesQueries.all().execute()
 
         while (cursor.next()) {
             val id = cursor.getLong(0)!!
             val title = cursor.getString(1)!!
-            pages[title] = id.toInt()
+            pages[id.toInt()] = title
         }
 
         cursor.close()
@@ -88,11 +90,13 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
     override fun run(store: Store, logger: ProgressLogger) {
         val dumpFile = getDumpFileName("pagelinks")
         val writer = LinksFileWriter(store.pages)
-        val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
+        val filter = LinksFilter(store.pages)
+
+        val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer, filter)
         manager.start(logger)
 
         // Save some memory
-        store.pages = mutableMapOf()
+        store.pages = HashBiMap.create()
     }
 }
 

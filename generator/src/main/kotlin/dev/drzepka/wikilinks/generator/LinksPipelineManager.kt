@@ -2,14 +2,17 @@ package dev.drzepka.wikilinks.generator
 
 import com.google.common.io.CountingInputStream
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
+import dev.drzepka.wikilinks.generator.model.LinkGroup
 import dev.drzepka.wikilinks.generator.model.PageLinks
-import dev.drzepka.wikilinks.generator.pipeline.link.LinksFileReader
 import dev.drzepka.wikilinks.generator.pipeline.reader.GZipReader
+import dev.drzepka.wikilinks.generator.pipeline.reader.LinksFileReader
 import dev.drzepka.wikilinks.generator.pipeline.worker.WriterWorker
 import dev.drzepka.wikilinks.generator.pipeline.writer.Writer
 import java.io.File
 import java.io.FileInputStream
 import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.TimeUnit
 
 @Suppress("UnstableApiUsage")
 class LinksPipelineManager(
@@ -17,16 +20,16 @@ class LinksPipelineManager(
     sourceLinksFileName: String,
     targetLinksFileName: String
 ) {
+    private var inLinksQueueWrapper: BufferingQueueWrapper<LinkGroup>?
+    private var outLinksQueueWrapper: BufferingQueueWrapper<LinkGroup>?
+    private val linksWriteQueue = ArrayBlockingQueue<List<PageLinks>>(30)
 
-    private var inLinksReader: LinksFileReader?
-    private var outLinksReader: LinksFileReader?
+    private var inLinksReader: LinksFileReader
+    private var outLinksReader: LinksFileReader
+
     private val linkFilesSizeMB: Int
-
     private val inCountingStream: CountingInputStream
     private val outCountingStream: CountingInputStream
-
-    private val pageLinksQueue = ArrayBlockingQueue<List<PageLinks>>(30)
-    private lateinit var writerWorker: WriterWorker<PageLinks>
 
     init {
         // Source links = links sorted by a source link
@@ -38,22 +41,30 @@ class LinksPipelineManager(
         inCountingStream = CountingInputStream(FileInputStream(targetLinksFile))
         outCountingStream = CountingInputStream(FileInputStream(sourceLinksFile))
 
+        val inLinksQueue: BlockingQueue<LinkGroup> = ArrayBlockingQueue(100)
+        val outLinksQueue: BlockingQueue<LinkGroup> = ArrayBlockingQueue(100)
+
         // In links = other pages linking to THIS page
         // Out links = THIS page linking to other pages
-        inLinksReader = LinksFileReader(GZipReader(inCountingStream, 32 * 1024 * 1024), 1)
-        outLinksReader = LinksFileReader(GZipReader(outCountingStream, 32 * 1024 * 1024), 0)
+        inLinksReader = LinksFileReader(GZipReader(inCountingStream, 16 * 1024 * 1024), inLinksQueue, 1)
+        outLinksReader = LinksFileReader(GZipReader(outCountingStream, 16 * 1024 * 1024), outLinksQueue, 0)
+
+        inLinksQueueWrapper = BufferingQueueWrapper(inLinksQueue, inLinksReader)
+        outLinksQueueWrapper = BufferingQueueWrapper(outLinksQueue, outLinksReader)
     }
 
     fun start(logger: ProgressLogger) {
-        writerWorker = WriterWorker(pageLinksQueue, writer)
-        Thread(writerWorker).apply {
-            name = "lpm-writer-worker"
-            start()
-        }
+        val inReaderThread = Thread(inLinksReader, "in-links-reader").apply { start() }
+        val outReaderThread = Thread(outLinksReader, "out-links-reader").apply { start() }
+
+        val writerWorker = WriterWorker(linksWriteQueue, writer)
+        Thread(writerWorker, "lpm-writer-worker").apply { start() }
 
         try {
             run(logger)
         } finally {
+            inReaderThread.interrupt()
+            outReaderThread.interrupt()
             writerWorker.stop()
         }
     }
@@ -62,7 +73,7 @@ class LinksPipelineManager(
         var iterations = 0L
         while (true) {
             val links = getNextLinks() ?: break
-            pageLinksQueue.put(listOf(links))
+            linksWriteQueue.put(listOf(links))
 
             if (++iterations % 100 == 0L) {
                 val readMB = ((inCountingStream.count + outCountingStream.count) / 1024 / 1024).toInt()
@@ -70,41 +81,75 @@ class LinksPipelineManager(
             }
         }
 
-        while (pageLinksQueue.isNotEmpty())
+        while (linksWriteQueue.isNotEmpty())
             Thread.sleep(200)
     }
 
     private fun getNextLinks(): PageLinks? {
-        if (inLinksReader == null && outLinksReader == null)
+        val inGroup = inLinksQueueWrapper?.peek()
+        val outGroup = outLinksQueueWrapper?.peek()
+
+        if (inGroup == null && outGroup == null)
             return null
 
-        val groupingColumn = minOf(
-            inLinksReader?.nextGroupingColumnValue ?: Int.MAX_VALUE,
-            outLinksReader?.nextGroupingColumnValue ?: Int.MAX_VALUE
+        val minGroupingValue = minOf(
+            inGroup?.groupingValue ?: Int.MAX_VALUE,
+            outGroup?.groupingValue ?: Int.MAX_VALUE
         )
 
         var inLinks = ""
         var outLinks = ""
 
-        if (inLinksReader?.nextGroupingColumnValue == groupingColumn)
-            inLinks = joinLinks(inLinksReader!!)
-        if (outLinksReader?.nextGroupingColumnValue == groupingColumn)
-            outLinks = joinLinks(outLinksReader!!)
+        if (inGroup?.groupingValue == minGroupingValue) {
+            inLinks = joinLinks(inGroup, inLinksReader.groupingColumn)
+            inLinksQueueWrapper?.consume()
 
-        return PageLinks(groupingColumn, inLinks, outLinks)
+            if (inLinksReader.done && inLinksQueueWrapper?.isEmpty() == true)
+                inLinksQueueWrapper = null
+        }
+
+        if (outGroup?.groupingValue == minGroupingValue) {
+            outLinks = joinLinks(outGroup, outLinksReader.groupingColumn)
+            outLinksQueueWrapper?.consume()
+
+            if (outLinksReader.done && outLinksQueueWrapper?.isEmpty() == true)
+                outLinksQueueWrapper = null
+        }
+
+        return PageLinks(minGroupingValue, inLinks, outLinks)
     }
 
-    private fun joinLinks(reader: LinksFileReader): String {
-        val group = reader.next()
-        val builder = StringBuilder(group.size * 8)
-        val valueColumn = 1 - reader.groupingColumn
+    private fun joinLinks(group: LinkGroup, groupingColumn: Int): String {
+        val links = group.links
 
-        for (i in 0 until group.size - 1) {
-            builder.append(group[i][valueColumn])
+        val builder = StringBuilder(links.size * 8)
+        val valueColumn = 1 - groupingColumn
+
+        for (i in 0 until links.size - 1) {
+            builder.append(links[i][valueColumn])
             builder.append(',')
         }
 
-        builder.append(group[group.lastIndex][valueColumn])
+        builder.append(links[links.lastIndex][valueColumn])
         return builder.toString()
+    }
+
+    private class BufferingQueueWrapper<T>(private val queue: BlockingQueue<T>, private val reader: LinksFileReader) {
+        private var buffer: T? = null
+
+        fun peek(): T? {
+            if (buffer == null) {
+                while (!reader.done && buffer == null)
+                    buffer = queue.poll(1, TimeUnit.SECONDS)
+            }
+
+            return buffer
+        }
+
+        fun consume() {
+            buffer = null
+        }
+
+        fun isEmpty(): Boolean = queue.isEmpty()
     }
 }

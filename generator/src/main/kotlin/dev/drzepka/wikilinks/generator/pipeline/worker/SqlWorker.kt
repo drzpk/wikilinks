@@ -3,13 +3,15 @@ package dev.drzepka.wikilinks.generator.pipeline.worker
 import dev.drzepka.wikilinks.generator.model.Value
 import dev.drzepka.wikilinks.generator.pipeline.SqlValueExtractor
 import dev.drzepka.wikilinks.generator.pipeline.ValueParser
+import dev.drzepka.wikilinks.generator.pipeline.filter.Filter
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 class SqlWorker(
     private val insertStatementQueue: BlockingQueue<String>,
-    private val valueQueue: BlockingQueue<List<Value>>
+    private val valueQueue: BlockingQueue<List<Value>>,
+    private val valueFilter: Filter<Value>?
 ) : Runnable {
 
     private val extractor = SqlValueExtractor()
@@ -38,12 +40,14 @@ class SqlWorker(
     }
 
     private fun doProcessStatement(stmt: String) {
-        val values = extractor
+        var sequence = extractor
             .extractFromStatement(stmt)
-            .map {
-                parser.parse(it)
-            }
+            .asSequence()
+            .map { parser.parse(it) }
 
-        valueQueue.put(values)
+        if (valueFilter != null)
+            sequence = sequence.filter {valueFilter.filter(it)}
+
+        valueQueue.put(sequence.toList())
     }
 }
