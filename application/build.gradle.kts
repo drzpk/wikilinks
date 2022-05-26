@@ -9,7 +9,6 @@ kotlin {
     *  https://kotlinlang.org/docs/reference/building-mpp-with-gradle.html#setting-up-targets */
     jvm {}
     linuxX64 {}
-    mingwX64 {}
 
     sourceSets {
         val commonMain by getting {
@@ -25,12 +24,6 @@ kotlin {
         }
 
         val linuxX64Main by getting {
-            dependencies {
-                implementation("com.squareup.sqldelight:native-driver:1.5.3")
-            }
-        }
-
-        val mingwX64Main by getting {
             dependencies {
                 implementation("com.squareup.sqldelight:native-driver:1.5.3")
             }
