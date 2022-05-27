@@ -14,35 +14,52 @@ class LinkSearchService(
 
     fun findPaths(sourcePage: Int, targetPage: Int): List<Path> {
         val targetVertices = ArrayList<PageVertex>()
-        val queue = ArrayDeque<PageVertex>()
+        val queue = HashSet<PageVertex>()
 
-        val sourceVertex = PageVertex(sourcePage, null)
+        val sourceVertex = PageVertex(sourcePage)
         queue.add(sourceVertex)
 
         var searchDepth = maxSearchDepth
+        var depth = -1
 
-        while (queue.isNotEmpty()) {
-            val vertex = queue.removeFirst()
-            log.trace { "$vertex" }
+        while (queue.isNotEmpty() && targetVertices.isEmpty()) {
+            depth++
+            val vertices = queue.associateByTo(hashMapOf()) { it.page }
+            queue.clear()
 
-            if (vertex.page == targetPage) {
-                targetVertices.add(vertex)
+            for (vertex in vertices.values) {
+                if (vertex.page == targetPage) {
+                    targetVertices.add(vertex)
 
-                // The shortest possible path length has been found, no point in going deeper
-                searchDepth = vertex.depth
+                    // The shortest possible path length has been found, no point in going deeper
+                    searchDepth = depth
+                }
             }
 
-            if (vertex.depth < searchDepth) {
-                linksRepository.getOutLinks(vertex.page).forEach { link ->
-                    queue.add(PageVertex(link, vertex))
+            if (depth < searchDepth) {
+                val pages = vertices.values.map { it.page }.toIntArray()
+                linksRepository.getOutLinks(*pages).forEach { link ->
+
+                    val parentVertex = vertices[link.from]!!
+                    val thisVertex = if (link.to in vertices) {
+                        val existing = vertices[link.to]!!
+                        existing.addParent(parentVertex)
+                        existing
+                    } else {
+                        val new = PageVertex(link.to, parentVertex)
+                        vertices[link.to] = new
+                        new
+                    }
+
+                    queue.add(thisVertex)
                 }
             }
         }
 
-        if (searchDepth == maxSearchDepth)
-            log.warn { "Maximum search depth of $DEFAULT_MAX_SEARCH_DEPTH has been reached for search: $sourcePage -> $targetPage" }
+        if (depth == maxSearchDepth && targetVertices.isEmpty())
+            log.warn { "Maximum search depth of $maxSearchDepth has been reached for search: $sourcePage -> $targetPage" }
 
-        return targetVertices.map { it.unfold() }
+        return targetVertices.flatMap { it.unfold() }
     }
 
     companion object {

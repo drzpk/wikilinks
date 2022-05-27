@@ -1,23 +1,58 @@
 package dev.drzepka.wikilinks.app.model
 
-data class PageVertex(val page: Int, private val parent: PageVertex?) {
-    val depth: Int = (parent?.depth ?: -1) + 1
+/**
+ * A vertex of page links graph that only keeps references to the parents with the lowest possible depth.
+ *
+ * @param root if set to true,
+ */
+data class PageVertex(val page: Int, private val root: Boolean = true) {
+    private val parents = mutableListOf<PageVertex>()
+    private var depth = 0
 
-    fun unfold(): Path {
-        val size = depth + 1
-        val pages = IntArray(size)
-        var index = size - 1
-        var current: PageVertex? = this
+    constructor(page: Int, parent: PageVertex) : this(page, false) {
+        addParent(parent)
+    }
 
-        while (current != null) {
-            pages[index--] = current.page
-            current = current.parent
+    constructor(page: Int, parents: List<PageVertex>) : this(page, false) {
+        parents.forEach { addParent(it) }
+    }
+
+    fun addParent(parent: PageVertex) {
+        // Depth of 0 means this vertex has no parents
+        if (parent.depth + 1 < depth || depth == 0) {
+            // There exists a shorter path
+            parents.clear()
+            depth = parent.depth + 1
         }
 
-        return Path(*pages)
+        if (parent.depth + 1 == depth)
+            parents.add(parent)
+    }
+
+    fun unfold(): List<Path> {
+        val paths = unfold(arrayListOf())
+        return paths.map { Path(it) }
+    }
+
+    private fun unfold(partialPath: MutableList<Int>): List<MutableList<Int>> {
+        partialPath.add(0, page)
+
+        val unfolded = ArrayList<MutableList<Int>>()
+        if (parents.isNotEmpty()) {
+            parents.forEach {
+                val copy = partialPath.toMutableList()
+                unfolded.addAll(it.unfold(copy))
+            }
+
+        } else {
+            unfolded.add(partialPath)
+        }
+
+        return unfolded
     }
 
     override fun toString(): String {
-        return "PageVertex(depth: $depth, page: $page, parent: $parent)"
+        val parentPages = parents.joinToString(separator = ", ", prefix = "[", postfix = "]") { it.page.toString() }
+        return "PageVertex(page: $page, parents: $parentPages)"
     }
 }

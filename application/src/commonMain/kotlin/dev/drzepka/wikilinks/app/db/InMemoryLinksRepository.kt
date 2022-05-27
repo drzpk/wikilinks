@@ -1,5 +1,7 @@
 package dev.drzepka.wikilinks.app.db
 
+import dev.drzepka.wikilinks.app.model.Link
+
 class InMemoryLinksRepository : LinksRepository {
     private val outLinks = HashMap<Int, MutableList<Int>>()
 
@@ -11,5 +13,9 @@ class InMemoryLinksRepository : LinksRepository {
         list.addAll(links.toList())
     }
 
-    override fun getOutLinks(pageId: Int): List<Int> = outLinks[pageId] ?: emptyList()
+    override fun getOutLinks(vararg pageIds: Int): List<Link> {
+        return pageIds.flatMap { from ->
+            outLinks[from]?.map { to -> Link(from, to) } ?: emptyList()
+        }
+    }
 }

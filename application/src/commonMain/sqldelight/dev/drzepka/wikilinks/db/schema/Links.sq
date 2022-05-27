@@ -8,4 +8,4 @@ insert:
 INSERT INTO Links VALUES (?, ?, ?);
 
 getOutLinks:
-SELECT out_links FROM Links WHERE page_id = ?;
+SELECT page_id, out_links FROM Links WHERE page_id IN ?;
