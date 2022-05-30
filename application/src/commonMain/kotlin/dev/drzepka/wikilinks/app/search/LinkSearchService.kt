@@ -38,8 +38,10 @@ class LinkSearchService(
 
             if (depth < searchDepth) {
                 val pages = vertices.values.map { it.page }.toIntArray()
-                linksRepository.getOutLinks(*pages).forEach { link ->
+                val outLinks = linksRepository.getOutLinks(*pages)
+                log.trace { "found ${outLinks.size}" }
 
+                outLinks.forEach { link ->
                     val parentVertex = vertices[link.from]!!
                     val thisVertex = if (link.to in vertices) {
                         val existing = vertices[link.to]!!

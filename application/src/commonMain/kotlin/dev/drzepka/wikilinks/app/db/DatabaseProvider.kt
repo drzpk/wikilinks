@@ -1,19 +1,29 @@
 package dev.drzepka.wikilinks.app.db
 
 import com.squareup.sqldelight.db.SqlDriver
+import dev.drzepka.wikilinks.app.Environment
+import dev.drzepka.wikilinks.app.environment
 import dev.drzepka.wikilinks.db.Database
 
 object DatabaseProvider {
-    const val databaseName = "database.db"
+    const val databaseName = "database.db" // todo: When launching from Linux, the library is looking for the a database in the a user's home directory
 
     fun getDatabase(): Database {
         val driver = getDriver(databaseName)
 
         // Optimize insert speed
-        driver.execute(null, "PRAGMA journal_mode = OFF", 0)
-        driver.execute(null, "PRAGMA synchronous = OFF", 0)
+        driver.exec("PRAGMA journal_mode = OFF")
+        driver.exec("PRAGMA synchronous = OFF")
 
         return Database.invoke(driver)
+    }
+
+    private fun SqlDriver.exec(sql: String) {
+        // The SQLite library on Linux doesn't support 'execute' statements.
+        if (environment == Environment.LINUX)
+            executeQuery(null, sql, 0)
+        else
+            execute(null, sql, 0)
     }
 }
 

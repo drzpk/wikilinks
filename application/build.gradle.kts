@@ -8,7 +8,13 @@ kotlin {
     *  To find out how to configure the targets, please follow the link:
     *  https://kotlinlang.org/docs/reference/building-mpp-with-gradle.html#setting-up-targets */
     jvm {}
-    linuxX64 {}
+    linuxX64 {
+        binaries {
+            executable {
+                entryPoint = "dev.drzepka.wikilinks.app.linuxMain"
+            }
+        }
+    }
 
     sourceSets {
         val commonMain by getting {
@@ -35,6 +41,19 @@ kotlin {
                 api("com.squareup.sqldelight:sqlite-driver:1.5.3")
                 implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.17.2")
                 implementation("io.github.microutils:kotlin-logging-jvm:2.1.23")
+            }
+        }
+
+        all {
+            languageSettings {
+                optIn("kotlin.RequiresOptIn")
+            }
+        }
+
+        targets.named("linuxX64") {
+            compilations.all {
+                val libraryDir = File(projectDir, "lib")
+                kotlinOptions.freeCompilerArgs += listOf("-linker-options", "-L$libraryDir")
             }
         }
     }
