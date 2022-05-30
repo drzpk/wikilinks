@@ -15,14 +15,20 @@ import dev.drzepka.wikilinks.generator.pipeline.writer.LinksFileWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.PageWriter
 import java.io.File
 
+private val workingDirectory = File("dumps")
+
 fun main() {
+    if (!workingDirectory.isDirectory)
+        workingDirectory.mkdir()
+
     val flow = GeneratorFlow(Store())
 
     flow.step(InitializeDatabaseStep)
     flow.step(PopulatePageTable)
     //flow.step(ExtractPagesFromDbStep)
     flow.step(ExtractLinksFromDumpStep)
-    flow.segment(LinksFileSorter(File("dumps/id_links.txt.gz")))
+    flow.segment(LinksFileSorter(File(workingDirectory, LinksFileWriter.LINKS_FILE_NAME)))
+    flow.step(PopulateLinksTableStep)
 
     flow.start()
 }
@@ -90,7 +96,7 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
 
     override fun run(store: Store, logger: ProgressLogger) {
         val dumpFile = getDumpFileName("pagelinks")
-        val writer = LinksFileWriter(store.pages)
+        val writer = LinksFileWriter(store.pages, workingDirectory)
         val filter = LinksFilter(store.pages)
 
         val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer, filter)

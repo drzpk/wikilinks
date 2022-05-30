@@ -9,12 +9,12 @@ import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.util.concurrent.Executors
 
-class LinksFileWriter(private val pages: BiMap<Int, String>) : Writer<Value> {
+class LinksFileWriter(private val pages: BiMap<Int, String>, workingDirectory: File) : Writer<Value> {
     private val executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2)
     private val fileWriter: java.io.Writer
 
     init {
-        val linksFile = File("dumps/id_links.txt.gz")
+        val linksFile = File(workingDirectory, LINKS_FILE_NAME)
         if (linksFile.isFile)
             linksFile.delete()
 
@@ -34,5 +34,9 @@ class LinksFileWriter(private val pages: BiMap<Int, String>) : Writer<Value> {
     override fun finalizeWriting() {
         fileWriter.close()
         executorService.shutdown()
+    }
+
+    companion object {
+        const val LINKS_FILE_NAME = "id_links.txt.gz"
     }
 }
