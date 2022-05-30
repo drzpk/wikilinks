@@ -21,8 +21,8 @@ internal class SqlValueExtractorTest {
         assertEquals("4748,0,'!',0", list1[1])
         assertEquals("9773,0,'!',0", list1[2])
 
-        assertEquals("1", list1[0])
-        assertEquals("2", list1[1])
-        assertEquals("3", list1[2])
+        assertEquals("1", list2[0])
+        assertEquals("2", list2[1])
+        assertEquals("3", list2[2])
     }
 }

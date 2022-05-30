@@ -1,12 +1,12 @@
 package dev.drzepka.wikilinks.generator.pipeline
 
 class SqlValueExtractor {
-    private val values = mutableListOf<String>()
+    private var values = mutableListOf<String>()
     private var statement = ""
     private var statementPos = 0
 
     fun extractFromStatement(statement: String): List<String> {
-        values.clear()
+        values = mutableListOf()
         this.statement = statement
         statementPos = 0
 
