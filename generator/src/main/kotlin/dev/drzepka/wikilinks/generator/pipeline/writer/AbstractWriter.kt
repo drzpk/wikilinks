@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.generator.pipeline.writer
 
 import dev.drzepka.wikilinks.db.Database
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -8,6 +9,7 @@ abstract class AbstractWriter<T>(protected val db: Database, private val bufferS
     private var activeBuffer = ArrayList<T>()
     private var inactiveBuffer = ArrayList<T>()
     private val writingLock = ReentrantLock()
+    private val isFlushing = AtomicBoolean(false)
 
     override fun write(value: T) {
         if (!filter(value))
@@ -23,6 +25,8 @@ abstract class AbstractWriter<T>(protected val db: Database, private val bufferS
 
     override fun finalizeWriting() {
         flush()
+        while (isFlushing.get())
+            Thread.sleep(250)
     }
 
     private fun flush() {
@@ -35,6 +39,7 @@ abstract class AbstractWriter<T>(protected val db: Database, private val bufferS
         // This gap between unlocking the lock by this thread and locking it by the executor
         // is fine, because the PageWriter itself is not multithreaded.
 
+        isFlushing.set(true)
         Thread(InsertExecutor(inactiveBuffer)).start()
     }
 
@@ -52,6 +57,7 @@ abstract class AbstractWriter<T>(protected val db: Database, private val bufferS
                 }
 
                 buffer.clear()
+                isFlushing.set(false)
             }
         }
     }
