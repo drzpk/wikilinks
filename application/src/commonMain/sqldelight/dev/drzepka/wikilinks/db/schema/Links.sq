@@ -1,11 +1,13 @@
 CREATE TABLE Links (
     page_id INTEGER NOT NULL PRIMARY KEY,
+    in_links_count INTEGER NOT NULL,
+    out_links_count INTEGER NOT NULL,
     in_links TEXT NOT NULL,
     out_links TEXT NOT NULL
 );
 
 insert:
-INSERT INTO Links VALUES (?, ?, ?);
+INSERT INTO Links VALUES (:id, :inCount, :outCount, :inLinks, :outLinks);
 
 getOutLinks:
 SELECT page_id, out_links FROM Links WHERE page_id IN ?;

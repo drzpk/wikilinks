@@ -99,9 +99,12 @@ class LinksPipelineManager(
 
         var inLinks = ""
         var outLinks = ""
+        var inLinksCount = 0
+        var outLinksCount = 0
 
         if (inGroup?.groupingValue == minGroupingValue) {
             inLinks = joinLinks(inGroup, inLinksReader.groupingColumn)
+            inLinksCount = inGroup.links.size
             inLinksQueueWrapper?.consume()
 
             if (inLinksReader.done && inLinksQueueWrapper?.isEmpty() == true)
@@ -110,13 +113,14 @@ class LinksPipelineManager(
 
         if (outGroup?.groupingValue == minGroupingValue) {
             outLinks = joinLinks(outGroup, outLinksReader.groupingColumn)
+            outLinksCount = outGroup.links.size
             outLinksQueueWrapper?.consume()
 
             if (outLinksReader.done && outLinksQueueWrapper?.isEmpty() == true)
                 outLinksQueueWrapper = null
         }
 
-        return PageLinks(minGroupingValue, inLinks, outLinks)
+        return PageLinks(minGroupingValue, inLinksCount, outLinksCount, inLinks, outLinks)
     }
 
     private fun joinLinks(group: LinkGroup, groupingColumn: Int): String {
