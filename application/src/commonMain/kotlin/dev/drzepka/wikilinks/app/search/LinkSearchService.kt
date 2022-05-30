@@ -43,17 +43,14 @@ class LinkSearchService(
 
                 outLinks.forEach { link ->
                     val parentVertex = vertices[link.from]!!
-                    val thisVertex = if (link.to in vertices) {
+                    if (link.to in vertices) {
                         val existing = vertices[link.to]!!
                         existing.addParent(parentVertex)
-                        existing
                     } else {
                         val new = PageVertex(link.to, parentVertex)
                         vertices[link.to] = new
-                        new
+                        queue.add(new)
                     }
-
-                    queue.add(thisVertex)
                 }
             }
         }
