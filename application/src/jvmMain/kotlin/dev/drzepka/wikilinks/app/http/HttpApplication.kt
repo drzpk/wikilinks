@@ -30,7 +30,7 @@ private fun Application.configureRouting() {
         route("links") {
             post("search") {
                 val request = call.receive<SearchRequest>()
-                val result = searchService.findPaths(request.source, request.target)
+                val result = searchService.search(request.source, request.target)
                 call.respond(result)
             }
         }

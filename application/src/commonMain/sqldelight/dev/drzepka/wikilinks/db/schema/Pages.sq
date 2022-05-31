@@ -9,3 +9,9 @@ CREATE INDEX idx_articles_title ON Pages(title);
 
 insert:
 INSERT INTO Pages VALUES (?, ?, ?);
+
+all:
+SELECT * FROM Pages;
+
+getByIds:
+SELECT id, title FROM Pages WHERE id IN ?;
