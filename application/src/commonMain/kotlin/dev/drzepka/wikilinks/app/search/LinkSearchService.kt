@@ -13,52 +13,94 @@ class LinkSearchService(
     private val maxSearchDepth = maxSearchDepth ?: DEFAULT_MAX_SEARCH_DEPTH
 
     fun findPaths(sourcePage: Int, targetPage: Int): List<Path> {
-        val targetVertices = ArrayList<PageVertex>()
-        val queue = HashSet<PageVertex>()
+        // "Head" as in search head. When searching from source or target side,
+        // the head moves towards the other end until it meets with the other one.
+        var sourceHead: MutableMap<Int, PageVertex> = HashMap()
+        var targetHead: MutableMap<Int, PageVertex> = HashMap()
 
-        val sourceVertex = PageVertex(sourcePage)
-        queue.add(sourceVertex)
+        sourceHead[sourcePage] = PageVertex(sourcePage)
+        targetHead[targetPage] = PageVertex(targetPage)
 
-        var searchDepth = maxSearchDepth
-        var depth = -1
+        var sourceDepth = 0
+        var targetDepth = 0
 
-        while (queue.isNotEmpty() && targetVertices.isEmpty()) {
-            depth++
-            val vertices = queue.associateByTo(hashMapOf()) { it.page }
-            queue.clear()
+        while (sourceDepth + targetDepth < maxSearchDepth) {
+            val outLinksCount = linksRepository.getOutLinksCount(*sourceHead.keys.toIntArray())
+            val inLinksCount = linksRepository.getInLinksCount(*targetHead.keys.toIntArray())
 
-            for (vertex in vertices.values) {
-                if (vertex.page == targetPage) {
-                    targetVertices.add(vertex)
-
-                    // The shortest possible path length has been found, no point in going deeper
-                    searchDepth = depth
-                }
+            if (outLinksCount <= inLinksCount) {
+                sourceDepth++
+                sourceHead = moveSearchHead(sourceHead, false)
+            } else {
+                targetDepth++
+                targetHead = moveSearchHead(targetHead, true)
             }
 
-            if (depth < searchDepth) {
-                val pages = vertices.values.map { it.page }.toIntArray()
-                val outLinks = linksRepository.getOutLinks(*pages)
-                log.trace { "found ${outLinks.size}" }
+            val paths = constructPaths(sourceHead, targetHead)
+            if (paths.isNotEmpty())
+                return paths
+        }
 
-                outLinks.forEach { link ->
-                    val parentVertex = vertices[link.from]!!
-                    if (link.to in vertices) {
-                        val existing = vertices[link.to]!!
-                        existing.addParent(parentVertex)
-                    } else {
-                        val new = PageVertex(link.to, parentVertex)
-                        vertices[link.to] = new
-                        queue.add(new)
-                    }
-                }
+        log.warn { "Maximum search depth of $maxSearchDepth has been reached for search: $sourcePage -> $targetPage" }
+        return emptyList()
+    }
+
+    private fun moveSearchHead(
+        oldHead: MutableMap<Int, PageVertex>,
+        reverseDirection: Boolean
+    ): MutableMap<Int, PageVertex> {
+        val links = if (!reverseDirection)
+            linksRepository.getOutLinks(*oldHead.keys.toIntArray())
+        else
+            linksRepository.getInLinks(*oldHead.keys.toIntArray())
+
+        log.trace { "Found ${links.size} links. Direction: ${if (!reverseDirection) "forward" else "reverse"}" }
+
+        val newHead = HashMap<Int, PageVertex>()
+        links.forEach { link ->
+            val sourcePage = if (!reverseDirection) link.from else link.to
+            val targetPage = if (!reverseDirection) link.to else link.from
+
+            val parentVertex = oldHead[sourcePage]!!
+            if (targetPage in newHead) {
+                val existing = newHead[targetPage]!!
+                existing.addParent(parentVertex)
+            } else {
+                val new = PageVertex(targetPage, parentVertex)
+                newHead[targetPage] = new
             }
         }
 
-        if (depth == maxSearchDepth && targetVertices.isEmpty())
-            log.warn { "Maximum search depth of $maxSearchDepth has been reached for search: $sourcePage -> $targetPage" }
+        return newHead
+    }
 
-        return targetVertices.flatMap { it.unfold() }
+    private fun constructPaths(sourceHead: Map<Int, PageVertex>, targetHead: Map<Int, PageVertex>): List<Path> {
+        val commonPages = sourceHead.keys.intersect(targetHead.keys)
+        if (commonPages.isEmpty())
+            return emptyList()
+
+        val paths = mutableListOf<Path>()
+        for (commonPage in commonPages) {
+            val sourcePaths = sourceHead[commonPage]!!.unfold()
+            val targetPaths = targetHead[commonPage]!!.unfold()
+
+            for (sourcePath in sourcePaths) {
+                for (targetPath in targetPaths)
+                    paths.add(joinPaths(sourcePath, targetPath))
+            }
+        }
+
+        return paths
+    }
+
+    private fun joinPaths(left: Path, right: Path): Path {
+        val pages = ArrayList<Int>(left.pages.size + right.pages.size - 1)
+        pages.addAll(left.pages)
+
+        for (i in right.pages.size - 2 downTo  0)
+            pages.add(right.pages[i])
+
+        return Path(pages)
     }
 
     companion object {

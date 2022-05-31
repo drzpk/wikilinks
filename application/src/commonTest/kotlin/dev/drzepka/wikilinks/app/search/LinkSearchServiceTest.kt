@@ -88,7 +88,7 @@ internal class LinkSearchServiceTest {
 
     private fun createService(outLinks: Map<Int, List<Int>>, maxSearchDepth: Int? = null): LinkSearchService {
         val repository = InMemoryLinksRepository()
-        outLinks.forEach { repository.addOutLinks(it.key, *it.value.toIntArray()) }
+        outLinks.forEach { repository.addLinks(it.key, *it.value.toIntArray()) }
         return LinkSearchService(repository, maxSearchDepth)
     }
 }

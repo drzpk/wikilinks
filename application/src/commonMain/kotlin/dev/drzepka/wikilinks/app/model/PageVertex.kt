@@ -2,25 +2,23 @@ package dev.drzepka.wikilinks.app.model
 
 /**
  * A vertex of page links graph that only keeps references to the parents with the lowest possible depth.
- *
- * @param root if set to true,
  */
-data class PageVertex(val page: Int, private val root: Boolean = true) {
+data class PageVertex(val page: Int) {
     private val parents = mutableListOf<PageVertex>()
     private var depth = 0
 
-    constructor(page: Int, parent: PageVertex) : this(page, false) {
+    constructor(page: Int, parent: PageVertex) : this(page) {
         addParent(parent)
     }
 
-    constructor(page: Int, parents: List<PageVertex>) : this(page, false) {
+    constructor(page: Int, parents: List<PageVertex>) : this(page) {
         parents.forEach { addParent(it) }
     }
 
     fun addParent(parent: PageVertex) {
         // Depth of 0 means this vertex has no parents
         if (parent.depth + 1 < depth || depth == 0) {
-            // There exists a shorter path
+            // There is a shorter path
             parents.clear()
             depth = parent.depth + 1
         }
@@ -53,6 +51,6 @@ data class PageVertex(val page: Int, private val root: Boolean = true) {
 
     override fun toString(): String {
         val parentPages = parents.joinToString(separator = ", ", prefix = "[", postfix = "]") { it.page.toString() }
-        return "PageVertex(page: $page, parents: $parentPages)"
+        return "PageVertex(depth: $depth, page: $page, parents: $parentPages)"
     }
 }

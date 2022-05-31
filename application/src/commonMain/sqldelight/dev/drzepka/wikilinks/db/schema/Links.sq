@@ -9,5 +9,14 @@ CREATE TABLE Links (
 insert:
 INSERT INTO Links VALUES (:id, :inCount, :outCount, :inLinks, :outLinks);
 
+countInLinks:
+SELECT SUM(in_links_count) FROM Links WHERE page_id IN ?;
+
+countOutLinks:
+SELECT SUM(out_links_count) FROM Links WHERE page_id IN ?;
+
+getInLinks:
+SELECT page_id, in_links FROM Links WHERE page_id IN ?;
+
 getOutLinks:
 SELECT page_id, out_links FROM Links WHERE page_id IN ?;
