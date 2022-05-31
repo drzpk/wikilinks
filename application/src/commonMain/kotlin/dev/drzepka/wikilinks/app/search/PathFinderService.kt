@@ -5,7 +5,7 @@ import dev.drzepka.wikilinks.app.model.PageVertex
 import dev.drzepka.wikilinks.app.model.Path
 import mu.KotlinLogging
 
-class LinkSearchService(
+class PathFinderService(
     private val linksRepository: LinksRepository,
     maxSearchDepth: Int? = null
 ) {

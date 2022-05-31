@@ -3,7 +3,7 @@ package dev.drzepka.wikilinks.app
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.app.db.DbLinksRepository
 import dev.drzepka.wikilinks.app.model.Path
-import dev.drzepka.wikilinks.app.search.LinkSearchService
+import dev.drzepka.wikilinks.app.search.PathFinderService
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 
@@ -40,8 +40,8 @@ fun search(startPage: Int, targetPage: Int): List<Path> {
     return getSearchService().findPaths(startPage, targetPage)
 }
 
-fun getSearchService(): LinkSearchService {
+fun getSearchService(): PathFinderService {
     val database = DatabaseProvider.getDatabase()
     val repository = DbLinksRepository(database)
-    return LinkSearchService(repository)
+    return PathFinderService(repository)
 }

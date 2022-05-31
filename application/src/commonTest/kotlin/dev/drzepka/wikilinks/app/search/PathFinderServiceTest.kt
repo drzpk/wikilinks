@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
-internal class LinkSearchServiceTest {
+internal class PathFinderServiceTest {
 
     @Test
     fun `should find single shortest path`() {
@@ -86,9 +86,9 @@ internal class LinkSearchServiceTest {
         assertEquals(0, service.findPaths(1, 6).size)
     }
 
-    private fun createService(outLinks: Map<Int, List<Int>>, maxSearchDepth: Int? = null): LinkSearchService {
+    private fun createService(outLinks: Map<Int, List<Int>>, maxSearchDepth: Int? = null): PathFinderService {
         val repository = InMemoryLinksRepository()
         outLinks.forEach { repository.addLinks(it.key, *it.value.toIntArray()) }
-        return LinkSearchService(repository, maxSearchDepth)
+        return PathFinderService(repository, maxSearchDepth)
     }
 }
