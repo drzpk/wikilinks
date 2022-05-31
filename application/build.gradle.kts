@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform") version "1.6.10"
+    kotlin("plugin.serialization") version "1.6.10"
     id("com.squareup.sqldelight")
 }
 
@@ -41,6 +42,9 @@ kotlin {
                 api("com.squareup.sqldelight:sqlite-driver:1.5.3")
                 implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.17.2")
                 implementation("io.github.microutils:kotlin-logging-jvm:2.1.23")
+                implementation("io.ktor:ktor-server-core:1.6.5")
+                implementation("io.ktor:ktor-server-netty:1.6.5")
+                implementation("io.ktor:ktor-jackson:1.6.5")
             }
         }
 

@@ -40,7 +40,7 @@ fun search(startPage: Int, targetPage: Int): List<Path> {
     return getSearchService().findPaths(startPage, targetPage)
 }
 
-private fun getSearchService(): LinkSearchService {
+fun getSearchService(): LinkSearchService {
     val database = DatabaseProvider.getDatabase()
     val repository = DbLinksRepository(database)
     return LinkSearchService(repository)
