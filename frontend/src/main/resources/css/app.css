@@ -1,0 +1,30 @@
+header {
+    margin-bottom: 4em;
+}
+
+header h1 {
+    text-align: center;
+}
+
+.search-component {
+
+}
+
+.search-component .inputs {
+    margin-top: 1em;
+    margin-bottom: 4em;
+}
+
+.search-component .inputs input[type="text"] {
+    margin: 0 2em;
+    padding: 0.5em;
+    font-size: larger;
+    text-align: center;
+}
+
+.search-component button {
+    font-size: x-large;
+    font-weight: bold;
+    padding: 0.7em 2.5em;
+    text-transform: uppercase;
+}
