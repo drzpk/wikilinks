@@ -15,8 +15,12 @@ header h1 {
     margin-bottom: 4em;
 }
 
-.search-component .inputs input[type="text"] {
+.search-component .inputs > div {
     margin: 0 2em;
+    width: 100%;
+}
+
+.search-component .inputs div input[type="text"] {
     padding: 0.5em;
     font-size: larger;
     text-align: center;
@@ -27,4 +31,41 @@ header h1 {
     font-weight: bold;
     padding: 0.7em 2.5em;
     text-transform: uppercase;
+}
+
+.search-hints-container {
+    position: relative;
+}
+
+.search-hints {
+    border: 1px solid black;
+    position: absolute;
+    z-index: 100;
+    background: white;
+    width: 100%;
+}
+
+.search-hint {
+    padding: 0.5em;
+    cursor: pointer;
+
+}
+
+.search-hint:hover {
+    background-color: #cbcbcb;
+}
+
+.search-hint .title {
+    margin: 0;
+    font-size: medium;
+    font-weight: bold;
+}
+
+.search-hint .description {
+    margin: 0;
+    font-size: smaller;
+}
+
+.search-hint:not(:last-child) {
+    border-bottom: 1px solid lightgray;
 }
