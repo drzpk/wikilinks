@@ -2,12 +2,9 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 
 plugins {
-    val kotlinVersion: String by System.getProperties()
-    val kvisionVersion: String by System.getProperties()
-
-    kotlin("plugin.serialization") version kotlinVersion
-    kotlin("js") version kotlinVersion
-    id("io.kvision") version kvisionVersion
+    kotlin("plugin.serialization")
+    kotlin("js")
+    id("io.kvision")
 }
 
 version = "1.0.0-SNAPSHOT"
@@ -49,6 +46,7 @@ kotlin {
         binaries.executable()
     }
     sourceSets["main"].dependencies {
+        implementation(project(":common"))
         implementation("io.kvision:kvision:$kvisionVersion")
         implementation("io.kvision:kvision-bootstrap:$kvisionVersion")
         implementation("io.kvision:kvision-bootstrap-css:$kvisionVersion")
