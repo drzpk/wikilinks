@@ -1,19 +1,38 @@
 package dev.drzepka.wikilinks.front.model
 
+import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
+import dev.drzepka.wikilinks.front.service.LinkSearchService
 import dev.drzepka.wikilinks.front.service.PageSearchService
 import dev.drzepka.wikilinks.front.util.DebounceBuffer
 import io.kvision.state.ObservableListWrapper
 import io.kvision.state.ObservableValue
+import kotlinx.browser.window
 import kotlin.time.Duration.Companion.seconds
 
-class State {
+class State(private val linkSearchService: LinkSearchService) {
     val sourceInput = SearchInputState()
     val targetInput = SearchInputState()
+
     val searchButtonActive = ObservableValue(false)
+    val searchInProgress = ObservableValue(false)
+    val searchResult = ObservableValue<LinkSearchResult?>(null)
 
     init {
         sourceInput.selectedPage.subscribe { onSelectedPageChanged() }
         targetInput.selectedPage.subscribe { onSelectedPageChanged() }
+    }
+
+    fun search() {
+        if (!searchButtonActive.value)
+            return
+
+        try {
+            searchInProgress.setState(true)
+            val result = linkSearchService.search(sourceInput.selectedPage.value!!, targetInput.selectedPage.value!!)
+            searchResult.setState(result)
+        } finally {
+            searchInProgress.setState(false)
+        }
     }
 
     private fun onSelectedPageChanged() {

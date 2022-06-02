@@ -69,3 +69,121 @@ header h1 {
 .search-hint:not(:last-child) {
     border-bottom: 1px solid lightgray;
 }
+
+.search-result {
+    margin-top: 4em;
+}
+
+.search-result .result-description {
+    width: 50%;
+    text-align: center;
+    font-size: large;
+    margin: auto auto 3em;
+}
+
+.search-result .found-paths-text {
+    text-align: center;
+    margin-bottom: 1em;
+    font-size: large;
+}
+
+.search-result .path {
+    margin: 1em 0;
+    overflow: hidden;
+}
+
+.search-result .path .page {
+    position: relative;
+    width: 16%;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+.search-result .path .page .content {
+    position: relative;
+    padding: 0.6em;
+    background-color: white;
+    z-index: 100;
+}
+
+.search-result .path .page .content:hover {
+    background-color: lightgray;
+}
+
+.search-result .path .page .connector {
+    position: absolute;
+    height: 1px;
+    top: 50%;
+    width: 100%;
+    background-color: black;
+    z-index: 1;
+}
+
+.search-result .path .page .connector.left {
+    left: -100%;
+}
+
+.search-result .path .page .connector.right {
+    left: 100%;
+}
+
+.search-result .path .page.first:after {
+    content: " ";
+    position: absolute;
+    width: 0.6em;
+    height: 0.6em;
+    top: calc(50% - 0.29em);
+    left: calc(100% - 0.3em);
+    background-color: black;
+    border-radius: 100%;
+}
+
+.search-result .path .page.last:before {
+    content: " ";
+    position: absolute;
+    width: 0.6em;
+    height: 0.6em;
+    top: calc(50% - 0.29em);
+    left: -0.3em;
+    background-color: black;
+    border-radius: 100%;
+}
+
+.search-result .path .page:not(.first):not(.last):before {
+    content: " ";
+    position: absolute;
+    width: 0.3em;
+    height: 0.3em;
+    top: calc(50% - 0.15em);
+    left: -0.2em;
+    background-color: black;
+    border-radius: 100%;
+}
+
+.search-result .path .page:not(.first):not(.last):after {
+    content: " ";
+    position: absolute;
+    width: 0.3em;
+    height: 0.3em;
+    top: calc(50% - 0.15em);
+    left: calc(100% - 0.1em);
+    background-color: black;
+    border-radius: 100%;
+}
+
+.search-result .path .page .title {
+    margin: 0;
+    font-size: medium;
+    font-weight: bold;
+}
+
+.search-result .path .page .description {
+    margin: 0;
+    font-size: smaller;
+    color: gray;
+    font-style: italic;
+}
+
+.search-result .connector {
+
+}

@@ -13,6 +13,7 @@ class SearchComponent(state: State) : Div(className = "search-component") {
     private val searchButton = Button("Search")
 
     init {
+        searchButton.onClick { state.search() }
         searchButton.bind(state.searchButtonActive, runImmediately = true) {
             disabled = !it
         }
