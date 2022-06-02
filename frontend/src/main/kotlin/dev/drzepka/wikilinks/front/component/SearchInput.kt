@@ -9,23 +9,54 @@ import io.kvision.state.bindEach
 import io.kvision.state.bindTo
 
 class SearchInput(private val state: SearchInputState) : Div() {
+    private var inputHasFocus = false
+    private var mouseOverHints = false
+    private var previousFocusValue = false
 
     init {
         textInput {
             bindTo(state.query)
 
             onEvent {
-                focus = { state.onFocusChanged(true) }
-                blur = { state.onFocusChanged(false) }
+                focus = {
+                    inputHasFocus = true
+                    updateStateFocus()
+                }
+                blur = {
+                    inputHasFocus = false
+                    updateStateFocus()
+                }
             }
         }
 
+        val that = this
         div(className = "search-hints-container") {
-            div(className = "search-hints").bindEach(this@SearchInput.state.hints) { hint -> add(SearchHint(hint)) }
+            div(className = "search-hints") {
+                bindEach(that.state.hints) { hint -> add(SearchHint(hint, that.state)) }
 
-            this@SearchInput.state.showHints.subscribe {
+                onEvent {
+                    mouseover = {
+                        that.mouseOverHints = true
+                        that.updateStateFocus()
+                    }
+                    mouseout = {
+                        that.mouseOverHints = false
+                        that.updateStateFocus()
+                    }
+                }
+            }
+
+            that.state.showHints.subscribe {
                 visible = it
             }
+        }
+    }
+
+    private fun updateStateFocus() {
+        val focusValue = inputHasFocus || mouseOverHints
+        if (focusValue != previousFocusValue) {
+            state.onFocusChanged(focusValue)
+            previousFocusValue = focusValue
         }
     }
 }
