@@ -1,6 +1,6 @@
-package dev.drzepka.wikilinks.app.model.searchresult
+package dev.drzepka.wikilinks.common.model.searchresult
 
-import dev.drzepka.wikilinks.app.model.Path
+import dev.drzepka.wikilinks.common.model.Path
 
 data class LinkSearchResult(
     val degreesOfSeparation: Int,

@@ -1,7 +1,7 @@
 package dev.drzepka.wikilinks.app.search
 
-import dev.drzepka.wikilinks.app.model.searchresult.LinkSearchResult
-import dev.drzepka.wikilinks.app.model.searchresult.SearchDuration
+import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
+import dev.drzepka.wikilinks.common.model.searchresult.SearchDuration
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 import kotlin.time.measureTimedValue

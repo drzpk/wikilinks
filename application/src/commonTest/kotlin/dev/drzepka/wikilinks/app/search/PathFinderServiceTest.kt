@@ -1,7 +1,7 @@
 package dev.drzepka.wikilinks.app.search
 
 import dev.drzepka.wikilinks.app.db.InMemoryLinksRepository
-import dev.drzepka.wikilinks.app.model.Path
+import dev.drzepka.wikilinks.common.model.Path
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals

@@ -3,10 +3,10 @@ package dev.drzepka.wikilinks.app
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.app.db.DbLinksRepository
 import dev.drzepka.wikilinks.app.db.DbPagesRepository
-import dev.drzepka.wikilinks.app.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.app.search.LinkSearchService
 import dev.drzepka.wikilinks.app.search.PageInfoService
 import dev.drzepka.wikilinks.app.search.PathFinderService
+import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 
 fun cmdLineSearch(args: Array<String>) {
     val startPage = args.getOrNull(0)?.toIntOrNull()

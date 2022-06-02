@@ -2,7 +2,7 @@ package dev.drzepka.wikilinks.app.search
 
 import dev.drzepka.wikilinks.app.db.LinksRepository
 import dev.drzepka.wikilinks.app.model.PageVertex
-import dev.drzepka.wikilinks.app.model.Path
+import dev.drzepka.wikilinks.common.model.Path
 import mu.KotlinLogging
 
 class PathFinderService(

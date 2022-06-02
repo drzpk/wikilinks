@@ -1,5 +1,7 @@
 package dev.drzepka.wikilinks.app.model
 
+import dev.drzepka.wikilinks.common.model.Path
+
 /**
  * A vertex of page links graph that only keeps references to the parents with the lowest possible depth.
  */

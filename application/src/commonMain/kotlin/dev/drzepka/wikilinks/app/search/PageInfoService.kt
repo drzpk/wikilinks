@@ -1,8 +1,8 @@
 package dev.drzepka.wikilinks.app.search
 
 import dev.drzepka.wikilinks.app.db.PagesRepository
-import dev.drzepka.wikilinks.app.model.Path
-import dev.drzepka.wikilinks.app.model.searchresult.PageInfo
+import dev.drzepka.wikilinks.common.model.Path
+import dev.drzepka.wikilinks.common.model.searchresult.PageInfo
 
 class PageInfoService(private val pagesRepository: PagesRepository) {
 

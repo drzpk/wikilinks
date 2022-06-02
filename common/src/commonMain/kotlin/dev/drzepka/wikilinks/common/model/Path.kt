@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app.model
+package dev.drzepka.wikilinks.common.model
 
 data class Path(val pages: List<Int>) {
     constructor(vararg pages: Int) : this(pages.asList())
