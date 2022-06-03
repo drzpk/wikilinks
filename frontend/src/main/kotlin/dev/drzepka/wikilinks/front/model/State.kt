@@ -6,7 +6,6 @@ import dev.drzepka.wikilinks.front.service.PageSearchService
 import dev.drzepka.wikilinks.front.util.DebounceBuffer
 import io.kvision.state.ObservableListWrapper
 import io.kvision.state.ObservableValue
-import kotlinx.browser.window
 import kotlin.time.Duration.Companion.seconds
 
 class State(private val linkSearchService: LinkSearchService) {
@@ -23,16 +22,20 @@ class State(private val linkSearchService: LinkSearchService) {
     }
 
     fun search() {
-        if (!searchButtonActive.value)
+        if (!searchButtonActive.value || searchInProgress.value)
             return
 
-        try {
-            searchInProgress.setState(true)
-            val result = linkSearchService.search(sourceInput.selectedPage.value!!, targetInput.selectedPage.value!!)
-            searchResult.setState(result)
-        } finally {
-            searchInProgress.setState(false)
-        }
+        searchInProgress.setState(true)
+        linkSearchService.search(sourceInput.selectedPage.value!!, targetInput.selectedPage.value!!)
+            .then {
+                searchResult.setState(it)
+            }
+            .catch {
+                console.error("Error while downloading links", it)
+            }
+            .then {
+                searchInProgress.setState(false)
+            }
     }
 
     private fun onSelectedPageChanged() {

@@ -14,6 +14,7 @@ import io.kvision.panel.root
 class Frontend : Application() {
     init {
         io.kvision.require("./css/app.css")
+        io.kvision.require("./css/loader.css")
     }
 
     private lateinit var state: State

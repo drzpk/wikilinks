@@ -33,6 +33,10 @@ header h1 {
     text-transform: uppercase;
 }
 
+.search-component .loader {
+    text-align: center;
+}
+
 .search-hints-container {
     position: relative;
 }

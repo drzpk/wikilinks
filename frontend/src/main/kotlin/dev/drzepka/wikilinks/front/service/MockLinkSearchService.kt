@@ -4,20 +4,28 @@ import dev.drzepka.wikilinks.common.model.Path
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.common.model.searchresult.PageInfo
 import dev.drzepka.wikilinks.common.model.searchresult.SearchDuration
+import kotlinx.browser.window
+import kotlin.js.Promise
 import kotlin.random.Random
 
 object MockLinkSearchService : LinkSearchService {
 
-    override fun search(sourcePage: Int, targetPage: Int): LinkSearchResult {
+    override fun search(sourcePage: Int, targetPage: Int): Promise<LinkSearchResult> {
         val degrees = Random.nextInt(1, 6)
         val paths = getRandomPaths(degrees)
 
-        return LinkSearchResult(
+        val result = LinkSearchResult(
             degrees,
             paths,
             getRandomPageInfo(paths.flatMap { it.pages }.toSet()),
             getRandomDuration()
         )
+
+        return Promise { resolve, _ ->
+            window.setTimeout({
+                resolve.invoke(result)
+            }, Random.nextInt(1000, 2000))
+        }
     }
 
     private fun getRandomPaths(degrees: Int): List<Path> {
