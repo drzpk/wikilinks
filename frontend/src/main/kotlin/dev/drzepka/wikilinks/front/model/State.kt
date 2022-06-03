@@ -8,9 +8,9 @@ import io.kvision.state.ObservableListWrapper
 import io.kvision.state.ObservableValue
 import kotlin.time.Duration.Companion.seconds
 
-class State(private val linkSearchService: LinkSearchService) {
-    val sourceInput = SearchInputState()
-    val targetInput = SearchInputState()
+class State(pageSearchService: PageSearchService, private val linkSearchService: LinkSearchService) {
+    val sourceInput = SearchInputState(pageSearchService)
+    val targetInput = SearchInputState(pageSearchService)
 
     val searchButtonActive = ObservableValue(false)
     val searchInProgress = ObservableValue(false)
@@ -43,7 +43,7 @@ class State(private val linkSearchService: LinkSearchService) {
     }
 }
 
-class SearchInputState {
+class SearchInputState(private val pageSearchService: PageSearchService) {
     val query = ObservableValue("")
     val hints = ObservableListWrapper<PageHint>()
     val showHints = ObservableValue(false)
@@ -83,12 +83,16 @@ class SearchInputState {
         if (query.isBlank()) {
             showHints.setState(false)
             return
-        } else {
-            showHints.setState(true)
         }
 
-        val results = PageSearchService.query(query)
-        hints.clear()
-        hints.addAll(results)
+        pageSearchService.search(query)
+            .then {
+                showHints.setState(true)
+                hints.clear()
+                hints.addAll(it)
+            }
+            .catch {
+                console.error("Error while searching for page with query '$query'", it)
+            }
     }
 }

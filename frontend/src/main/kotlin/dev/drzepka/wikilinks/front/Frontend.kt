@@ -4,6 +4,7 @@ import dev.drzepka.wikilinks.front.component.SearchComponent
 import dev.drzepka.wikilinks.front.component.searchresult.SearchResultComponent
 import dev.drzepka.wikilinks.front.model.State
 import dev.drzepka.wikilinks.front.service.MockLinkSearchService
+import dev.drzepka.wikilinks.front.service.MockPageSearchService
 import io.kvision.Application
 import io.kvision.html.h1
 import io.kvision.html.header
@@ -47,5 +48,5 @@ class Frontend : Application() {
         )
     }
 
-    private fun createState(): State = State(MockLinkSearchService)
+    private fun createState(): State = State(MockPageSearchService, MockLinkSearchService)
 }
