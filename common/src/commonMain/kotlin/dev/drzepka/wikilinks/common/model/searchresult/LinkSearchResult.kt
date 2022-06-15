@@ -2,6 +2,7 @@ package dev.drzepka.wikilinks.common.model.searchresult
 
 import dev.drzepka.wikilinks.common.model.Path
 
+@kotlinx.serialization.Serializable
 data class LinkSearchResult(
     val degreesOfSeparation: Int,
     val paths: List<Path>,

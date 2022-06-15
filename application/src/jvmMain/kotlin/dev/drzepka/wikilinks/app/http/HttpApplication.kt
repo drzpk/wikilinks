@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.app.http
 
 import dev.drzepka.wikilinks.app.getSearchService
+import dev.drzepka.wikilinks.common.model.LinkSearchRequest
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.jackson.*
@@ -27,11 +28,13 @@ private fun Application.configureRouting() {
     val searchService = getSearchService()
 
     routing {
-        route("links") {
-            post("search") {
-                val request = call.receive<SearchRequest>()
-                val result = searchService.search(request.source, request.target)
-                call.respond(result)
+        route("api") {
+            route("links") {
+                post("search") {
+                    val request = call.receive<LinkSearchRequest>()
+                    val result = searchService.search(request.source, request.target)
+                    call.respond(result)
+                }
             }
         }
     }

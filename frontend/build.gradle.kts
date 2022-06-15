@@ -24,6 +24,7 @@ val webDir = file("src/main/web")
 kotlin {
     js {
         browser {
+            // https://webpack.js.org/configuration
             runTask {
                 outputFileName = "main.bundle.js"
                 sourceMaps = false
@@ -31,7 +32,7 @@ kotlin {
                     open = false,
                     port = 3000,
                     proxy = mutableMapOf(
-                        "/kv/*" to "http://localhost:8080",
+                        "/api" to "http://localhost:8080",
                         "/kvws/*" to mapOf("target" to "ws://localhost:8080", "ws" to true)
                     ),
                     static = mutableListOf("$buildDir/processedResources/js/main")

@@ -5,6 +5,7 @@ import dev.drzepka.wikilinks.front.component.searchresult.SearchResultComponent
 import dev.drzepka.wikilinks.front.model.State
 import dev.drzepka.wikilinks.front.service.MockLinkSearchService
 import dev.drzepka.wikilinks.front.service.MockPageSearchService
+import dev.drzepka.wikilinks.front.service.impl.LinkSearchServiceImpl
 import dev.drzepka.wikilinks.front.service.impl.PageSearchServiceImpl
 import io.kvision.Application
 import io.kvision.html.h1
@@ -53,7 +54,8 @@ class Frontend : Application() {
 
     private fun createState(): State {
         val pageSearchService = if (useMocks) MockPageSearchService else PageSearchServiceImpl()
-        val linkSearchService = MockLinkSearchService
+        val linkSearchService = if (useMocks) MockLinkSearchService else LinkSearchServiceImpl()
+
         return State(pageSearchService, linkSearchService)
     }
 }
