@@ -16,6 +16,9 @@ repositories {
 
 val kotlinVersion: String by System.getProperties()
 val kvisionVersion: String by System.getProperties()
+val ktorVersion: String by System.getProperties()
+val coroutinesVersion: String by System.getProperties()
+val kotlinxSerializationVersion: String by System.getProperties()
 val webDir = file("src/main/web")
 
 kotlin {
@@ -47,11 +50,17 @@ kotlin {
     }
     sourceSets["main"].dependencies {
         implementation(project(":common"))
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+        implementation("org.jetbrains.kotlin:atomicfu:$kotlinVersion")
         implementation("io.kvision:kvision:$kvisionVersion")
         implementation("io.kvision:kvision-state:$kvisionVersion")
         implementation("io.kvision:kvision-bootstrap:$kvisionVersion")
         implementation("io.kvision:kvision-bootstrap-css:$kvisionVersion")
         implementation("io.kvision:kvision-i18n:$kvisionVersion")
+        implementation("io.ktor:ktor-client-core-js:$ktorVersion")
+        implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+        implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+
     }
     sourceSets["test"].dependencies {
         implementation(kotlin("test-js"))

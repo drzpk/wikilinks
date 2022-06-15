@@ -5,6 +5,7 @@ import dev.drzepka.wikilinks.front.component.searchresult.SearchResultComponent
 import dev.drzepka.wikilinks.front.model.State
 import dev.drzepka.wikilinks.front.service.MockLinkSearchService
 import dev.drzepka.wikilinks.front.service.MockPageSearchService
+import dev.drzepka.wikilinks.front.service.impl.PageSearchServiceImpl
 import io.kvision.Application
 import io.kvision.html.h1
 import io.kvision.html.header
@@ -13,6 +14,8 @@ import io.kvision.panel.responsiveGridPanel
 import io.kvision.panel.root
 
 class Frontend : Application() {
+    private val useMocks = false
+
     init {
         io.kvision.require("./css/app.css")
         io.kvision.require("./css/loader.css")
@@ -48,5 +51,9 @@ class Frontend : Application() {
         )
     }
 
-    private fun createState(): State = State(MockPageSearchService, MockLinkSearchService)
+    private fun createState(): State {
+        val pageSearchService = if (useMocks) MockPageSearchService else PageSearchServiceImpl()
+        val linkSearchService = MockLinkSearchService
+        return State(pageSearchService, linkSearchService)
+    }
 }
