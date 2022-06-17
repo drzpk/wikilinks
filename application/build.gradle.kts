@@ -65,8 +65,9 @@ kotlin {
 }
 
 sqldelight {
-    database("Database") {
-        packageName = "dev.drzepka.wikilinks.db"
+    database("LinksDatabase") {
+        packageName = "dev.drzepka.wikilinks.db.links"
+        sourceFolders = listOf("sqldelight/links")
         schemaOutputDirectory = file("build/dbs")
     }
     linkSqlite = true

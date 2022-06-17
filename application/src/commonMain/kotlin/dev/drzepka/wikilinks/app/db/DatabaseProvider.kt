@@ -3,19 +3,28 @@ package dev.drzepka.wikilinks.app.db
 import com.squareup.sqldelight.db.SqlDriver
 import dev.drzepka.wikilinks.app.Environment
 import dev.drzepka.wikilinks.app.environment
-import dev.drzepka.wikilinks.db.Database
+import dev.drzepka.wikilinks.db.links.LinksDatabase
 
 object DatabaseProvider {
-    const val databaseName = "database.db" // todo: When launching from Linux, the library is looking for the a database in the a user's home directory
+    const val LINKS_DATABASE_NAME = "links.db"
 
-    fun getDatabase(): Database {
-        val driver = getDriver(databaseName)
+    // todo: When launching from Linux, the library is looking for the a database in the a user's home directory
 
-        // Optimize insert speed
-        driver.exec("PRAGMA journal_mode = OFF")
-        driver.exec("PRAGMA synchronous = OFF")
+    fun getLinksDatabase(): LinksDatabase {
+        val driver = getDbDriver(LINKS_DATABASE_NAME, true)
+        return LinksDatabase.invoke(driver)
+    }
 
-        return Database.invoke(driver)
+    private fun getDbDriver(dbName: String, disableProtection: Boolean): SqlDriver {
+        val driver = getDriver(dbName)
+
+        if (disableProtection) {
+            // Optimize insert speed
+            driver.exec("PRAGMA journal_mode = OFF")
+            driver.exec("PRAGMA synchronous = OFF")
+        }
+
+        return driver
     }
 
     private fun SqlDriver.exec(sql: String) {

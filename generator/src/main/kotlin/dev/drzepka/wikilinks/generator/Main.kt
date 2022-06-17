@@ -2,7 +2,6 @@ package dev.drzepka.wikilinks.generator
 
 import com.google.common.collect.HashBiMap
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
-import dev.drzepka.wikilinks.app.db.DatabaseProvider.databaseName
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
@@ -37,12 +36,12 @@ private object InitializeDatabaseStep : FlowStep<Store> {
     override val name = "Initializing the database"
 
     override fun run(store: Store, logger: ProgressLogger) {
-        File(databaseName).apply {
+        File(DatabaseProvider.LINKS_DATABASE_NAME).apply {
             if (isFile)
                 delete()
         }
 
-        store.db = DatabaseProvider.getDatabase()
+        store.db = DatabaseProvider.getLinksDatabase()
     }
 }
 

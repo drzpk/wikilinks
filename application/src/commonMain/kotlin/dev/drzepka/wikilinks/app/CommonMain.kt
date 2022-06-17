@@ -40,7 +40,7 @@ fun search(startPage: Int, targetPage: Int): LinkSearchResult {
 }
 
 fun getSearchService(): LinkSearchService {
-    val database = DatabaseProvider.getDatabase()
+    val database = DatabaseProvider.getLinksDatabase()
     val linksRepository = DbLinksRepository(database)
     val pagesRepository = DbPagesRepository(database)
 

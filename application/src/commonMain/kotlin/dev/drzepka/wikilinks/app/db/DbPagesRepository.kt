@@ -1,8 +1,8 @@
 package dev.drzepka.wikilinks.app.db
 
-import dev.drzepka.wikilinks.db.Database
+import dev.drzepka.wikilinks.db.links.LinksDatabase
 
-class DbPagesRepository(private val database: Database) : PagesRepository {
+class DbPagesRepository(private val database: LinksDatabase) : PagesRepository {
 
     override fun getPageTitles(pageIds: Collection<Int>): Map<Int, String> {
         val ids = pageIds.map { it.toLong() }

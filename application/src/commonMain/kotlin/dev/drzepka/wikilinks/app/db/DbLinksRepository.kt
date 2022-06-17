@@ -1,9 +1,9 @@
 package dev.drzepka.wikilinks.app.db
 
 import dev.drzepka.wikilinks.app.model.Link
-import dev.drzepka.wikilinks.db.Database
+import dev.drzepka.wikilinks.db.links.LinksDatabase
 
-class DbLinksRepository(private val database: Database) : LinksRepository {
+class DbLinksRepository(private val database: LinksDatabase) : LinksRepository {
 
     override fun getInLinksCount(vararg pageIds: Int): Int {
         val ids = pageIds.map{it.toLong()}
