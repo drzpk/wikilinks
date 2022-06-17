@@ -2,6 +2,7 @@ package dev.drzepka.wikilinks.common
 
 object WikiConfig {
     const val REST_API_URL = "https://en.wikipedia.org/w/rest.php"
+    const val ACTION_API_URL = "https://en.wikipedia.org/w/api.php"
 
     // TODO: generate a class with version and use it here
     /**

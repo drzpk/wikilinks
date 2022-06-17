@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app
+package dev.drzepka.wikilinks.app.utils
 
 enum class Environment {
     JVM, LINUX

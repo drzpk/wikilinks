@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app
+package dev.drzepka.wikilinks.app.utils
 
 import kotlin.system.exitProcess
 

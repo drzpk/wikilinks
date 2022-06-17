@@ -4,6 +4,9 @@ plugins {
     id("com.squareup.sqldelight")
 }
 
+val coroutinesVersion: String by System.getProperties()
+val ktorVersion: String by System.getProperties()
+
 kotlin {
     /* Targets configuration omitted. 
     *  To find out how to configure the targets, please follow the link:
@@ -22,7 +25,12 @@ kotlin {
             dependencies {
                 implementation(project(":common"))
                 implementation(kotlin("stdlib-common"))
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
                 implementation("io.github.microutils:kotlin-logging:2.1.23")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                implementation("io.ktor:ktor-client-core:$ktorVersion")
+                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
             }
         }
         val commonTest by getting {
@@ -35,6 +43,8 @@ kotlin {
             dependencies {
                 implementation("com.squareup.sqldelight:native-driver:1.5.3")
                 implementation("io.github.microutils:kotlin-logging-linuxx64:2.1.23")
+                implementation("io.ktor:ktor-client-curl:$ktorVersion")
+
             }
         }
 
@@ -43,9 +53,12 @@ kotlin {
                 api("com.squareup.sqldelight:sqlite-driver:1.5.3")
                 implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.17.2")
                 implementation("io.github.microutils:kotlin-logging-jvm:2.1.23")
-                implementation("io.ktor:ktor-server-core:1.6.5")
-                implementation("io.ktor:ktor-server-netty:1.6.5")
-                implementation("io.ktor:ktor-jackson:1.6.5")
+                implementation("io.ktor:ktor-server-core:$ktorVersion")
+                implementation("io.ktor:ktor-server-netty:$ktorVersion")
+                implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
+                implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+                implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
+                implementation("io.ktor:ktor-client-apache:$ktorVersion")
             }
         }
 
@@ -70,5 +83,11 @@ sqldelight {
         sourceFolders = listOf("sqldelight/links")
         schemaOutputDirectory = file("build/dbs")
     }
+    database("CacheDatabase") {
+        packageName = "dev.drzepka.wikilinks.db.cache"
+        sourceFolders = listOf("sqldelight/cache")
+        schemaOutputDirectory = file("build/dbs")
+    }
+
     linkSqlite = true
 }

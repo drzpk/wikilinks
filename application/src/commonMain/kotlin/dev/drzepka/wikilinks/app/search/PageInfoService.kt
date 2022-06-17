@@ -1,10 +1,25 @@
 package dev.drzepka.wikilinks.app.search
 
+import dev.drzepka.wikilinks.app.cache.PageCacheService
 import dev.drzepka.wikilinks.app.db.PagesRepository
+import dev.drzepka.wikilinks.app.model.PageCacheHit
+import dev.drzepka.wikilinks.app.utils.http
+import dev.drzepka.wikilinks.common.WikiConfig
 import dev.drzepka.wikilinks.common.model.Path
 import dev.drzepka.wikilinks.common.model.searchresult.PageInfo
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.*
+import mu.KotlinLogging
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
-class PageInfoService(private val pagesRepository: PagesRepository) {
+@OptIn(ExperimentalTime::class)
+class PageInfoService(private val pagesRepository: PagesRepository, private val cacheService: PageCacheService) {
+    private val log = KotlinLogging.logger {}
 
     fun collectInfo(paths: Collection<Path>): Map<Int, PageInfo> {
         val uniquePageIds = paths
@@ -12,9 +27,108 @@ class PageInfoService(private val pagesRepository: PagesRepository) {
             .flatMap { it.pages }
             .toSet()
 
-        val titles = pagesRepository.getPageTitles(uniquePageIds)
-        return titles.mapValues { PageInfo(it.value, getPageUrl(it.value)) }
+        return getPagesInfo(uniquePageIds)
     }
 
-    private fun getPageUrl(title: String): String = "https://en.wikipedia.org/wiki/$title"
+    private fun getPagesInfo(pageIds: Collection<Int>): Map<Int, PageInfo> {
+        val cacheHits = cacheService.getCache(pageIds)
+        val pagesToDownload = pageIds - cacheHits.keys
+        log.debug {
+            val percentage = floor(cacheHits.size / pageIds.size.toFloat() * 1000) / 10
+            "Cache hit ratio: ${cacheHits.size}/${pageIds.size} ($percentage%)"
+        }
+
+        val downloadedPages = fetchPages(pagesToDownload)
+        cacheService.putCache(downloadedPages.values.map { it.toCacheHit() })
+
+        cacheHits
+            .asSequence()
+            .map { it.value.toPageInfo() }
+            .forEach { downloadedPages[it.id] = it }
+
+        return downloadedPages
+    }
+
+    private fun fetchPages(pageIds: List<Int>): MutableMap<Int, PageInfo> {
+        val value = measureTimedValue {
+            downloadPagesFromWikipedia(pageIds).associateByTo(HashMap()) { it.id }
+        }
+
+        val downloaded = value.value
+        log.debug { "Downloaded ${downloaded.size} pages from Wikipedia in ${value.duration.inWholeMilliseconds} ms" }
+
+        if (downloaded.size != pageIds.size) {
+            val notFoundPages = pageIds - downloaded.keys
+            log.warn { "Some pages weren't found on Wikipedia: $notFoundPages" }
+        }
+
+        setPageUrlTitles(downloaded)
+        return downloaded
+    }
+
+    private fun downloadPagesFromWikipedia(pageIds: List<Int>): Collection<PageInfo> {
+        // MediaWiki API only allows to query 50 pages per request
+        val chunkSize = 50
+        val chunks = ceil(pageIds.size / chunkSize.toFloat()).toInt()
+
+        val pagesInfo = ArrayList<PageInfo>()
+        for (chunkNo in 0 until chunks) {
+            val end = (((chunkNo) + 1) * chunkSize).coerceAtMost(pageIds.size)
+            val chunk = pageIds.slice((chunkNo * chunkSize) until end)
+
+            val pages = downloadPagesChunkFromWikipedia(chunk)
+            pagesInfo.addAll(pages)
+        }
+
+        return pagesInfo
+    }
+
+    private fun downloadPagesChunkFromWikipedia(pageIds: Collection<Int>): Collection<PageInfo> {
+        val obj = runBlocking {
+            val response = http.get(WikiConfig.ACTION_API_URL) {
+                parameter("action", "query")
+                parameter("format", "json")
+                parameter("prop", "info|pageterms")
+                parameter("pageids", pageIds.joinToString(separator = "|"))
+            }
+
+            response.body<JsonObject>()
+        }
+
+        var chunk = emptyList<PageInfo>()
+        if ("query" in obj) {
+            val queryObj = obj["query"]?.jsonObject!!
+            if ("pages" in queryObj) {
+                val pagesObj = queryObj["pages"]?.jsonObject!!
+                chunk = pagesObj.values.map { it.jsonObject.toPageInfo() }
+            }
+        }
+
+        return chunk
+    }
+
+    private fun setPageUrlTitles(info: MutableMap<Int, PageInfo>) {
+        val titles = pagesRepository.getPageTitles(info.keys)
+        titles.forEach {
+            info[it.key] = info[it.key]!!.copy(urlTitle = it.value)
+        }
+    }
+
+    private fun PageCacheHit.toPageInfo(): PageInfo = PageInfo(pageId, displayTitle, urlTitle, description)
+
+    private fun PageInfo.toCacheHit(): PageCacheHit = PageCacheHit(id, urlTitle, title, description)
+
+    private fun JsonObject.toPageInfo(): PageInfo {
+        val id = this["pageid"]?.jsonPrimitive?.intOrNull!!
+        val title = this["title"]?.jsonPrimitive?.contentOrNull!!
+
+        var description = ""
+        if ("terms" in this) {
+            val terms = this["terms"]!!.jsonObject
+            if ("description" in terms)
+                description = terms["description"]?.jsonArray?.getOrNull(0)?.jsonPrimitive?.contentOrNull ?: ""
+        }
+
+        return PageInfo(id, title, "", description)
+    }
 }
