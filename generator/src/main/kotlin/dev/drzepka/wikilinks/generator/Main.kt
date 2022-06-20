@@ -41,7 +41,7 @@ private object InitializeDatabaseStep : FlowStep<Store> {
                 delete()
         }
 
-        store.db = DatabaseProvider.getLinksDatabase()
+        store.db = DatabaseProvider.getLinksDatabase(createSchema = true, disableProtection = true)
     }
 }
 

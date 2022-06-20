@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.app.db
 
+import com.squareup.sqldelight.db.SqlCursor
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.db.use
 import dev.drzepka.wikilinks.app.utils.Environment
@@ -17,8 +18,8 @@ object DatabaseProvider {
 
     // todo: When launching from Linux, the library is looking for the a database in the a user's home directory
 
-    fun getLinksDatabase(createSchema: Boolean = false): LinksDatabase {
-        val driver = getDbDriver(LINKS_DATABASE_NAME, true)
+    fun getLinksDatabase(createSchema: Boolean = false, disableProtection: Boolean = false): LinksDatabase {
+        val driver = getDbDriver(LINKS_DATABASE_NAME, disableProtection)
         if (createSchema)
             LinksDatabase.Schema.createIfNecessary(driver, "links")
         return LinksDatabase.invoke(driver)
@@ -46,7 +47,7 @@ object DatabaseProvider {
         if (driver.getVersion() == 0) {
             log.info { "Creating schema $name" }
             create(driver)
-            driver.setVersion(1)
+            driver.setVersion(0, 1)
         }
     }
 
@@ -59,13 +60,26 @@ object DatabaseProvider {
     }
 
     private fun SqlDriver.getVersion(): Int {
-        val cursor = executeQuery(null, "PRAGMA user_version;", 0, null)
-        return cursor.use { it.getLong(0)!!.toInt() }
+        // Sqlite also supports PRAGMA user_version, but for some reason it doesn't work on native driver.
+        val tableExists = executeQuery("SELECT name from sqlite_master WHERE type = 'table' and name = 'Version'")
+            .use { it.next() && it.getString(0) != null }
+
+        if (!tableExists)
+            return 0
+
+        return executeQuery("SELECT version FROM Version").use { it.next(); it.getLong(0) }!!.toInt()
     }
 
-    private fun SqlDriver.setVersion(version: Int) {
-        execute(null, "PRAGMA user_version = $version;", 0, null)
+    private fun SqlDriver.setVersion(oldVersion: Int, newVersion: Int) {
+        if (oldVersion == 0) {
+            execute(null, "CREATE TABLE Version (version INTEGER NOT NULL);", 0)
+            execute(null, "INSERT INTO Version VALUES ($newVersion);", 0)
+        } else {
+            execute(null, "UPDATE Version SET version = $newVersion;", 0)
+        }
     }
+
+    private fun SqlDriver.executeQuery(sql: String): SqlCursor = executeQuery(null, sql, 0)
 }
 
 internal expect fun getDriver(databaseName: String): SqlDriver
