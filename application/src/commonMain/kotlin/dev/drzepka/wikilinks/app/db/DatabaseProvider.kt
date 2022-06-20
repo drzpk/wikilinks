@@ -34,11 +34,13 @@ object DatabaseProvider {
     private fun getDbDriver(dbName: String, disableProtection: Boolean): SqlDriver {
         val driver = getDriver(dbName)
 
-        if (disableProtection) {
-            // Optimize insert speed
-            driver.exec("PRAGMA journal_mode = OFF")
-            driver.exec("PRAGMA synchronous = OFF")
-        }
+        // Optimize insert speed
+        // https://www.sqlite.org/pragma.html
+        val journalMode = if (disableProtection) "OFF" else "DELETE"
+        val synchronous = if (disableProtection) "OFF" else "FULL"
+
+        driver.exec("PRAGMA journal_mode = $journalMode")
+        driver.exec("PRAGMA synchronous = $synchronous")
 
         return driver
     }
