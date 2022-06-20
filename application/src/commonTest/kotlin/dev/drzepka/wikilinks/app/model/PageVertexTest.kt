@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.app.model
 
+import dev.drzepka.wikilinks.common.model.Path
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
