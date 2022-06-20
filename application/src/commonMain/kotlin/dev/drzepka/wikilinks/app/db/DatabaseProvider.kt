@@ -44,7 +44,7 @@ object DatabaseProvider {
 
     private fun SqlDriver.Schema.createIfNecessary(driver: SqlDriver, name: String) {
         if (driver.getVersion() == 0) {
-            log.info { "Created schema $name" }
+            log.info { "Creating schema $name" }
             create(driver)
             driver.setVersion(1)
         }
