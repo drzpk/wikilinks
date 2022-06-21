@@ -1,11 +1,11 @@
 package dev.drzepka.wikilinks.generator.pipeline.writer
 
-import dev.drzepka.wikilinks.db.Database
+import dev.drzepka.wikilinks.db.links.LinksDatabase
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-abstract class AbstractWriter<T>(protected val db: Database, private val bufferSize: Int) : Writer<T> {
+abstract class AbstractWriter<T>(protected val db: LinksDatabase, private val bufferSize: Int) : Writer<T> {
     private var activeBuffer = ArrayList<T>()
     private var inactiveBuffer = ArrayList<T>()
     private val writingLock = ReentrantLock()
