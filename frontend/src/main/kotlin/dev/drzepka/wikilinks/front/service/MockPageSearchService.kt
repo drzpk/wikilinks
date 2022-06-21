@@ -7,8 +7,9 @@ import kotlin.random.Random
 
 object MockPageSearchService : PageSearchService {
 
-    override fun search(title: String): Promise<List<PageHint>> {
-        val hints = (0 until  Random.nextInt(2, 5)).map {
+    override fun search(title: String, exact: Boolean): Promise<List<PageHint>> {
+        val hintCount = if (!exact) Random.nextInt(2, 5) else 1
+        val hints = (0 until hintCount).map {
             PageHint(
                 Random.nextInt(),
                 "$title ${Random.nextInt(1000)}",

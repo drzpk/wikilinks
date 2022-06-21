@@ -16,7 +16,7 @@ class SearchComponent(state: State) : Div(className = "search-component") {
 
     init {
         searchButton.onClick { state.search() }
-        searchButton.bind(state.searchButtonActive, runImmediately = true) {
+        searchButton.bind(state.canSearch, runImmediately = true) {
             disabled = !it
         }
         searchButton.bind(state.searchInProgress) {

@@ -2,6 +2,8 @@ package dev.drzepka.wikilinks.front
 
 import dev.drzepka.wikilinks.front.component.SearchComponent
 import dev.drzepka.wikilinks.front.component.searchresult.SearchResultComponent
+import dev.drzepka.wikilinks.front.model.HistoryState
+import dev.drzepka.wikilinks.front.model.SearchQuery
 import dev.drzepka.wikilinks.front.model.State
 import dev.drzepka.wikilinks.front.service.MockLinkSearchService
 import dev.drzepka.wikilinks.front.service.MockPageSearchService
@@ -13,10 +15,10 @@ import io.kvision.html.header
 import io.kvision.panel.ContainerType
 import io.kvision.panel.responsiveGridPanel
 import io.kvision.panel.root
+import kotlinx.browser.window
+import org.w3c.dom.url.URLSearchParams
 
-class Frontend : Application() {
-    private val useMocks = false
-
+class Frontend : Application(), HistoryState {
     init {
         io.kvision.require("./css/app.css")
         io.kvision.require("./css/loader.css")
@@ -52,10 +54,35 @@ class Frontend : Application() {
         )
     }
 
-    private fun createState(): State {
-        val pageSearchService = if (useMocks) MockPageSearchService else PageSearchServiceImpl()
-        val linkSearchService = if (useMocks) MockLinkSearchService else LinkSearchServiceImpl()
+    override fun getSearchQuery(): SearchQuery? {
+        val params = URLSearchParams(window.location.search)
+        val source = params.get(QUERY_SOURCE)
+        val target = params.get(QUERY_TARGET)
 
-        return State(pageSearchService, linkSearchService)
+        return if (source != null && target != null)
+            SearchQuery(source, target)
+        else null
+    }
+
+    override fun putSearchQuery(query: SearchQuery) {
+        val params = URLSearchParams(window.location.search)
+        params.set(QUERY_SOURCE, query.sourcePage)
+        params.set(QUERY_TARGET, query.targetPage)
+
+        val url = "${window.location.pathname}?$params"
+        window.history.pushState(null, "", url)
+    }
+
+    private fun createState(): State {
+        val pageSearchService = if (USE_MOCKS) MockPageSearchService else PageSearchServiceImpl()
+        val linkSearchService = if (USE_MOCKS) MockLinkSearchService else LinkSearchServiceImpl()
+
+        return State(pageSearchService, linkSearchService, this)
+    }
+
+    companion object {
+        private const val USE_MOCKS = false
+        private const val QUERY_SOURCE = "source"
+        private const val QUERY_TARGET = "target"
     }
 }
