@@ -34,7 +34,8 @@ class PageCacheService(private val database: CacheDatabase) {
                     0,
                     hit.urlTitle,
                     hit.displayTitle,
-                    hit.description
+                    hit.description,
+                    hit.imageUrl
                 )
 
                 database.pageCacheQueries.insert(pageCache)
@@ -43,7 +44,13 @@ class PageCacheService(private val database: CacheDatabase) {
     }
 
     private fun createHit(result: FindByIds): PageCacheHit =
-        PageCacheHit(result.page_id.toInt(), result.url_title, result.display_title, result.description)
+        PageCacheHit(
+            result.page_id.toInt(),
+            result.url_title,
+            result.display_title,
+            result.description,
+            result.image_url
+        )
 
     private fun updateCacheAccess(hits: Collection<PageCacheHit>) {
         val now = Clock.System.now().toString()

@@ -6,14 +6,15 @@ CREATE TABLE PageCache (
     ----
     url_title TEXT NOT NULL,
     display_title TEXT NOT NULL,
-    description TEXT NOT NULL
+    description TEXT NOT NULL,
+    image_url TEXT
 );
 
 insert:
 INSERT OR REPLACE INTO PageCache VALUES ?;
 
 findByIds:
-SELECT page_id, url_title, display_title, description FROM PageCache WHERE page_id IN :ids;
+SELECT page_id, url_title, display_title, description, image_url FROM PageCache WHERE page_id IN :ids;
 
 updateHits:
 UPDATE PageCache SET hits = hits + 1, last_accessed_at = :lastAccessedAt WHERE page_id IN :id;

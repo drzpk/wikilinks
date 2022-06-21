@@ -52,7 +52,6 @@ header h1 {
 .search-hint {
     padding: 0.5em;
     cursor: pointer;
-
 }
 
 .search-hint:hover {
@@ -72,6 +71,22 @@ header h1 {
 
 .search-hint:not(:last-child) {
     border-bottom: 1px solid lightgray;
+}
+
+.search-hint .image-wrapper {
+    width: 3em;
+    min-width: 3em;
+    margin-right: 1em;
+    text-align: center;
+}
+
+.search-hint .image-wrapper img {
+    max-width: 3em;
+    max-height: 3em;
+    width: auto;
+    height: auto;
+    border: 1px solid gray;
+    border-radius: 0.5em;
 }
 
 .search-result {
@@ -105,6 +120,7 @@ header h1 {
 
 .search-result .path .page .content {
     position: relative;
+    height: 100%;
     padding: 0.6em;
     background-color: white;
     z-index: 100;
@@ -112,6 +128,19 @@ header h1 {
 
 .search-result .path .page .content:hover {
     background-color: lightgray;
+}
+
+.search-result .path .page .content img {
+    max-width: 3em;
+    max-height: 3em;
+    width: auto;
+    height: auto;
+    border: 1px solid gray;
+    border-radius: 0.5em;
+}
+
+.search-result .path .page .content .header {
+    margin-bottom: 0.5em;
 }
 
 .search-result .path .page .connector {
@@ -176,7 +205,7 @@ header h1 {
 }
 
 .search-result .path .page .title {
-    margin: 0;
+    margin: 0 0 0 0.75em;
     font-size: medium;
     font-weight: bold;
 }

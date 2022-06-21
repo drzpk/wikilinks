@@ -84,11 +84,12 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
     }
 
     private fun downloadPagesChunkFromWikipedia(pageIds: Collection<Int>): Collection<PageInfo> {
+        // https://www.mediawiki.org/w/api.php?action=help&modules=query
         val obj = runBlocking {
             val response = http.get(WikiConfig.ACTION_API_URL) {
                 parameter("action", "query")
                 parameter("format", "json")
-                parameter("prop", "info|pageterms")
+                parameter("prop", "info|pageterms|pageimages")
                 parameter("pageids", pageIds.joinToString(separator = "|"))
             }
 
@@ -114,9 +115,9 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
         }
     }
 
-    private fun PageCacheHit.toPageInfo(): PageInfo = PageInfo(pageId, displayTitle, urlTitle, description)
+    private fun PageCacheHit.toPageInfo(): PageInfo = PageInfo(pageId, displayTitle, urlTitle, description, imageUrl)
 
-    private fun PageInfo.toCacheHit(): PageCacheHit = PageCacheHit(id, urlTitle, title, description)
+    private fun PageInfo.toCacheHit(): PageCacheHit = PageCacheHit(id, urlTitle, title, description, imageUrl)
 
     private fun JsonObject.toPageInfo(): PageInfo {
         val id = this["pageid"]?.jsonPrimitive?.intOrNull!!
@@ -129,6 +130,13 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
                 description = terms["description"]?.jsonArray?.getOrNull(0)?.jsonPrimitive?.contentOrNull ?: ""
         }
 
-        return PageInfo(id, title, "", description)
+        var imageUrl: String? = null
+        if ("thumbnail" in this) {
+            val thumbnail = this["thumbnail"]!!.jsonObject
+            if ("source" in thumbnail)
+                imageUrl = thumbnail["source"]?.jsonPrimitive?.contentOrNull
+        }
+
+        return PageInfo(id, title, "", description, imageUrl)
     }
 }

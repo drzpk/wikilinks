@@ -33,10 +33,16 @@ class PageSearchServiceImpl : PageSearchService, CoroutineScope {
         val pages = obj["pages"] as JsonArray
         return pages.map {
             it as JsonObject
+
+            val imageUrl = if ("thumbnail" in it && it["thumbnail"] !is JsonNull)
+                it["thumbnail"]?.jsonObject?.get("url")?.jsonPrimitive?.contentOrNull
+            else null
+
             PageHint(
                 it["id"]!!.jsonPrimitive.int,
                 it["title"]!!.jsonPrimitive.content,
-                it["description"]?.jsonPrimitive?.contentOrNull ?: ""
+                it["description"]?.jsonPrimitive?.contentOrNull ?: "",
+                imageUrl
             )
         }
     }

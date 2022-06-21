@@ -12,7 +12,8 @@ object MockPageSearchService : PageSearchService {
             PageHint(
                 Random.nextInt(),
                 "$title ${Random.nextInt(1000)}",
-                "This is a description for $title ${Random.nextInt(10000, 10000000)}"
+                "This is a description for $title ${Random.nextInt(10000, 10000000)}",
+                null
             )
         }
 
