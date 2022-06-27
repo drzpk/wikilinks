@@ -6,6 +6,8 @@ import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
+import dev.drzepka.wikilinks.generator.pipeline.downloader.DumpDownloader
+import dev.drzepka.wikilinks.generator.pipeline.downloader.HttpClientProvider
 import dev.drzepka.wikilinks.generator.pipeline.filter.LinksFilter
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
@@ -22,11 +24,12 @@ fun main() {
 
     val flow = GeneratorFlow(Store())
 
+    flow.segment(DumpDownloader(workingDirectory, HttpClientProvider.create()))
     flow.step(InitializeDatabaseStep)
     flow.step(PopulatePageTable)
     //flow.step(ExtractPagesFromDbStep)
     flow.step(ExtractLinksFromDumpStep)
-    flow.segment(LinksFileSorter(File(workingDirectory, LinksFileWriter.LINKS_FILE_NAME)))
+    flow.segment(SortLinksFileStep)
     flow.step(PopulateLinksTableStep)
 
     flow.start()
@@ -105,6 +108,8 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
         store.pages = HashBiMap.create()
     }
 }
+
+private val SortLinksFileStep = LinksFileSorter(File(workingDirectory, LinksFileWriter.LINKS_FILE_NAME))
 
 private fun getDumpFileName(name: String): String {
     val dirName = "dumps"
