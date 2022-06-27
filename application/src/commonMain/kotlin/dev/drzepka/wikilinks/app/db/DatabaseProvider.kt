@@ -17,7 +17,11 @@ object DatabaseProvider {
 
     private val log = KotlinLogging.logger {}
 
-    fun getLinksDatabase(createSchema: Boolean = false, disableProtection: Boolean = false): LinksDatabase {
+    fun getLinksDatabase(
+        createSchema: Boolean = false,
+        disableProtection: Boolean = false,
+        overrideDirectory: String? = null
+    ): LinksDatabase {
         val driver = getDbDriver(LINKS_DATABASE_NAME, disableProtection)
         if (createSchema)
             LinksDatabase.Schema.createIfNecessary(driver, "links")
@@ -30,8 +34,9 @@ object DatabaseProvider {
         return CacheDatabase.invoke(driver)
     }
 
-    private fun getDbDriver(dbName: String, disableProtection: Boolean): SqlDriver {
-        val driver = getDriver(Configuration.databasesDirectory, dbName)
+    private fun getDbDriver(dbName: String, disableProtection: Boolean, overrideDirectory: String? = null): SqlDriver {
+        val dir = overrideDirectory ?: Configuration.databasesDirectory
+        val driver = getDriver(dir, dbName)
 
         // Optimize insert speed
         // https://www.sqlite.org/pragma.html

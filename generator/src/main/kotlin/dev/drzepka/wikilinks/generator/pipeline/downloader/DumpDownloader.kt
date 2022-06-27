@@ -4,7 +4,7 @@ import dev.drzepka.wikilinks.generator.Configuration
 import dev.drzepka.wikilinks.generator.flow.FlowSegment
 import dev.drzepka.wikilinks.generator.flow.Logger
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
-import dev.drzepka.wikilinks.generator.model.ResolvedDump
+import dev.drzepka.wikilinks.generator.model.ArchiveDump
 import dev.drzepka.wikilinks.generator.model.Store
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -14,7 +14,7 @@ import kotlinx.coroutines.runBlocking
 import java.io.File
 
 class DumpDownloader(private val workingDirectory: File, provider: HttpClientProvider) : FlowSegment<Store> {
-    override val numberOfSteps = if (Configuration.skipDownloadingDumps) 2 + REQUIRED_FILE_VARIANTS.size else 0
+    override val numberOfSteps = if (!Configuration.skipDownloadingDumps) 2 + REQUIRED_FILE_VARIANTS.size else 0
 
     private val resolver = LastDumpResolver(provider, REQUIRED_FILE_VARIANTS)
     private val http = provider.client
@@ -25,13 +25,14 @@ class DumpDownloader(private val workingDirectory: File, provider: HttpClientPro
 
         logger.startNextStep("Resolving new dumps")
         val dumps = resolver.resolveLastDumpFileUrls()
+        store.version = dumps.version
 
         logger.startNextStep("Deleting old dumps")
-        deleteOldDumps(dumps.map { it.fileName })
+        deleteOldDumps(dumps.dumps.map { it.fileName })
 
-        for ((index, dump) in dumps.withIndex()) {
+        for ((index, dump) in dumps.dumps.withIndex()) {
             val name = dump.fileName
-            logger.startNextStep("Downloading file ${index + 1}/${dumps.size} ($name)")
+            logger.startNextStep("Downloading file ${index + 1}/${dumps.dumps.size} ($name)")
             downloadFile(dump, logger)
         }
     }
@@ -46,7 +47,7 @@ class DumpDownloader(private val workingDirectory: File, provider: HttpClientPro
             }
     }
 
-    private suspend fun downloadFile(dump: ResolvedDump, logger: ProgressLogger) {
+    private suspend fun downloadFile(dump: ArchiveDump, logger: ProgressLogger) {
         val file = File(workingDirectory, dump.fileName)
         if (file.isFile && file.length() == dump.size) {
             println("File already exist, skipping")

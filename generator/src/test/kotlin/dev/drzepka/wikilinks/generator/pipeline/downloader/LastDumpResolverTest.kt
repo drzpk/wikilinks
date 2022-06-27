@@ -1,7 +1,7 @@
 package dev.drzepka.wikilinks.generator.pipeline.downloader
 
 import dev.drzepka.wikilinks.generator.Configuration
-import dev.drzepka.wikilinks.generator.model.ResolvedDump
+import dev.drzepka.wikilinks.generator.model.ArchiveDump
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -15,6 +15,8 @@ internal class LastDumpResolverTest {
 
     @Test
     fun `should find last dump`() {
+        val ds = Configuration.dumpSource
+
         val mockEngine = MockEngine {
             val url = it.url.toString()
             when {
@@ -27,14 +29,18 @@ internal class LastDumpResolverTest {
 
         val resolver = LastDumpResolver(HttpClientProvider(mockEngine), variants)
         val dumps = runBlocking { resolver.resolveLastDumpFileUrls() }
+        val archives = dumps.dumps
 
-        assertEquals(2, dumps.size)
-        assertTrue(dumps.contains(ResolvedDump("${Configuration.dumpSource}/20220620/enwiki-20220620-page.sql.gz", 123)))
-        assertTrue(dumps.contains(ResolvedDump("${Configuration.dumpSource}/20220620/enwiki-20220620-pagelinks.sql.gz", 456)))
+        assertEquals("20220620", dumps.version)
+        assertEquals(2, archives.size)
+        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-page.sql.gz", 123)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-pagelinks.sql.gz", 456)))
     }
 
     @Test
     fun `should fall back to previous dump if the last one is missing required files`() {
+        val ds = Configuration.dumpSource
+
         val mockEngine = MockEngine {
             val url = it.url.toString()
             when {
@@ -48,10 +54,12 @@ internal class LastDumpResolverTest {
 
         val resolver = LastDumpResolver(HttpClientProvider(mockEngine), variants)
         val dumps = runBlocking { resolver.resolveLastDumpFileUrls() }
+        val archives = dumps.dumps
 
-        assertEquals(2, dumps.size)
-        assertTrue(dumps.contains(ResolvedDump("${Configuration.dumpSource}/20220601/enwiki-20220601-page.sql.gz", 2)))
-        assertTrue(dumps.contains(ResolvedDump("${Configuration.dumpSource}/20220601/enwiki-20220601-pagelinks.sql.gz", 3)))
+        assertEquals("20220601", dumps.version)
+        assertEquals(2, archives.size)
+        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-page.sql.gz", 2)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-pagelinks.sql.gz", 3)))
     }
 
     private fun MockRequestHandleScope.respondWithLength(length: Long): HttpResponseData {

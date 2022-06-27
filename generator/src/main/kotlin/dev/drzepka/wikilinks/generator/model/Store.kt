@@ -6,4 +6,5 @@ import dev.drzepka.wikilinks.db.links.LinksDatabase
 class Store {
     lateinit var db: LinksDatabase
     lateinit var pages: BiMap<Int, String>
+    lateinit var version: String
 }

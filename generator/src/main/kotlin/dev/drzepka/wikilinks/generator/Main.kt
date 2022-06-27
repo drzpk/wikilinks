@@ -2,6 +2,7 @@ package dev.drzepka.wikilinks.generator
 
 import com.google.common.collect.HashBiMap
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
+import dev.drzepka.wikilinks.app.db.FileConfigRepository
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
@@ -31,6 +32,7 @@ fun main() {
     flow.step(ExtractLinksFromDumpStep)
     flow.segment(SortLinksFileStep)
     flow.step(PopulateLinksTableStep)
+    flow.step(SwapDatabasesStep)
 
     flow.start()
 }
@@ -110,6 +112,17 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
 }
 
 private val SortLinksFileStep = LinksFileSorter(File(workingDirectory, LinksFileWriter.LINKS_FILE_NAME))
+
+private object SwapDatabasesStep : FlowStep<Store> {
+    override val name = "Swapping application databases"
+
+    override fun run(store: Store, logger: ProgressLogger) {
+        val databasePath = Configuration.databasesDirectory ?: "."
+        val databasesDirectory = File(databasePath)
+        val configRepository = FileConfigRepository(databasesDirectory.canonicalPath)
+        DatabaseSwapper(workingDirectory, File(databasePath), configRepository)
+    }
+}
 
 private fun getDumpFileName(name: String): String {
     val dirName = "dumps"
