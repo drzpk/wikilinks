@@ -3,6 +3,7 @@ package dev.drzepka.wikilinks.app.db
 import com.squareup.sqldelight.db.SqlCursor
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.db.use
+import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.app.utils.Environment
 import dev.drzepka.wikilinks.app.utils.environment
 import dev.drzepka.wikilinks.db.cache.CacheDatabase
@@ -15,8 +16,6 @@ object DatabaseProvider {
     const val CACHE_DATABASE_NAME = "cache.db"
 
     private val log = KotlinLogging.logger {}
-
-    // todo: When launching from Linux, the library is looking for the a database in the a user's home directory
 
     fun getLinksDatabase(createSchema: Boolean = false, disableProtection: Boolean = false): LinksDatabase {
         val driver = getDbDriver(LINKS_DATABASE_NAME, disableProtection)
@@ -32,7 +31,7 @@ object DatabaseProvider {
     }
 
     private fun getDbDriver(dbName: String, disableProtection: Boolean): SqlDriver {
-        val driver = getDriver(dbName)
+        val driver = getDriver(Configuration.databasesDirectory, dbName)
 
         // Optimize insert speed
         // https://www.sqlite.org/pragma.html
@@ -84,4 +83,4 @@ object DatabaseProvider {
     private fun SqlDriver.executeQuery(sql: String): SqlCursor = executeQuery(null, sql, 0)
 }
 
-internal expect fun getDriver(databaseName: String): SqlDriver
+internal expect fun getDriver(basePath: String?, databaseName: String): SqlDriver
