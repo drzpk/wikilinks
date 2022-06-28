@@ -38,7 +38,7 @@ class DumpDownloader(private val workingDirectory: File, provider: HttpClientPro
         for ((index, dump) in dumps.dumps.withIndex()) {
             val name = dump.fileName
             logger.startNextStep("Downloading file ${index + 1}/${dumps.dumps.size} ($name)")
-            downloadFile(dump, logger)
+            downloadFile(dump, logger)?.join()
         }
     }
 
@@ -52,11 +52,11 @@ class DumpDownloader(private val workingDirectory: File, provider: HttpClientPro
             }
     }
 
-    private fun CoroutineScope.downloadFile(dump: ArchiveDump, logger: ProgressLogger) {
+    private fun CoroutineScope.downloadFile(dump: ArchiveDump, logger: ProgressLogger): Job? {
         val file = File(workingDirectory, dump.fileName)
         if (file.isFile && file.length() == dump.size) {
             println("File is already downloaded, skipping")
-            return
+            return null
         }
 
         var offset = 0L
@@ -66,7 +66,7 @@ class DumpDownloader(private val workingDirectory: File, provider: HttpClientPro
         }
 
         val channel = writer(file, offset > 0)
-        downloader(dump, offset, logger, channel)
+        return downloader(dump, offset, logger, channel)
     }
 
     @OptIn(ObsoleteCoroutinesApi::class)
