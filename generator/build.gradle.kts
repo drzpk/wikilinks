@@ -16,6 +16,16 @@ dependencies {
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
 }
 
+kotlin {
+    sourceSets {
+        all {
+            languageSettings {
+                optIn("kotlin.RequiresOptIn")
+            }
+        }
+    }
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
 }

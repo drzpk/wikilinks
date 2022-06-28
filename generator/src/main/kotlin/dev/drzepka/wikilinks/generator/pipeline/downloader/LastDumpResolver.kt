@@ -43,7 +43,8 @@ class LastDumpResolver(provider: HttpClientProvider, private val requiredFileVar
             }
 
             val length = response.contentLength() ?: throw IllegalStateException("Content length is not available")
-            resolvedDumps.add(ArchiveDump(url, length))
+            val supportsRange = response.headers[HttpHeaders.AcceptRanges]?.equals("bytes", ignoreCase = true)
+            resolvedDumps.add(ArchiveDump(url, length, supportsRange ?: false))
         }
 
         return resolvedDumps
