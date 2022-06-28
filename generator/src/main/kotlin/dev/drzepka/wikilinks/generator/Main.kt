@@ -19,7 +19,7 @@ import io.ktor.client.engine.apache.*
 import java.io.File
 import kotlin.system.exitProcess
 
-private val workingDirectory = File("dumps")
+private val workingDirectory = File(Configuration.workingDirectory)
 
 fun main(args: Array<String>) {
     val version = args.getOrNull(0)
