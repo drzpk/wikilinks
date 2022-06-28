@@ -2,17 +2,17 @@ package dev.drzepka.wikilinks.generator.pipeline
 
 import dev.drzepka.wikilinks.generator.model.Value
 
-class ValueParser {
+class ValueParser(private val source: String) {
     private val values = mutableListOf<Any?>()
-    private lateinit var source: String
-    private var pos = 0
+    var pos = 0
+        private set
 
-    fun parse(source: String): Value {
-        this.source = source
-        pos = 0
+    fun parse(offset: Int = 0): Value {
+        pos = offset
         values.clear()
 
-        while (pos < source.length) {
+        consumeBoundary(VALUE_START)
+        while (pos < source.length && source[pos] != VALUE_END) {
             if (isNumber())
                 readNumber()
             else if (isString())
@@ -24,8 +24,16 @@ class ValueParser {
             else
                 throwSyntaxError(pos)
         }
+        consumeBoundary(VALUE_END)
 
         return values.toList()
+    }
+
+    private fun consumeBoundary(boundary: Char) {
+        if (source[pos] == boundary)
+            pos++
+        else
+            throwSyntaxError(pos, "expected boundary character '$boundary' but found '${source[pos]}'")
     }
 
     private fun isNumber(): Boolean = source[pos] in DIGIT_ZERO..DIGIT_NINE
@@ -39,7 +47,7 @@ class ValueParser {
 
     private fun readNumber() {
         var endIndex = pos + 1
-        while (endIndex < source.length && source[endIndex] != PARAMETER_SEPARATOR)
+        while (endIndex < source.length && source[endIndex] != PARAMETER_SEPARATOR && source[endIndex] != VALUE_END)
             endIndex++
 
         val raw = source.substring(pos, endIndex)
@@ -56,7 +64,7 @@ class ValueParser {
             else
                 input.toInt()
         } catch (e: NumberFormatException) {
-            throw IllegalStateException("Error while parsing source: $source", e)
+            throw IllegalStateException("Error while parsing number: $input", e)
         }
     }
 
@@ -73,7 +81,6 @@ class ValueParser {
 
         if (source[endIndex] != APOSTROPHE)
             throwSyntaxError(endIndex, "unexpected end of string")
-
 
         val builder = StringBuilder(endIndex - pos)
         var i = pos
@@ -95,11 +102,18 @@ class ValueParser {
     }
 
     private fun throwSyntaxError(at: Int, additionalInfo: String? = null): Nothing {
+        val range = 100
+        val start = (at - range).coerceAtLeast(0)
+        val end = (at + range).coerceAtMost(source.length)
+        val excerpt = source.substring(start until end)
+
         val suffix = if (additionalInfo != null) ": $additionalInfo" else ""
-        throw IllegalStateException("Syntax error at $at$suffix. Source: $source")
+        throw IllegalStateException("Syntax error at $at$suffix. Source: $excerpt")
     }
 
     companion object {
+        private const val VALUE_START = '('
+        private const val VALUE_END = ')'
         private const val APOSTROPHE = '\''
         private const val ESCAPE_CHARACTER = '\\'
         private const val DIGIT_ZERO = '0'
