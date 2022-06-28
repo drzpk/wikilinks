@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app.utils
+package dev.drzepka.wikilinks.common.utils
 
 import java.io.File
 

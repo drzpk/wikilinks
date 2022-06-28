@@ -1,36 +1,37 @@
-package dev.drzepka.wikilinks.generator.pipeline.downloader
+package dev.drzepka.wikilinks.common.dump
 
-import dev.drzepka.wikilinks.generator.Configuration
-import dev.drzepka.wikilinks.generator.model.ArchiveDump
-import dev.drzepka.wikilinks.generator.model.ResolvedDumps
+import dev.drzepka.wikilinks.common.model.dump.ArchiveDump
+import dev.drzepka.wikilinks.common.model.dump.ResolvedDumps
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 
-class LastDumpResolver(provider: HttpClientProvider, private val requiredFileVariants: List<String>) {
+class DumpResolver(provider: HttpClientProvider, private val source: String, private val requiredFileVariants: List<String>) {
     private val http = provider.client
 
     suspend fun resolveLastDumpFileUrls(): ResolvedDumps {
-        val text = http.get(Configuration.dumpSource).bodyAsText()
+        val text = http.get(source).bodyAsText()
 
-        @Suppress("ConvertCallChainIntoSequence")
-        val versions = DATE_REGEX.findAll(text)
+        return DATE_REGEX.findAll(text)
             .map { it.groupValues[1] }
             .filter { it != "latest" }
-            .sortedWith(Comparator.reverseOrder())
+            .sortedWith(reverseOrder())
+            .firstNotNullOfOrNull { doResolveForVersion(it) }
+            ?: throw IllegalStateException("No suitable dump was found")
+    }
 
-        for (version in versions) {
-            val urls = getFileUrls(version)
-            val dumps = convertToDumps(urls)
-            if (dumps != null)
-                return ResolvedDumps(version, dumps)
-        }
+    suspend fun resolveForVersion(version: String): ResolvedDumps {
+        return doResolveForVersion(version) ?: throw IllegalArgumentException("Dump for version $version wasn't found.")
+    }
 
-        throw IllegalStateException("No suitable dump was found")
+    private suspend fun doResolveForVersion(version: String): ResolvedDumps? {
+        val urls = getFileUrls(version)
+        val dumps = convertToDumps(urls)
+        return dumps?.let { ResolvedDumps(version, it) }
     }
 
     private fun getFileUrls(version: String): List<String> =
-        requiredFileVariants.map { "${Configuration.dumpSource}/$version/enwiki-$version-$it.sql.gz" }
+        requiredFileVariants.map { "$source/$version/enwiki-$version-$it.sql.gz" }
 
     private suspend fun convertToDumps(urls: List<String>): List<ArchiveDump>? {
         val resolvedDumps = mutableListOf<ArchiveDump>()

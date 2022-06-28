@@ -1,34 +1,35 @@
-package dev.drzepka.wikilinks.generator.pipeline.downloader
+package dev.drzepka.wikilinks.common.dump
 
-import dev.drzepka.wikilinks.generator.Configuration
-import dev.drzepka.wikilinks.generator.model.ArchiveDump
+import dev.drzepka.wikilinks.common.model.dump.ArchiveDump
+import dev.drzepka.wikilinks.common.testRunBlocking
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import kotlin.js.JsName
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
-internal class LastDumpResolverTest {
+internal class DumpResolverTest {
     private val variants = listOf("page", "pagelinks")
 
     @Test
+    @JsName("test1")
     fun `should find last dump`() {
-        val ds = Configuration.dumpSource
+        val ds = "https://dump.source.org/test"
 
         val mockEngine = MockEngine {
             val url = it.url.toString()
             when {
-                url == Configuration.dumpSource -> respondOk(DUMP_LISTING_CONTENT)
+                url == ds -> respondOk(DUMP_LISTING_CONTENT)
                 it.method == HttpMethod.Head && url.endsWith("20220620-page.sql.gz") -> respondWithLength(123)
                 it.method == HttpMethod.Head && url.endsWith("20220620-pagelinks.sql.gz") -> respondWithLength(456)
                 else -> respond("", HttpStatusCode.NotFound)
             }
         }
 
-        val resolver = LastDumpResolver(HttpClientProvider(mockEngine), variants)
-        val dumps = runBlocking { resolver.resolveLastDumpFileUrls() }
+        val resolver = DumpResolver(HttpClientProvider(mockEngine), ds, variants)
+        val dumps = testRunBlocking { resolver.resolveLastDumpFileUrls() }
         val archives = dumps.dumps
 
         assertEquals("20220620", dumps.version)
@@ -38,13 +39,14 @@ internal class LastDumpResolverTest {
     }
 
     @Test
+    @JsName("test2")
     fun `should fall back to previous dump if the last one is missing required files`() {
-        val ds = Configuration.dumpSource
+        val ds = "https://dump.source.org/test"
 
         val mockEngine = MockEngine {
             val url = it.url.toString()
             when {
-                url == Configuration.dumpSource -> respondOk(DUMP_LISTING_CONTENT)
+                url == ds -> respondOk(DUMP_LISTING_CONTENT)
                 it.method == HttpMethod.Head && url.endsWith("20220620-page.sql.gz") -> respondWithLength(1)
                 it.method == HttpMethod.Head && url.endsWith("20220601-page.sql.gz") -> respondWithLength(2)
                 it.method == HttpMethod.Head && url.endsWith("20220601-pagelinks.sql.gz") -> respondWithLength(3)
@@ -52,8 +54,8 @@ internal class LastDumpResolverTest {
             }
         }
 
-        val resolver = LastDumpResolver(HttpClientProvider(mockEngine), variants)
-        val dumps = runBlocking { resolver.resolveLastDumpFileUrls() }
+        val resolver = DumpResolver(HttpClientProvider(mockEngine), ds, variants)
+        val dumps = testRunBlocking { resolver.resolveLastDumpFileUrls() }
         val archives = dumps.dumps
 
         assertEquals("20220601", dumps.version)

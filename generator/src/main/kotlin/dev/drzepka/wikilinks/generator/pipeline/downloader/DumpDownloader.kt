@@ -1,10 +1,12 @@
 package dev.drzepka.wikilinks.generator.pipeline.downloader
 
+import dev.drzepka.wikilinks.common.dump.DumpResolver
+import dev.drzepka.wikilinks.common.dump.HttpClientProvider
+import dev.drzepka.wikilinks.common.model.dump.ArchiveDump
 import dev.drzepka.wikilinks.generator.Configuration
 import dev.drzepka.wikilinks.generator.flow.FlowSegment
 import dev.drzepka.wikilinks.generator.flow.Logger
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
-import dev.drzepka.wikilinks.generator.model.ArchiveDump
 import dev.drzepka.wikilinks.generator.model.Store
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -18,10 +20,14 @@ import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
-class DumpDownloader(private val workingDirectory: File, provider: HttpClientProvider) : FlowSegment<Store> {
+class DumpDownloader(
+    private val workingDirectory: File,
+    private val dumpVersion: String,
+    provider: HttpClientProvider
+) : FlowSegment<Store> {
     override val numberOfSteps = if (!Configuration.skipDownloadingDumps) 2 + REQUIRED_FILE_VARIANTS.size else 0
 
-    private val resolver = LastDumpResolver(provider, REQUIRED_FILE_VARIANTS)
+    private val resolver = DumpResolver(provider, Configuration.dumpSource, REQUIRED_FILE_VARIANTS)
     private val http = provider.client
 
     override fun run(store: Store, logger: Logger) = runBlocking {
@@ -29,7 +35,7 @@ class DumpDownloader(private val workingDirectory: File, provider: HttpClientPro
             return@runBlocking
 
         logger.startNextStep("Resolving new dumps")
-        val dumps = resolver.resolveLastDumpFileUrls()
+        val dumps = resolver.resolveForVersion(dumpVersion)
         store.version = dumps.version
 
         logger.startNextStep("Deleting old dumps")
@@ -78,7 +84,12 @@ class DumpDownloader(private val workingDirectory: File, provider: HttpClientPro
         stream.close()
     }
 
-    private fun CoroutineScope.downloader(dump: ArchiveDump, offset: Long, logger: ProgressLogger, output: SendChannel<ByteReadPacket>) = launch {
+    private fun CoroutineScope.downloader(
+        dump: ArchiveDump,
+        offset: Long,
+        logger: ProgressLogger,
+        output: SendChannel<ByteReadPacket>
+    ) = launch {
         var totalLengthMB: Int? = null
 
         http.prepareGet(dump.url) {

@@ -4,6 +4,8 @@ plugins {
 }
 
 val kotlinxSerializationVersion: String by System.getProperties()
+val ktorVersion: String by System.getProperties()
+val coroutinesVersion: String by System.getProperties()
 
 kotlin {
     jvm {}
@@ -16,6 +18,15 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                implementation("io.github.microutils:kotlin-logging:2.1.23")
+                compileOnly("io.ktor:ktor-client-core:$ktorVersion")
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("io.ktor:ktor-client-mock:$ktorVersion")
             }
         }
     }

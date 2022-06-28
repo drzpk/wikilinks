@@ -3,27 +3,38 @@ package dev.drzepka.wikilinks.generator
 import com.google.common.collect.HashBiMap
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.app.db.FileConfigRepository
+import dev.drzepka.wikilinks.common.dump.HttpClientProvider
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
+import dev.drzepka.wikilinks.generator.pipeline.downloader.DumpDownloader
 import dev.drzepka.wikilinks.generator.pipeline.filter.LinksFilter
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksDbWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksFileWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.PageWriter
+import io.ktor.client.engine.apache.*
 import java.io.File
+import kotlin.system.exitProcess
 
 private val workingDirectory = File("dumps")
 
-fun main() {
+fun main(args: Array<String>) {
+    val version = args.getOrNull(0)
+    if (version == null) {
+        println("Dump version is required as the first parameter.")
+        exitProcess(1)
+    }
+
     if (!workingDirectory.isDirectory)
         workingDirectory.mkdir()
 
+    println("Starting generator with dump version=$version")
     val flow = GeneratorFlow(Store())
 
-    flow.segment(DumpDownloader(workingDirectory, HttpClientProvider.create()))
+    flow.segment(DumpDownloader(workingDirectory, version, HttpClientProvider(Apache)))
     flow.step(InitializeDatabaseStep)
     flow.step(PopulatePageTable)
     //flow.step(ExtractPagesFromDbStep)

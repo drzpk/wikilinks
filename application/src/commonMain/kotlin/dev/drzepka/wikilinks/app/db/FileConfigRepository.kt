@@ -1,6 +1,6 @@
 package dev.drzepka.wikilinks.app.db
 
-import dev.drzepka.wikilinks.app.utils.MultiplatformFile
+import dev.drzepka.wikilinks.common.utils.MultiplatformFile
 import mu.KotlinLogging
 
 class FileConfigRepository(workingDirectory: String) : ConfigRepository {

@@ -1,3 +1,3 @@
-package dev.drzepka.wikilinks.generator.model
+package dev.drzepka.wikilinks.common.model.dump
 
 data class ResolvedDumps(val version: String, val dumps: List<ArchiveDump>)
