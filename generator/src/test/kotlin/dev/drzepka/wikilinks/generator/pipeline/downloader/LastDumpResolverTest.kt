@@ -33,8 +33,8 @@ internal class LastDumpResolverTest {
 
         assertEquals("20220620", dumps.version)
         assertEquals(2, archives.size)
-        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-page.sql.gz", 123)))
-        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-pagelinks.sql.gz", 456)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-page.sql.gz", 123, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-pagelinks.sql.gz", 456, false)))
     }
 
     @Test
@@ -58,8 +58,8 @@ internal class LastDumpResolverTest {
 
         assertEquals("20220601", dumps.version)
         assertEquals(2, archives.size)
-        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-page.sql.gz", 2)))
-        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-pagelinks.sql.gz", 3)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-page.sql.gz", 2, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-pagelinks.sql.gz", 3, false)))
     }
 
     private fun MockRequestHandleScope.respondWithLength(length: Long): HttpResponseData {
