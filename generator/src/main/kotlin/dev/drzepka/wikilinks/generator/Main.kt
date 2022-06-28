@@ -7,8 +7,6 @@ import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
-import dev.drzepka.wikilinks.generator.pipeline.downloader.DumpDownloader
-import dev.drzepka.wikilinks.generator.pipeline.downloader.HttpClientProvider
 import dev.drzepka.wikilinks.generator.pipeline.filter.LinksFilter
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
@@ -46,7 +44,11 @@ private object InitializeDatabaseStep : FlowStep<Store> {
                 delete()
         }
 
-        store.db = DatabaseProvider.getLinksDatabase(createSchema = true, disableProtection = true)
+        store.db = DatabaseProvider.getLinksDatabase(
+            createSchema = true,
+            disableProtection = true,
+            overrideDirectory = workingDirectory.canonicalPath
+        )
     }
 }
 

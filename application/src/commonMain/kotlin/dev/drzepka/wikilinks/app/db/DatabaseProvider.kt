@@ -22,7 +22,7 @@ object DatabaseProvider {
         disableProtection: Boolean = false,
         overrideDirectory: String? = null
     ): LinksDatabase {
-        val driver = getDbDriver(LINKS_DATABASE_NAME, disableProtection)
+        val driver = getDbDriver(LINKS_DATABASE_NAME, disableProtection, overrideDirectory)
         if (createSchema)
             LinksDatabase.Schema.createIfNecessary(driver, "links")
         return LinksDatabase.invoke(driver)
