@@ -6,11 +6,13 @@ import dev.drzepka.wikilinks.generator.flow.Logger
 import dev.drzepka.wikilinks.generator.model.Store
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
 import java.io.*
+import java.lang.management.ManagementFactory
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executors
 import java.util.zip.GZIPInputStream
+import kotlin.math.floor
 
 @Suppress("UnstableApiUsage")
 class LinksFileSorter(private val file: File) : FlowSegment<Store> {
@@ -139,7 +141,13 @@ class LinksFileSorter(private val file: File) : FlowSegment<Store> {
     }
 
     // Total links (20220501): 963_013_717
-    private fun getLinksPerBlock(): Int = 10_000_000
+    private fun getLinksPerBlock(): Int {
+        // Based on tests with a profiler
+        val linksPerGBHeap = 7_500_000 / 6.0
+        val maxHeapBytes = ManagementFactory.getMemoryMXBean().heapMemoryUsage.max
+        val maxHeapGB = maxHeapBytes.toDouble() / 1024 / 1024 / 1024
+        return floor(linksPerGBHeap * maxHeapGB + 0.5).toInt()
+    }
 
     private fun getBlockSortingThreads(): Int = 2
 

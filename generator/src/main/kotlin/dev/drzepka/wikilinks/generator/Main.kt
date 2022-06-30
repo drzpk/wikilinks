@@ -120,7 +120,7 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
         manager.start(logger)
 
         // Save some memory
-        store.pages = HashBiMap.create()
+        store.pages.clear()
     }
 }
 
