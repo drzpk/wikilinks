@@ -4,7 +4,7 @@ tasks.register<Exec>("uploadFrontend") {
     doFirst {
         val name = getBucketName.get().extra["bucketName"]
         println("Uploading frontend distribution to bucket $name")
-        commandLine = listOf("aws", "s3", "sync", ".", "s3://$name/distribution")
+        commandLine = listOf("aws", "s3", "sync", ".", "s3://$name/frontend")
     }
 
     workingDir = project(":frontend").buildDir.resolve("distributions")

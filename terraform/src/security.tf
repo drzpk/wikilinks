@@ -1,5 +1,5 @@
-resource "aws_iam_role" "bucket_client" {
-  name_prefix = "${var.prefix}BucketClient-"
+resource "aws_iam_role" "bucket_api_client" {
+  name_prefix = "${var.prefix}BucketApiClient-"
 
   inline_policy {
     name   = "GrantS3ReadOnlyAccess"
@@ -12,7 +12,7 @@ resource "aws_iam_role" "bucket_client" {
             "s3:Get*",
             "s3:List*"
           ]
-          Resource = "${aws_s3_bucket.bucket.arn}/*"
+          Resource = "${aws_s3_bucket.bucket.arn}/frontend/*"
         }
       ]
     })

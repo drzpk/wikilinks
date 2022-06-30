@@ -1,5 +1,5 @@
 resource "aws_api_gateway_rest_api" "api" {
-  name = "${var.prefix}WikiLinks"
+  name               = "${var.prefix}WikiLinks"
   binary_media_types = [
     "image/jpeg",
     "image/png",
@@ -72,9 +72,9 @@ resource "aws_api_gateway_integration" "s3_proxy" {
   rest_api_id             = aws_api_gateway_rest_api.api.id
   type                    = "AWS"
   integration_http_method = "GET"
-  uri                     = "arn:aws:apigateway:${var.aws_region}:s3:path/${aws_s3_bucket.bucket.bucket}/distribution/{object}"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:s3:path/${aws_s3_bucket.bucket.bucket}/frontend/{object}"
   passthrough_behavior    = "WHEN_NO_MATCH"
-  credentials             = aws_iam_role.bucket_client.arn
+  credentials             = aws_iam_role.bucket_api_client.arn
   request_parameters      = {
     "integration.request.path.object" : "method.request.path.object"
   }
@@ -101,20 +101,20 @@ resource "aws_api_gateway_method_response" "app_redirect_302" {
 }
 
 resource "aws_api_gateway_method_response" "frontend_get_200" {
-  http_method = aws_api_gateway_method.frontend_get.http_method
-  status_code = "200"
-  resource_id = aws_api_gateway_resource.s3_proxy.id
-  rest_api_id = aws_api_gateway_rest_api.api.id
+  http_method         = aws_api_gateway_method.frontend_get.http_method
+  status_code         = "200"
+  resource_id         = aws_api_gateway_resource.s3_proxy.id
+  rest_api_id         = aws_api_gateway_rest_api.api.id
   response_parameters = {
     "method.response.header.Content-Type" = true
   }
 }
 
 resource "aws_api_gateway_integration_response" "root_redirect_302" {
-  http_method         = aws_api_gateway_method.root_get.http_method
-  status_code         = aws_api_gateway_method_response.root_redirect_302.status_code
-  resource_id         = aws_api_gateway_rest_api.api.root_resource_id
-  rest_api_id         = aws_api_gateway_rest_api.api.id
+  http_method        = aws_api_gateway_method.root_get.http_method
+  status_code        = aws_api_gateway_method_response.root_redirect_302.status_code
+  resource_id        = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id        = aws_api_gateway_rest_api.api.id
   response_templates = {
     "application/json" = <<-EOT
       #set($redirectTarget = "app/index.html")
@@ -128,10 +128,10 @@ resource "aws_api_gateway_integration_response" "root_redirect_302" {
 }
 
 resource "aws_api_gateway_integration_response" "app_redirect_302" {
-  http_method         = aws_api_gateway_method.app_get.http_method
-  status_code         = aws_api_gateway_method_response.app_redirect_302.status_code
-  resource_id         = aws_api_gateway_resource.app.id
-  rest_api_id         = aws_api_gateway_rest_api.api.id
+  http_method        = aws_api_gateway_method.app_get.http_method
+  status_code        = aws_api_gateway_method_response.app_redirect_302.status_code
+  resource_id        = aws_api_gateway_resource.app.id
+  rest_api_id        = aws_api_gateway_rest_api.api.id
   response_templates = {
     "application/json" = <<-EOT
       #set($redirectTarget = "index.html")
@@ -145,10 +145,10 @@ resource "aws_api_gateway_integration_response" "app_redirect_302" {
 }
 
 resource "aws_api_gateway_integration_response" "frontend_proxy_200" {
-  http_method = aws_api_gateway_method.frontend_get.http_method
-  status_code = aws_api_gateway_method_response.frontend_get_200.status_code
-  resource_id = aws_api_gateway_resource.s3_proxy.id
-  rest_api_id = aws_api_gateway_rest_api.api.id
+  http_method         = aws_api_gateway_method.frontend_get.http_method
+  status_code         = aws_api_gateway_method_response.frontend_get_200.status_code
+  resource_id         = aws_api_gateway_resource.s3_proxy.id
+  rest_api_id         = aws_api_gateway_rest_api.api.id
   response_parameters = {
     "method.response.header.Content-Type" = "integration.response.header.Content-Type"
   }
@@ -163,6 +163,12 @@ resource "aws_api_gateway_deployment" "deployment" {
   lifecycle {
     create_before_destroy = true
   }
+
+  depends_on = [
+    aws_api_gateway_integration.root_redirect,
+    aws_api_gateway_integration.app_redirect,
+    aws_api_gateway_integration.s3_proxy
+  ]
 }
 
 resource "aws_api_gateway_stage" "wikilinks" {
