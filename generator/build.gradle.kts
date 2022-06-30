@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    application
 }
 
 val ktorVersion: String by System.getProperties()
@@ -25,6 +26,10 @@ kotlin {
             }
         }
     }
+}
+
+application {
+    mainClass.set("dev.drzepka.wikilinks.generator.MainKt")
 }
 
 tasks.withType<Test> {

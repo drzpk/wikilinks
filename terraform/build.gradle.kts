@@ -3,11 +3,21 @@ tasks.register<Exec>("uploadFrontend") {
 
     doFirst {
         val name = getBucketName.get().extra["bucketName"]
-        println("Uploading frontend distribution to bucket $name")
         commandLine = listOf("aws", "s3", "sync", ".", "s3://$name/frontend")
     }
 
     workingDir = project(":frontend").buildDir.resolve("distributions")
+}
+
+tasks.register<Exec>("uploadGenerator") {
+    dependsOn(getBucketName, tasks.findByPath(":generator:distZip"))
+
+    doFirst {
+        val name = getBucketName.get().extra["bucketName"]
+        commandLine = listOf("aws", "s3", "sync", ".", "s3://$name/generator")
+    }
+
+    workingDir = project(":generator").buildDir.resolve("distributions")
 }
 
 val getBucketName by tasks.registering(Exec::class) {
@@ -16,6 +26,8 @@ val getBucketName by tasks.registering(Exec::class) {
     standardOutput = java.io.ByteArrayOutputStream()
 
     doLast {
-        extra["bucketName"] = standardOutput.toString()
+        val name = standardOutput.toString()
+        println("Bucket name: $name")
+        extra["bucketName"] = name
     }
 }
