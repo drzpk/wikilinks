@@ -9,12 +9,18 @@ variable "aws_profile" {
 }
 
 variable "prefix" {
-  type = string
+  type        = string
   description = "Prefix prepend to resource names"
-  default = ""
+  default     = ""
 }
 
 variable "owner" {
-  type = string
+  type    = string
   default = ""
+}
+
+variable "dev_tools" {
+  type        = bool
+  description = "Whether provision additional resources for development purposes"
+  default     = false
 }

@@ -1,5 +1,5 @@
 resource "aws_efs_file_system" "fs" {
-  creation_token = "wikilinks-efs"
+  creation_token   = "wikilinks-efs"
   performance_mode = "generalPurpose"
 
   lifecycle_policy {
@@ -9,6 +9,12 @@ resource "aws_efs_file_system" "fs" {
   tags = {
     Name = "${var.prefix}WikiLinks"
   }
+}
+
+resource "aws_efs_mount_target" "public" {
+  file_system_id  = aws_efs_file_system.fs.id
+  subnet_id       = aws_subnet.public.id
+  security_groups = [aws_security_group.efs.id]
 }
 
 resource "aws_s3_bucket" "bucket" {
