@@ -1,15 +1,20 @@
 package dev.drzepka.wikilinks.common.dump
 
+import dev.drzepka.wikilinks.common.WikiConfig
 import dev.drzepka.wikilinks.common.model.dump.ArchiveDump
 import dev.drzepka.wikilinks.common.model.dump.ResolvedDumps
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 
-class DumpResolver(provider: HttpClientProvider, private val source: String, private val requiredFileVariants: List<String>) {
+class DumpResolver(
+    provider: HttpClientProvider,
+    private val source: String,
+    private val requiredFileVariants: List<String>
+) {
     private val http = provider.client
 
-    suspend fun resolveLastDumpFileUrls(): ResolvedDumps {
+    suspend fun resolveLatestDumps(): ResolvedDumps {
         val text = http.get(source).bodyAsText()
 
         return DATE_REGEX.findAll(text)
@@ -53,5 +58,8 @@ class DumpResolver(provider: HttpClientProvider, private val source: String, pri
 
     companion object {
         private val DATE_REGEX = Regex("""<a href="\w+/">(\w+)/</a>""")
+
+        fun createFromConfig(provider: HttpClientProvider): DumpResolver =
+            DumpResolver(provider, WikiConfig.DUMP_SOURCE, WikiConfig.REQUIRED_FILE_VARIANTS)
     }
 }

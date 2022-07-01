@@ -10,4 +10,10 @@ object WikiConfig {
      */
     const val USER_AGENT_HEADER_VALUE = "WikiLinks/1.0-SNAPSHOT (dominik.1.rzepka@gmail.com)"
     const val USER_AGENT_HEADER = "Api-User-Agent"
+
+    const val DUMP_SOURCE = "https://dumps.wikimedia.org/enwiki"
+    val REQUIRED_FILE_VARIANTS = listOf("page", "pagelinks")
+
+    const val DUMP_VERSION_FILE_NAME = "dump_version.txt"
+    const val MAINTENANCE_MODE_FILE_NAME = "maintenance_mode"
 }

@@ -1,5 +1,6 @@
 locals {
-  key_name = "${var.prefix}generator-key"
+  key_name       = "${var.prefix}generator-key"
+  efs_mount_path = "/mnt/data"
 }
 
 resource "aws_instance" "dev" {
@@ -16,10 +17,11 @@ resource "aws_instance" "dev" {
 }
 
 resource "aws_launch_template" "generator" {
-  name          = "${var.prefix}Generator"
-  instance_type = "t3.medium"
-  image_id      = data.aws_ami.ubuntu.image_id
-  key_name      = local.key_name
+  name                                 = "${var.prefix}Generator"
+  instance_type                        = "t3.medium"
+  image_id                             = data.aws_ami.ubuntu.image_id
+  key_name                             = local.key_name
+  instance_initiated_shutdown_behavior = "terminate"
   network_interfaces {
     subnet_id                   = aws_subnet.public.id
     associate_public_ip_address = true
@@ -31,11 +33,18 @@ resource "aws_launch_template" "generator" {
 resource "aws_lambda_function" "updater" {
   function_name = "${var.prefix}updater"
   role          = aws_iam_role.updater.arn
-  # todo: debug
-  runtime       = "python3.9"
-  memory_size   = 128
-  handler       = "test.handler"
-  filename      = data.archive_file.tmp.output_path
+  runtime       = "java11"
+  memory_size   = 256
+  handler       = "dev.drzepka.wikilinks.updater.LambdaHandler"
+  filename      = "${path.root}/../../updater/build/libs/updater.jar"
+  timeout       = 600
+
+  environment {
+    variables = {
+      DATABASES_DIRECTORY = "${local.efs_mount_path}/databases"
+      LAUNCH_TEMPLATE_ID  = aws_launch_template.generator.id
+    }
+  }
 
   vpc_config {
     security_group_ids = [aws_security_group.updater.id]
@@ -44,18 +53,8 @@ resource "aws_lambda_function" "updater" {
 
   file_system_config {
     arn              = aws_efs_access_point.fs_root.arn
-    local_mount_path = "/mnt/data"
+    local_mount_path = local.efs_mount_path
   }
-}
-
-data "archive_file" "tmp" {
-  source_content          = <<-EOT
-  def handler(a, b):
-    pass
-  EOT
-  source_content_filename = "test.py"
-  type                    = "zip"
-  output_path             = "${path.module}/lambda.zip"
 }
 
 data "aws_ami" "ubuntu" {

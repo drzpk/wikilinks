@@ -29,7 +29,7 @@ internal class DumpResolverTest {
         }
 
         val resolver = DumpResolver(HttpClientProvider(mockEngine), ds, variants)
-        val dumps = testRunBlocking { resolver.resolveLastDumpFileUrls() }
+        val dumps = testRunBlocking { resolver.resolveLatestDumps() }
         val archives = dumps.dumps
 
         assertEquals("20220620", dumps.version)
@@ -55,7 +55,7 @@ internal class DumpResolverTest {
         }
 
         val resolver = DumpResolver(HttpClientProvider(mockEngine), ds, variants)
-        val dumps = testRunBlocking { resolver.resolveLastDumpFileUrls() }
+        val dumps = testRunBlocking { resolver.resolveLatestDumps() }
         val archives = dumps.dumps
 
         assertEquals("20220601", dumps.version)

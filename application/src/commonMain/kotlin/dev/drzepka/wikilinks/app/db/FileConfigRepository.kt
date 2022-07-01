@@ -1,13 +1,15 @@
 package dev.drzepka.wikilinks.app.db
 
+import dev.drzepka.wikilinks.common.WikiConfig.DUMP_VERSION_FILE_NAME
+import dev.drzepka.wikilinks.common.WikiConfig.MAINTENANCE_MODE_FILE_NAME
 import dev.drzepka.wikilinks.common.utils.MultiplatformFile
 import mu.KotlinLogging
 
 class FileConfigRepository(workingDirectory: String) : ConfigRepository {
     private val log = KotlinLogging.logger {}
 
-    private val versionFile = MultiplatformFile("$workingDirectory/dump_version.txt")
-    private val maintenanceModeFile = MultiplatformFile("$workingDirectory/maintenance_mode")
+    private val versionFile = MultiplatformFile("$workingDirectory/$DUMP_VERSION_FILE_NAME")
+    private val maintenanceModeFile = MultiplatformFile("$workingDirectory/$MAINTENANCE_MODE_FILE_NAME")
 
     override fun getDumpVersion(): String {
         val version = versionFile.read().trim()

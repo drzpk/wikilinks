@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.generator.pipeline.downloader
 
+import dev.drzepka.wikilinks.common.WikiConfig.REQUIRED_FILE_VARIANTS
 import dev.drzepka.wikilinks.common.dump.DumpResolver
 import dev.drzepka.wikilinks.common.dump.HttpClientProvider
 import dev.drzepka.wikilinks.common.model.dump.ArchiveDump
@@ -27,7 +28,7 @@ class DumpDownloader(
 ) : FlowSegment<Store> {
     override val numberOfSteps = if (!Configuration.skipDownloadingDumps) 2 + REQUIRED_FILE_VARIANTS.size else 0
 
-    private val resolver = DumpResolver(provider, Configuration.dumpSource, REQUIRED_FILE_VARIANTS)
+    private val resolver = DumpResolver.createFromConfig(provider)
     private val http = provider.client
 
     override fun run(store: Store, logger: Logger) = runBlocking {
@@ -122,9 +123,5 @@ class DumpDownloader(
             logger.updateProgress(totalLengthMB!!, totalLengthMB!!, "MB")
         else
             println()
-    }
-
-    companion object {
-        private val REQUIRED_FILE_VARIANTS = listOf("page", "pagelinks")
     }
 }
