@@ -31,6 +31,10 @@ kotlin {
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+                implementation("io.ktor:ktor-server-core:$ktorVersion")
+                implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
+                implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
             }
         }
         val commonTest by getting {
@@ -44,7 +48,8 @@ kotlin {
                 implementation("com.squareup.sqldelight:native-driver:1.5.3")
                 implementation("io.github.microutils:kotlin-logging-linuxx64:2.1.23")
                 implementation("io.ktor:ktor-client-curl:$ktorVersion")
-
+                implementation("io.ktor:ktor-server-core:$ktorVersion")
+                implementation("io.ktor:ktor-server-cio:$ktorVersion")
             }
         }
 
@@ -53,12 +58,8 @@ kotlin {
                 api("com.squareup.sqldelight:sqlite-driver:1.5.3")
                 implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.17.2")
                 implementation("io.github.microutils:kotlin-logging-jvm:2.1.23")
-                implementation("io.ktor:ktor-server-core:$ktorVersion")
-                implementation("io.ktor:ktor-server-netty:$ktorVersion")
-                implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
-                implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
                 implementation("io.ktor:ktor-client-apache:$ktorVersion")
+                implementation("io.ktor:ktor-server-netty:$ktorVersion")
             }
         }
 

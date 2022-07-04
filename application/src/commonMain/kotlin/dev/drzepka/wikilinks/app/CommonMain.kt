@@ -10,6 +10,13 @@ import dev.drzepka.wikilinks.app.search.PathFinderService
 import dev.drzepka.wikilinks.app.utils.exit
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 
+fun commonMain(args: Array<String>) {
+    if (args.isNotEmpty() && args[0] == "http")
+        httpApplication()
+    else
+        cmdLineSearch(args)
+}
+
 fun cmdLineSearch(args: Array<String>) {
     val startPage = args.getOrNull(0)?.toIntOrNull()
     val targetPage = args.getOrNull(1)?.toIntOrNull()

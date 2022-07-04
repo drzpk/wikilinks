@@ -1,11 +1,8 @@
-package dev.drzepka.wikilinks.app.http
+package dev.drzepka.wikilinks.app
 
-import dev.drzepka.wikilinks.app.getSearchService
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
-import io.ktor.serialization.jackson.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
@@ -15,15 +12,16 @@ import io.ktor.server.routing.*
 fun httpApplication() {
     println("Starting HTTP server")
 
-    embeddedServer(Netty, port = 8080) {
+    createEmbeddedServer(port = 8080) {
         install(ContentNegotiation) {
-            jackson()
+            json()
         }
         install(StatusPages)
-
         configureRouting()
-    }.start(wait = true)
+    }
 }
+
+internal expect fun createEmbeddedServer(port: Int, configuration: Application.() -> Unit)
 
 private fun Application.configureRouting() {
     val searchService = getSearchService()
