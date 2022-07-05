@@ -15,13 +15,13 @@ import java.util.concurrent.ArrayBlockingQueue
 
 @Suppress("UnstableApiUsage")
 class SqlPipelineManager(
-    private val fileName: String,
+    private val dumpFile: File,
     private val readerFactory: (stream: InputStream) -> Reader,
     private val writer: Writer<Value>,
     private val valueFilter: Filter<Value>? = null,
     parallelismFactor: Float = 1.0f
 ) {
-    private val fileSizeMB: Int
+    private val fileSizeMB: Int = (dumpFile.length() / 1024 / 1024).toInt()
     private val sqlWorkerCount = (Runtime.getRuntime().availableProcessors() * parallelismFactor).toInt()
     private val statementQueue = ArrayBlockingQueue<String>(sqlWorkerCount * 3)
     private val valueQueue = ArrayBlockingQueue<List<Value>>(10)
@@ -29,11 +29,6 @@ class SqlPipelineManager(
     private val sqlWorkers = mutableListOf<SqlWorker>()
     private lateinit var writerWorker: WriterWorker<Value>
     private lateinit var logger: ProgressLogger
-
-    init {
-        val file = File(fileName)
-        fileSizeMB = (file.length() / 1024 / 1024).toInt()
-    }
 
     fun start(logger: ProgressLogger) {
         this.logger = logger
@@ -69,7 +64,7 @@ class SqlPipelineManager(
     }
 
     private fun readFile() {
-        val countingStream = CountingInputStream(FileInputStream(fileName))
+        val countingStream = CountingInputStream(FileInputStream(dumpFile))
         val reader = readerFactory.invoke(countingStream)
         var readStatements = 0
 

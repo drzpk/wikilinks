@@ -3,12 +3,10 @@ package dev.drzepka.wikilinks.generator
 import com.google.common.collect.HashBiMap
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.app.db.FileConfigRepository
-import dev.drzepka.wikilinks.common.dump.HttpClientProvider
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
-import dev.drzepka.wikilinks.generator.pipeline.downloader.DumpDownloader
 import dev.drzepka.wikilinks.generator.pipeline.filter.LinksFilter
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
@@ -34,7 +32,7 @@ fun main(args: Array<String>) {
     println("Starting generator with dump version=$version")
     val flow = GeneratorFlow(Store())
 
-    flow.segment(DumpDownloader(workingDirectory, version, HttpClientProvider(Apache)))
+    //flow.segment(DumpDownloader(workingDirectory, version, HttpClientProvider(Apache)))
     flow.step(InitializeDatabaseStep)
     flow.step(PopulatePageTable)
     //flow.step(ExtractPagesFromDbStep)
@@ -68,7 +66,7 @@ private object PopulatePageTable : FlowStep<Store> {
 
     override fun run(store: Store, logger: ProgressLogger) {
         val writer = PageWriter(store.db)
-        val dumpFile = getDumpFileName("page")
+        val dumpFile = getDumpFile("page")
         val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
 
         manager.start(logger)
@@ -112,7 +110,7 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
     override val name = "Extracting page links from the dump"
 
     override fun run(store: Store, logger: ProgressLogger) {
-        val dumpFile = getDumpFileName("pagelinks")
+        val dumpFile = getDumpFile("pagelinks")
         val writer = LinksFileWriter(store.pages, workingDirectory)
         val filter = LinksFilter(store.pages)
 
@@ -137,11 +135,7 @@ private object SwapDatabasesStep : FlowStep<Store> {
     }
 }
 
-private fun getDumpFileName(name: String): String {
-    val dirName = "dumps"
-    val directory = File(dirName)
-    val file = directory.listFiles()!!
-        .map { it.name }
-        .find { it.startsWith("enwiki-") && it.endsWith("$name.sql.gz") }!!
-    return "$dirName/$file"
+private fun getDumpFile(name: String): File {
+    return workingDirectory.listFiles()!!
+        .find { it.name.startsWith("enwiki-") && it.name.endsWith("$name.sql.gz") }!!
 }

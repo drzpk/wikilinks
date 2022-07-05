@@ -29,7 +29,7 @@ export DATABASES_DIRECTORY=/mnt/data/databases
 export WORKING_DIRECTORY=/mnt/data/dumps
 export LAUNCH_TEMPLATE_ID=${launch_template_id}
 
-java -jar updater.jar > /app/logs/updater.log &
+java -jar updater.jar &> /app/logs/updater.log &
 
 chmod +x application.kexe
-./application.kexe http > /app/logs/application.log &
+./application.kexe http &> /app/logs/application.log &
