@@ -1,8 +1,8 @@
-resource "aws_iam_role" "bucket_api_client" {
-  name_prefix = "${var.prefix}BucketApiClient-"
+resource "aws_iam_role" "api_gateway" {
+  name_prefix = "${var.prefix}APIGateway-"
 
   inline_policy {
-    name   = "GrantS3ReadOnlyAccess"
+    name   = "S3FrontendApp"
     policy = jsonencode({
       Version   = "2012-10-17"
       Statement = [
@@ -32,16 +32,15 @@ resource "aws_iam_role" "bucket_api_client" {
   })
 }
 
-resource "aws_iam_role" "updater" {
-  # todo: debug
-  name_prefix = "${var.prefix}Updater-"
+resource "aws_iam_role" "generator" {
+  name_prefix = "${var.prefix}Generator-"
 
   managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
   ]
 
   inline_policy {
-    name   = "AllowEFSAccess"
+    name   = "EFSAccess"
     policy = jsonencode({
       Version   = "2012-10-17"
       Statement = [
@@ -59,6 +58,27 @@ resource "aws_iam_role" "updater" {
     })
   }
 
+  inline_policy {
+    name   = "S3GeneratorApp"
+    policy = jsonencode({
+      Version   = "2012-10-17"
+      Statement = [
+        {
+          Effect = "Allow"
+          Action = [
+            "s3:Get*",
+            "s3:List*"
+          ]
+          Resource = [
+            aws_s3_bucket.bucket.arn,
+            "${aws_s3_bucket.bucket.arn}/generator",
+            "${aws_s3_bucket.bucket.arn}/generator/*"
+          ]
+        }
+      ]
+    })
+  }
+
   assume_role_policy = jsonencode({
     Version   = "2012-10-17"
     Statement = [
@@ -66,7 +86,127 @@ resource "aws_iam_role" "updater" {
         Effect    = "Allow"
         Action    = "sts:AssumeRole"
         Principal = {
-          Service = "lambda.amazonaws.com"
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role" "application" {
+  name_prefix = "${var.prefix}Application-"
+
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+  ]
+
+  inline_policy {
+    name   = "EFSAccess"
+    policy = jsonencode({
+      Version   = "2012-10-17"
+      Statement = [
+        {
+          Effect = "Allow"
+          Action = [
+            "elasticfilesystem:ClientMount",
+            "elasticfilesystem:ClientRootAccess",
+            "elasticfilesystem:ClientWrite",
+            "elasticfilesystem:DescribeMountTargets"
+          ]
+          Resource = aws_efs_file_system.fs.arn
+        }
+      ]
+    })
+  }
+
+  inline_policy {
+    name   = "S3Application"
+    policy = jsonencode({
+      Version   = "2012-10-17"
+      Statement = [
+        {
+          Effect = "Allow"
+          Action = [
+            "s3:Get*",
+            "s3:List*"
+          ]
+          Resource = [
+            aws_s3_bucket.bucket.arn,
+            "${aws_s3_bucket.bucket.arn}/application/",
+            "${aws_s3_bucket.bucket.arn}/application/*",
+            "${aws_s3_bucket.bucket.arn}/updater/",
+            "${aws_s3_bucket.bucket.arn}/updater/*"
+          ]
+        }
+      ]
+    })
+  }
+
+  inline_policy {
+    name   = "EC2GeneratorControl"
+    policy = jsonencode({
+      Version   = "2012-10-17"
+      Statement = [
+        {
+          Effect   = "Allow"
+          Action   = "ec2:DescribeInstances"
+          Resource = "*"
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "ec2:RunInstances",
+            "ec2:CreateTags",
+            "ec2:TerminateInstances"
+          ]
+          Resource  = "*"
+          Condition = {
+            StringEquals = {
+              "ec2:LaunchTemplate" = aws_launch_template.generator.arn
+            }
+          }
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "ec2:RunInstances",
+            "ec2:CreateTags",
+            "ec2:TerminateInstances"
+          ]
+          Resource  = "*"
+          Condition = {
+            StringLike = {
+              "ec2:ResourceTag/GeneratorRunner" = "*"
+            }
+          }
+        },
+        {
+          // Copied from the policy AutoScalingServiceRolePolicy,
+          // required for launching EC2 instances
+          "Sid" : "EC2InstanceProfileManagement",
+          "Effect" : "Allow",
+          "Action" : [
+            "iam:PassRole"
+          ],
+          "Resource" : "*",
+          "Condition" : {
+            "StringLike" : {
+              "iam:PassedToService" : "ec2.amazonaws.com*"
+            }
+          }
+        },
+      ]
+    })
+  }
+
+  assume_role_policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Action    = "sts:AssumeRole"
+        Principal = {
+          Service = "ec2.amazonaws.com"
         }
       }
     ]
@@ -96,14 +236,22 @@ resource "aws_security_group" "generator" {
   }
 }
 
-resource "aws_security_group" "updater" {
-  name   = "${var.prefix}Updater"
+resource "aws_security_group" "application" {
+  name   = "${var.prefix}Application"
   vpc_id = aws_vpc.vpc.id
 
-  egress {
-    from_port   = 2049
+  ingress {
+    # todo: this rule should probably be removed after testing
+    from_port   = 22
     protocol    = "tcp"
-    to_port     = 2049
+    to_port     = 22
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    protocol    = "-1"
+    to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -118,7 +266,7 @@ resource "aws_security_group" "efs" {
     to_port         = 2049
     security_groups = [
       aws_security_group.generator.id,
-      aws_security_group.updater.id
+      aws_security_group.application.id
     ]
   }
 }

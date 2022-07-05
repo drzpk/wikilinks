@@ -36,18 +36,17 @@ class EC2Facade {
             .launchTemplateId(launchTemplateId)
             .build()
 
-        val tags = listOf(
-            Tag.builder().key(InstanceTag.LOCATOR.text).value(locatorTagValue).build(),
-            Tag.builder().key(InstanceTag.CREATED_AT.text).value(Instant.now().toString()).build(),
-            Tag.builder().key(InstanceTag.DUMP_VERSION.text).value(dumpVersion).build()
-        )
-
         val request = RunInstancesRequest.builder()
             .launchTemplate(launchTemplate)
-            .tagSpecifications(TagSpecification.builder().tags(tags).build())
+            .minCount(1)
+            .maxCount(1)
             .build()
 
-        client.runInstances(request)
+        val response = client.runInstances(request)
+        val id = response.instances().first().instanceId()
+
+        // Tags must be added after creating the instance so tags from the template are not overridden.
+        addTags(id, locatorTagValue, dumpVersion)
     }
 
     fun terminateInstance(id: String) {
@@ -64,6 +63,20 @@ class EC2Facade {
         Filter.builder().name("tag-key").values(InstanceTag.LOCATOR.text).build(),
         Filter.builder().name("tag-value").values(locatorTagValue).build()
     )
+
+    private fun addTags(instanceId: String, locatorTagValue: String, dumpVersion: String) {
+        val tags = listOf(
+            Tag.builder().key(InstanceTag.LOCATOR.text).value(locatorTagValue).build(),
+            Tag.builder().key(InstanceTag.CREATED_AT.text).value(Instant.now().toString()).build(),
+            Tag.builder().key(InstanceTag.DUMP_VERSION.text).value(dumpVersion).build()
+        )
+
+        val request = CreateTagsRequest.builder()
+            .resources(instanceId)
+            .tags(tags)
+            .build()
+        client.createTags(request)
+    }
 
     private fun extractCreationTime(instance: Instance): Instant {
         var time = instance.tags()

@@ -74,7 +74,7 @@ resource "aws_api_gateway_integration" "s3_proxy" {
   integration_http_method = "GET"
   uri                     = "arn:aws:apigateway:${var.aws_region}:s3:path/${aws_s3_bucket.bucket.bucket}/frontend/{object}"
   passthrough_behavior    = "WHEN_NO_MATCH"
-  credentials             = aws_iam_role.bucket_api_client.arn
+  credentials             = aws_iam_role.api_gateway.arn
   request_parameters      = {
     "integration.request.path.object" : "method.request.path.object"
   }

@@ -1,0 +1,35 @@
+#!/bin/bash
+mkdir /mnt/data
+mkdir -p /app/logs
+chmod o+rx /app
+chmod o+rw /app/logs
+
+yum install -y amazon-efs-utils
+echo "${fs_id}:/ /mnt/data efs _netdev,noresvport,tls,iam,accesspoint=${fs_ap_id} 80 0" >> /etc/fstab
+mount -a
+amazon-linux-extras install -y java-openjdk11
+
+mkdir /mnt/data/dumps 2> /dev/null
+mkdir /mnt/data/databases 2> /dev/null
+
+cd /app
+
+download_executable () {
+  prefix=$1
+  fileName=$(aws s3 ls "s3://${bucket}/$prefix/" | sort -r | tr -s ' ' | cut -d' ' -f4 | head -n 1)
+  aws s3 cp "s3://${bucket}/$prefix/$fileName" .
+}
+
+download_executable application
+download_executable updater
+
+# todo: cron job for updater
+
+export DATABASES_DIRECTORY=/mnt/data/databases
+export WORKING_DIRECTORY=/mnt/data/dumps
+export LAUNCH_TEMPLATE_ID=${launch_template_id}
+
+java -jar updater.jar > /app/logs/updater.log &
+
+chmod +x application.kexe
+./application.kexe http > /app/logs/application.log &

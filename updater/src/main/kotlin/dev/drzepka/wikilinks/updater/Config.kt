@@ -5,7 +5,7 @@ import java.time.Duration
 // todo: use BaseConfiguration class
 object Config {
     const val LOCATOR_TAG_VALUE = "This tag is used to locate EC2 instances running WikiLinks Generator."
-    val GENERATOR_INSTANCE_MAX_AGE: Duration = Duration.ofHours(12)
+    val GENERATOR_INSTANCE_MAX_AGE: Duration = Duration.ofHours(6)
 
     val databasesDirectory = getString("DATABASES_DIRECTORY", required = true)!!
     val launchTemplateId = getString("LAUNCH_TEMPLATE_ID", required = true)!!

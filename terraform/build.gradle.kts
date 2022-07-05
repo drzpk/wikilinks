@@ -10,14 +10,36 @@ tasks.register<Exec>("uploadFrontend") {
 }
 
 tasks.register<Exec>("uploadGenerator") {
-    dependsOn(getBucketName, tasks.findByPath(":generator:distZip"))
+    dependsOn(getBucketName, tasks.findByPath(":generator:jar"))
 
     doFirst {
         val name = getBucketName.get().extra["bucketName"]
         commandLine = listOf("aws", "s3", "sync", ".", "s3://$name/generator")
     }
 
-    workingDir = project(":generator").buildDir.resolve("distributions")
+    workingDir = project(":generator").buildDir.resolve("libs")
+}
+
+tasks.register<Exec>("uploadApplication") {
+    dependsOn(getBucketName, tasks.findByPath(":application:linkReleaseExecutableLinuxX64"))
+
+    doFirst {
+        val name = getBucketName.get().extra["bucketName"]
+        commandLine = listOf("aws", "s3", "sync", ".", "s3://$name/application")
+    }
+
+    workingDir = project(":application").buildDir.resolve("bin/linuxX64/releaseExecutable")
+}
+
+tasks.register<Exec>("uploadUpdater") {
+    dependsOn(getBucketName, tasks.findByPath(":updater:jar"))
+
+    doFirst {
+        val name = getBucketName.get().extra["bucketName"]
+        commandLine = listOf("aws", "s3", "sync", ".", "s3://$name/updater")
+    }
+
+    workingDir = project(":updater").buildDir.resolve("libs")
 }
 
 val getBucketName by tasks.registering(Exec::class) {

@@ -32,6 +32,17 @@ application {
     mainClass.set("dev.drzepka.wikilinks.generator.MainKt")
 }
 
+tasks.withType<Jar> {
+    manifest.attributes["Main-Class"] = "dev.drzepka.wikilinks.generator.MainKt"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    val dependencies = configurations
+        .runtimeClasspath
+        .get()
+        .map(::zipTree)
+    from(dependencies)
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
 }

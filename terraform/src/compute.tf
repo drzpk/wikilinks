@@ -3,6 +3,27 @@ locals {
   efs_mount_path = "/mnt/data"
 }
 
+resource "aws_instance" "application" {
+  instance_type               = "t3.micro"
+  ami                         = data.aws_ami.amazon_linux.id
+  subnet_id                   = aws_subnet.public.id
+  vpc_security_group_ids      = [aws_security_group.application.id]
+  iam_instance_profile        = aws_iam_instance_profile.application.name
+  associate_public_ip_address = true
+  key_name                    = local.key_name
+
+  user_data = base64encode(templatefile("${path.cwd}/scripts/application.sh.tftpl", {
+    bucket             = aws_s3_bucket.bucket.bucket,
+    fs_id              = aws_efs_file_system.fs.id,
+    fs_ap_id           = aws_efs_access_point.fs_root.id
+    launch_template_id = aws_launch_template.generator.id
+  }))
+
+  tags = {
+    Name = "${var.prefix}Application"
+  }
+}
+
 resource "aws_instance" "dev" {
   count = var.dev_tools ? 1 : 0
 
@@ -11,7 +32,8 @@ resource "aws_instance" "dev" {
     id      = aws_launch_template.generator.id
     version = "$Latest"
   }
-  tags = {
+  user_data = ""
+  tags      = {
     Name = "${var.prefix}Dev"
   }
 }
@@ -19,51 +41,51 @@ resource "aws_instance" "dev" {
 resource "aws_launch_template" "generator" {
   name                                 = "${var.prefix}Generator"
   instance_type                        = "t3.medium"
-  image_id                             = data.aws_ami.ubuntu.image_id
+  image_id                             = data.aws_ami.amazon_linux.image_id
   key_name                             = local.key_name
   instance_initiated_shutdown_behavior = "terminate"
+  iam_instance_profile {
+    arn = aws_iam_instance_profile.generator.arn
+  }
   network_interfaces {
     subnet_id                   = aws_subnet.public.id
     associate_public_ip_address = true
     security_groups             = [aws_security_group.generator.id]
   }
   update_default_version = true
-}
 
-resource "aws_lambda_function" "updater" {
-  function_name = "${var.prefix}updater"
-  role          = aws_iam_role.updater.arn
-  runtime       = "java11"
-  memory_size   = 256
-  handler       = "dev.drzepka.wikilinks.updater.LambdaHandler"
-  filename      = "${path.root}/../../updater/build/libs/updater.jar"
-  timeout       = 600
-
-  environment {
-    variables = {
-      DATABASES_DIRECTORY = "${local.efs_mount_path}/databases"
-      LAUNCH_TEMPLATE_ID  = aws_launch_template.generator.id
+  user_data = base64encode(templatefile("${path.cwd}/scripts/generator.sh.tftpl", {
+    bucket   = aws_s3_bucket.bucket.bucket,
+    fs_id    = aws_efs_file_system.fs.id,
+    fs_ap_id = aws_efs_access_point.fs_root.id
+  }))
+  tag_specifications {
+    resource_type = "instance"
+    tags          = {
+      Name            = "${var.prefix}GeneratorRunner"
+      Owner           = var.owner
+      GeneratorRunner = ""
     }
   }
-
-  vpc_config {
-    security_group_ids = [aws_security_group.updater.id]
-    subnet_ids         = [aws_subnet.public.id]
-  }
-
-  file_system_config {
-    arn              = aws_efs_access_point.fs_root.arn
-    local_mount_path = local.efs_mount_path
-  }
 }
 
-data "aws_ami" "ubuntu" {
+resource "aws_iam_instance_profile" "application" {
+  name = "${var.prefix}Application"
+  role = aws_iam_role.application.name
+}
+
+resource "aws_iam_instance_profile" "generator" {
+  name = "${var.prefix}Generator"
+  role = aws_iam_role.generator.name
+}
+
+data "aws_ami" "amazon_linux" {
   most_recent = true
-  owners      = ["099720109477"] # Canonical
+  owners      = ["137112412989"] # Amazon
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    values = ["amzn2-ami-kernel-5.10-hvm-2.0.*"]
   }
 
   filter {
