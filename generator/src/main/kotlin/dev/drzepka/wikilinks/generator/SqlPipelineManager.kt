@@ -3,7 +3,7 @@ package dev.drzepka.wikilinks.generator
 import com.google.common.io.CountingInputStream
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Value
-import dev.drzepka.wikilinks.generator.pipeline.filter.Filter
+import dev.drzepka.wikilinks.generator.pipeline.processor.Processor
 import dev.drzepka.wikilinks.generator.pipeline.reader.Reader
 import dev.drzepka.wikilinks.generator.pipeline.worker.SqlWorker
 import dev.drzepka.wikilinks.generator.pipeline.worker.WriterWorker
@@ -18,7 +18,7 @@ class SqlPipelineManager(
     private val dumpFile: File,
     private val readerFactory: (stream: InputStream) -> Reader,
     private val writer: Writer<Value>,
-    private val valueFilter: Filter<Value>? = null,
+    private val valueProcessor: Processor<Value>? = null,
     parallelismFactor: Float = 1.0f
 ) {
     private val fileSizeMB: Int = (dumpFile.length() / 1024 / 1024).toInt()
@@ -40,7 +40,7 @@ class SqlPipelineManager(
 
     private fun startWorkers() {
         repeat(sqlWorkerCount) {
-            val worker = SqlWorker(statementQueue, valueQueue, valueFilter)
+            val worker = SqlWorker(statementQueue, valueQueue, valueProcessor)
             sqlWorkers.add(worker)
 
             val thread = Thread(worker)

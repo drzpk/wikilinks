@@ -1,13 +1,14 @@
 package dev.drzepka.wikilinks.generator
 
-import com.google.common.collect.HashBiMap
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.app.db.FileConfigRepository
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
-import dev.drzepka.wikilinks.generator.pipeline.filter.LinksFilter
+import dev.drzepka.wikilinks.generator.pipeline.processor.LinksProcessor
+import dev.drzepka.wikilinks.generator.pipeline.pagelookup.InMemoryPageLookup
+import dev.drzepka.wikilinks.generator.pipeline.pagelookup.PageLookupFactory
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksDbWriter
@@ -35,7 +36,7 @@ fun main(args: Array<String>) {
     //flow.segment(DumpDownloader(workingDirectory, version, HttpClientProvider(Apache)))
     flow.step(InitializeDatabaseStep)
     flow.step(PopulatePageTable)
-    //flow.step(ExtractPagesFromDbStep)
+    flow.step(LoadPagesFromDbStep)
     flow.step(ExtractLinksFromDumpStep)
     flow.segment(SortLinksFileStep)
     flow.step(PopulateLinksTableStep)
@@ -65,12 +66,13 @@ private object PopulatePageTable : FlowStep<Store> {
     override val name: String = "Populating the page table"
 
     override fun run(store: Store, logger: ProgressLogger) {
-        val writer = PageWriter(store.db)
+        store.pageLookup = PageLookupFactory.create(store.db)
+
+        val writer = PageWriter(store.pageLookup, store.db)
         val dumpFile = getDumpFile("page")
         val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
 
         manager.start(logger)
-        store.pages = writer.pages
     }
 }
 
@@ -88,21 +90,25 @@ private object PopulateLinksTableStep : FlowStep<Store> {
 
 // Can be used instead of the PopulatePageTable step for testing purposes
 @Suppress("unused")
-private object ExtractPagesFromDbStep : FlowStep<Store> {
+private object LoadPagesFromDbStep : FlowStep<Store> {
     override val name = "Extracting pages from the database"
 
     override fun run(store: Store, logger: ProgressLogger) {
-        val pages = HashBiMap.create<Int, String>()
-        val cursor = store.db.pagesQueries.all().execute()
+        val pageLookup = PageLookupFactory.create(store.db)
 
-        while (cursor.next()) {
-            val id = cursor.getLong(0)!!
-            val title = cursor.getString(1)!!
-            pages[id.toInt()] = title
+        if (pageLookup is InMemoryPageLookup) {
+            val cursor = store.db.pagesQueries.all().execute()
+
+            while (cursor.next()) {
+                val id = cursor.getLong(0)!!
+                val title = cursor.getString(1)!!
+                pageLookup.save(id.toInt(), title)
+            }
+
+            cursor.close()
         }
 
-        cursor.close()
-        store.pages = pages
+        store.pageLookup = pageLookup
     }
 }
 
@@ -111,14 +117,14 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
 
     override fun run(store: Store, logger: ProgressLogger) {
         val dumpFile = getDumpFile("pagelinks")
-        val writer = LinksFileWriter(store.pages, workingDirectory)
-        val filter = LinksFilter(store.pages)
+        val writer = LinksFileWriter(workingDirectory)
+        val filter = LinksProcessor(store.pageLookup)
 
         val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer, filter)
         manager.start(logger)
 
         // Save some memory
-        store.pages.clear()
+        store.pageLookup.clear()
     }
 }
 

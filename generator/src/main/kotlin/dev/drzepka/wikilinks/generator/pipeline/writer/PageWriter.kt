@@ -1,12 +1,10 @@
 package dev.drzepka.wikilinks.generator.pipeline.writer
 
-import com.google.common.collect.BiMap
-import com.google.common.collect.HashBiMap
 import dev.drzepka.wikilinks.db.links.LinksDatabase
 import dev.drzepka.wikilinks.generator.model.Value
+import dev.drzepka.wikilinks.generator.pipeline.pagelookup.PageLookup
 
-class PageWriter(db: LinksDatabase) : AbstractWriter<Value>(db, 1_000_000) {
-    val pages: BiMap<Int, String> = HashBiMap.create()
+class PageWriter(private val pageLookup: PageLookup, db: LinksDatabase) : AbstractWriter<Value>(db, 1_000_000) {
 
     override fun filter(value: Value): Boolean {
         // Only store pages with namespace == 0
@@ -19,7 +17,7 @@ class PageWriter(db: LinksDatabase) : AbstractWriter<Value>(db, 1_000_000) {
         val isRedirect = value[4] as Int
 
         db.pagesQueries.insert(id.toLong(), title, isRedirect.toLong())
-        pages[id] = title
+        pageLookup.save(id, title)
     }
 
     override fun finalizeWriting() {
