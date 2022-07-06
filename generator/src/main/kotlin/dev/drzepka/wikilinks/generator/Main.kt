@@ -91,23 +91,19 @@ private object PopulateLinksTableStep : FlowStep<Store> {
 // Can be used instead of the PopulatePageTable step for testing purposes
 @Suppress("unused")
 private object LoadPagesFromDbStep : FlowStep<Store> {
-    override val name = "Extracting pages from the database"
+    override val name = "Loading pages from the database"
 
     override fun run(store: Store, logger: ProgressLogger) {
         val pageLookup = PageLookupFactory.create(store.db)
+        val cursor = store.db.pagesQueries.all().execute()
 
-        if (pageLookup is InMemoryPageLookup) {
-            val cursor = store.db.pagesQueries.all().execute()
-
-            while (cursor.next()) {
-                val id = cursor.getLong(0)!!
-                val title = cursor.getString(1)!!
-                pageLookup.save(id.toInt(), title)
-            }
-
-            cursor.close()
+        while (cursor.next()) {
+            val id = cursor.getLong(0)!!
+            val title = cursor.getString(1)!!
+            pageLookup.save(id.toInt(), title)
         }
 
+        cursor.close()
         store.pageLookup = pageLookup
     }
 }
@@ -118,9 +114,9 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
     override fun run(store: Store, logger: ProgressLogger) {
         val dumpFile = getDumpFile("pagelinks")
         val writer = LinksFileWriter(workingDirectory)
-        val filter = LinksProcessor(store.pageLookup)
+        val processor = LinksProcessor(store.pageLookup)
 
-        val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer, filter)
+        val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer, processor)
         manager.start(logger)
 
         // Save some memory
