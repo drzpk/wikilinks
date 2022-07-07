@@ -2,10 +2,12 @@ package dev.drzepka.wikilinks.generator
 
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.app.db.FileConfigRepository
+import dev.drzepka.wikilinks.common.dump.HttpClientProvider
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
+import dev.drzepka.wikilinks.generator.pipeline.downloader.DumpDownloader
 import dev.drzepka.wikilinks.generator.pipeline.processor.LinksProcessor
 import dev.drzepka.wikilinks.generator.pipeline.pagelookup.PageLookupFactory
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
@@ -13,6 +15,7 @@ import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksDbWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksFileWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.PageWriter
+import io.ktor.client.engine.apache.*
 import java.io.File
 import java.lang.management.ManagementFactory
 
@@ -25,11 +28,12 @@ fun generate(version: String) {
 
     val flow = GeneratorFlow(Store())
 
-    //flow.segment(DumpDownloader(workingDirectory, version, HttpClientProvider(Apache)))
+    flow.segment(DumpDownloader(workingDirectory, version, HttpClientProvider(Apache)))
     flow.step(InitializeDatabaseStep)
-    //flow.step(PopulatePageTable)
-    flow.step(LoadPagesFromDbStep)
-    //flow.step(ExtractLinksFromDumpStep)
+    flow.step(PopulatePageTable)
+    //flow.step(LoadPagesFromDbStep)
+    flow.step(ExtractLinksFromDumpStep)
+    flow.step(ClearPageLookup)
     flow.segment(SortLinksFileStep)
     flow.step(PopulateLinksTableStep)
     flow.step(SwapDatabasesStep)
@@ -41,10 +45,10 @@ private object InitializeDatabaseStep : FlowStep<Store> {
     override val name = "Initializing the database"
 
     override fun run(store: Store, logger: ProgressLogger) {
-//        File(DatabaseProvider.LINKS_DATABASE_NAME).apply {
-//            if (isFile)
-//                delete()
-//        }
+        File(DatabaseProvider.LINKS_DATABASE_NAME).apply {
+            if (isFile)
+                delete()
+        }
 
         store.db = DatabaseProvider.getLinksDatabase(
             createSchema = true,
@@ -110,9 +114,18 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
 
         val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer, processor)
         manager.start(logger)
+    }
+}
 
+private object ClearPageLookup : FlowStep<Store> {
+    override val name = "Clearing page lookup"
+
+    override fun run(store: Store, logger: ProgressLogger) {
         // Save some memory
-        store.pageLookup.clear()
+        try {
+            store.pageLookup.clear()
+        } catch (ignored: UninitializedPropertyAccessException) {
+        }
     }
 }
 

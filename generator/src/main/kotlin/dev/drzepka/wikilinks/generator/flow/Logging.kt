@@ -72,7 +72,7 @@ class Logger(private val totalSteps: Int) : ProgressLogger {
         else
             print("\r$progressText")
 
-        needsNewLineAfterStep = needsNewLineAfterStep || Configuration.batchMode
+        needsNewLineAfterStep = needsNewLineAfterStep || !Configuration.batchMode
         lastProgressUpdate = Instant.now()
     }
 
