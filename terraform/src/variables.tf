@@ -21,6 +21,6 @@ variable "owner" {
 
 variable "dev_tools" {
   type        = bool
-  description = "Whether provision additional resources for development purposes"
+  description = "Whether provision additional resources or enable some settings for development purposes"
   default     = false
 }

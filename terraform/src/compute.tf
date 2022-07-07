@@ -1,6 +1,5 @@
 locals {
-  key_name       = "${var.prefix}generator-key"
-  efs_mount_path = "/mnt/data"
+  key_name       = "${var.prefix}ec2-key"
 }
 
 resource "aws_instance" "application" {
@@ -16,56 +15,10 @@ resource "aws_instance" "application" {
     bucket             = aws_s3_bucket.bucket.bucket,
     fs_id              = aws_efs_file_system.fs.id,
     fs_ap_id           = aws_efs_access_point.fs_root.id
-    launch_template_id = aws_launch_template.generator.id
   }))
 
   tags = {
     Name = "${var.prefix}Application"
-  }
-}
-
-resource "aws_instance" "dev" {
-  count = var.dev_tools ? 1 : 0
-
-  instance_type = "t3.micro"
-  launch_template {
-    id      = aws_launch_template.generator.id
-    version = "$Latest"
-  }
-  user_data = ""
-  tags      = {
-    Name = "${var.prefix}Dev"
-  }
-}
-
-resource "aws_launch_template" "generator" {
-  name                                 = "${var.prefix}Generator"
-  instance_type                        = "t3.medium"
-  image_id                             = data.aws_ami.amazon_linux.image_id
-  key_name                             = local.key_name
-  instance_initiated_shutdown_behavior = "terminate"
-  iam_instance_profile {
-    arn = aws_iam_instance_profile.generator.arn
-  }
-  network_interfaces {
-    subnet_id                   = aws_subnet.public.id
-    associate_public_ip_address = true
-    security_groups             = [aws_security_group.generator.id]
-  }
-  update_default_version = true
-
-  user_data = base64encode(templatefile("${path.cwd}/scripts/generator.sh.tftpl", {
-    bucket   = aws_s3_bucket.bucket.bucket,
-    fs_id    = aws_efs_file_system.fs.id,
-    fs_ap_id = aws_efs_access_point.fs_root.id
-  }))
-  tag_specifications {
-    resource_type = "instance"
-    tags          = {
-      Name            = "${var.prefix}GeneratorRunner"
-      Owner           = var.owner
-      GeneratorRunner = ""
-    }
   }
 }
 
@@ -109,6 +62,6 @@ resource "local_file" "key_file" {
   content  = tls_private_key.private_key.private_key_pem
 }
 
-output "dev_instance_ip" {
-  value = length(aws_instance.dev) > 0 ? aws_instance.dev[0].public_ip : "<not available>"
+output "app_instance_ip" {
+  value = aws_instance.application.public_ip
 }

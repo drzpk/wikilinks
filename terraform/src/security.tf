@@ -184,63 +184,6 @@ resource "aws_iam_role" "application" {
     })
   }
 
-  inline_policy {
-    name   = "EC2GeneratorControl"
-    policy = jsonencode({
-      Version   = "2012-10-17"
-      Statement = [
-        {
-          Effect   = "Allow"
-          Action   = "ec2:DescribeInstances"
-          Resource = "*"
-        },
-        {
-          Effect = "Allow"
-          Action = [
-            "ec2:RunInstances",
-            "ec2:CreateTags",
-            "ec2:TerminateInstances"
-          ]
-          Resource  = "*"
-          Condition = {
-            StringEquals = {
-              "ec2:LaunchTemplate" = aws_launch_template.generator.arn
-            }
-          }
-        },
-        {
-          Effect = "Allow"
-          Action = [
-            "ec2:RunInstances",
-            "ec2:CreateTags",
-            "ec2:TerminateInstances"
-          ]
-          Resource  = "*"
-          Condition = {
-            StringLike = {
-              "ec2:ResourceTag/GeneratorRunner" = "*"
-            }
-          }
-        },
-        {
-          // Copied from the policy AutoScalingServiceRolePolicy,
-          // required for launching EC2 instances
-          "Sid" : "EC2InstanceProfileManagement",
-          "Effect" : "Allow",
-          "Action" : [
-            "iam:PassRole"
-          ],
-          "Resource" : "*",
-          "Condition" : {
-            "StringLike" : {
-              "iam:PassedToService" : "ec2.amazonaws.com*"
-            }
-          }
-        },
-      ]
-    })
-  }
-
   assume_role_policy = jsonencode({
     Version   = "2012-10-17"
     Statement = [
