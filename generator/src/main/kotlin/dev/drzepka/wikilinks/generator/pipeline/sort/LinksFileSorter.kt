@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.generator.pipeline.sort
 
 import com.google.common.io.CountingInputStream
+import dev.drzepka.wikilinks.generator.availableProcessors
 import dev.drzepka.wikilinks.generator.flow.FlowSegment
 import dev.drzepka.wikilinks.generator.flow.Logger
 import dev.drzepka.wikilinks.generator.model.Store
@@ -16,7 +17,7 @@ import kotlin.math.floor
 
 @Suppress("UnstableApiUsage")
 class LinksFileSorter(private val file: File) : FlowSegment<Store> {
-    private val executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2)
+    private val executor = Executors.newFixedThreadPool((availableProcessors() / 2).coerceAtLeast(1))
     private val blockFileSorters = mutableListOf<BlockFileSorter>()
 
     private val sourceFileSizeMB = (file.length() / 1024 / 1024).toInt()

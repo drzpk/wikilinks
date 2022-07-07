@@ -1,7 +1,5 @@
 package dev.drzepka.wikilinks.app.db
 
-import dev.drzepka.wikilinks.common.WikiConfig.DUMP_VERSION_FILE_NAME
-import dev.drzepka.wikilinks.common.WikiConfig.MAINTENANCE_MODE_FILE_NAME
 import dev.drzepka.wikilinks.common.utils.MultiplatformFile
 import mu.KotlinLogging
 
@@ -10,8 +8,12 @@ class FileConfigRepository(workingDirectory: String) : ConfigRepository {
 
     private val versionFile = MultiplatformFile("$workingDirectory/$DUMP_VERSION_FILE_NAME")
     private val maintenanceModeFile = MultiplatformFile("$workingDirectory/$MAINTENANCE_MODE_FILE_NAME")
+    private val generatorActiveFile = MultiplatformFile("$workingDirectory/$GENERATOR_ACTIVE_FILE_NAME")
 
-    override fun getDumpVersion(): String {
+    override fun getDumpVersion(): String? {
+        if (!versionFile.isFile())
+            return null
+
         val version = versionFile.read().trim()
         log.info { "Current dump version: $version" }
         return version
@@ -40,5 +42,32 @@ class FileConfigRepository(workingDirectory: String) : ConfigRepository {
             maintenanceModeFile.create()
         else
             maintenanceModeFile.delete()
+    }
+
+    override fun isGeneratorActive(): Boolean {
+        // todo: return false if file modification time is older than generator max run time
+        val exists = generatorActiveFile.isFile()
+        log.info {
+            val status = if (exists) "active" else "inactive"
+            "Generator status: $status"
+        }
+        return exists
+    }
+
+    override fun setGeneratorActive(state: Boolean) {
+        log.info {
+            val desc = if (state) "active" else "inactive"
+            "Setting generator status: $desc"
+        }
+        if (state)
+            generatorActiveFile.create()
+        else
+            generatorActiveFile.delete()
+    }
+
+    companion object {
+        private const val DUMP_VERSION_FILE_NAME = "dump_version.txt"
+        private const val MAINTENANCE_MODE_FILE_NAME = "maintenance_mode"
+        private const val GENERATOR_ACTIVE_FILE_NAME = "generator_active"
     }
 }

@@ -22,7 +22,7 @@ class SqlPipelineManager(
     parallelismFactor: Float = 1.0f
 ) {
     private val fileSizeMB: Int = (dumpFile.length() / 1024 / 1024).toInt()
-    private val sqlWorkerCount = (Runtime.getRuntime().availableProcessors() * parallelismFactor).toInt()
+    private val sqlWorkerCount = (availableProcessors() * parallelismFactor).toInt().coerceAtLeast(1)
     private val statementQueue = ArrayBlockingQueue<String>(sqlWorkerCount * 3)
     private val valueQueue = ArrayBlockingQueue<List<Value>>(10)
 

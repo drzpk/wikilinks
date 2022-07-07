@@ -1,3 +1,5 @@
+import java.nio.file.Files
+
 tasks.register<Exec>("uploadFrontend") {
     dependsOn(getBucketName, tasks.findByPath(":frontend:browserProductionWebpack"))
 
@@ -12,12 +14,16 @@ tasks.register<Exec>("uploadFrontend") {
 tasks.register<Exec>("uploadGenerator") {
     dependsOn(getBucketName, tasks.findByPath(":generator:jar"))
 
+    val targetDir = project(":generator").buildDir.resolve("libs")
     doFirst {
+        val scriptPath = project(":terraform").projectDir.resolve("src/scripts/processed/generator.sh").toPath()
+        Files.copy(scriptPath, targetDir.resolve("generator.sh").toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+
         val name = getBucketName.get().extra["bucketName"]
         commandLine = listOf("aws", "s3", "sync", ".", "s3://$name/generator")
     }
 
-    workingDir = project(":generator").buildDir.resolve("libs")
+    workingDir = targetDir
 }
 
 tasks.register<Exec>("uploadApplication") {
@@ -29,17 +35,6 @@ tasks.register<Exec>("uploadApplication") {
     }
 
     workingDir = project(":application").buildDir.resolve("bin/linuxX64/releaseExecutable")
-}
-
-tasks.register<Exec>("uploadUpdater") {
-    dependsOn(getBucketName, tasks.findByPath(":updater:jar"))
-
-    doFirst {
-        val name = getBucketName.get().extra["bucketName"]
-        commandLine = listOf("aws", "s3", "sync", ".", "s3://$name/updater")
-    }
-
-    workingDir = project(":updater").buildDir.resolve("libs")
 }
 
 val getBucketName by tasks.registering(Exec::class) {

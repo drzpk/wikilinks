@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.generator.pipeline.writer
 
+import dev.drzepka.wikilinks.generator.availableProcessors
 import dev.drzepka.wikilinks.generator.model.Value
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
 import java.io.BufferedOutputStream
@@ -9,7 +10,7 @@ import java.io.OutputStreamWriter
 import java.util.concurrent.Executors
 
 class LinksFileWriter(workingDirectory: File) : Writer<Value> {
-    private val executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2)
+    private val executorService = Executors.newFixedThreadPool((availableProcessors() / 2).coerceAtLeast(1))
     private val fileWriter: java.io.Writer
 
     init {
