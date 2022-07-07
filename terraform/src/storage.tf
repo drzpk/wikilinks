@@ -42,6 +42,15 @@ resource "aws_s3_bucket" "bucket" {
   bucket_prefix = "${var.prefix}wikilinks-"
 }
 
+# todo: lifecycle policy
+resource "aws_ecr_repository" "generator" {
+  name                 = "${var.prefix}generator"
+  image_tag_mutability = "MUTABLE"
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
 output "bucket_name" {
   value = aws_s3_bucket.bucket.bucket
 }

@@ -36,7 +36,7 @@ resource "aws_iam_role" "generator" {
   name_prefix = "${var.prefix}Generator-"
 
   managed_policy_arns = [
-    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
   ]
 
   inline_policy {
@@ -86,7 +86,49 @@ resource "aws_iam_role" "generator" {
         Effect    = "Allow"
         Action    = "sts:AssumeRole"
         Principal = {
-          Service = "ec2.amazonaws.com"
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role" "batch_environment" {
+  name_prefix = "${var.prefix}GeneratorBatch-"
+
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+  ]
+
+  assume_role_policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Action    = "sts:AssumeRole"
+        Principal = {
+          Service = "batch.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role" "batch_execution" {
+  name_prefix = "${var.prefix}GeneratorBatchExecution-"
+
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+  ]
+
+  assume_role_policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Action    = "sts:AssumeRole"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
         }
       }
     ]
@@ -270,3 +312,47 @@ resource "aws_security_group" "efs" {
     ]
   }
 }
+
+resource "aws_ecr_repository_policy" "generator" {
+  repository = aws_ecr_repository.generator.name
+  policy     = jsonencode({
+    Version   = "2008-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal : {
+          AWS = data.aws_caller_identity.id.user_id
+        }
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:DescribeRepositories",
+          "ecr:GetRepositoryPolicy",
+          "ecr:ListImages",
+          "ecr:DeleteRepository",
+          "ecr:BatchDeleteImage",
+          "ecr:SetRepositoryPolicy",
+          "ecr:DeleteRepositoryPolicy"
+        ]
+      },
+      {
+        Sid = "AWSBatchAccess"
+        Effect = "Allow"
+        Principal = {
+          Service = "batch.amazonaws.com"
+        }
+        Action = [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer"
+        ]
+      }
+    ]
+  })
+}
+
+data "aws_caller_identity" "id" {}
