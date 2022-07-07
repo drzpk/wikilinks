@@ -144,7 +144,7 @@ class LinksFileSorter(private val file: File) : FlowSegment<Store> {
     // Total links (20220501): 963_013_717
     private fun getLinksPerBlock(): Int {
         // Based on tests with a profiler
-        val linksPerGBHeap = 7_500_000 / 6.0
+        val linksPerGBHeap = 5_000_000 / 6.0
         val maxHeapBytes = ManagementFactory.getMemoryMXBean().heapMemoryUsage.max
         val maxHeapGB = maxHeapBytes.toDouble() / 1024 / 1024 / 1024
         return floor(linksPerGBHeap * maxHeapGB + 0.5).toInt()
