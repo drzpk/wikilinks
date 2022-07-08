@@ -46,7 +46,7 @@ class DatabaseSwapper(
         val knownDatabases = listOf(DatabaseProvider.LINKS_DATABASE_NAME, DatabaseProvider.CACHE_DATABASE_NAME)
         val databases = databasesDirectory
             .listFiles()!!
-            .filter { knownDatabases.any { k -> it.startsWith(k) } && !it.name.endsWith(".backup.db") }
+            .filter { knownDatabases.any { k -> it.name.startsWith(k) } && !it.name.endsWith(".old.db") }
 
         oldDatabasesDirectory.mkdir()
 
@@ -118,6 +118,9 @@ class DatabaseSwapper(
         directory
             .listFiles()!!
             .filter { matcher.invoke(it.name) }
-            .forEach { it.delete() }
+            .forEach {
+                println("Deleting: $it")
+                it.delete()
+            }
     }
 }

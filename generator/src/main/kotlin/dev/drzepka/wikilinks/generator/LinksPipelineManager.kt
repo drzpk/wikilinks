@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit
 @Suppress("UnstableApiUsage")
 class LinksPipelineManager(
     private val writer: Writer<PageLinks>,
-    sourceLinksFileName: String,
-    targetLinksFileName: String
+    sourceLinksFile: File,
+    targetLinksFile: File
 ) {
     private var inLinksQueueWrapper: BufferingQueueWrapper<LinkGroup>?
     private var outLinksQueueWrapper: BufferingQueueWrapper<LinkGroup>?
@@ -34,8 +34,6 @@ class LinksPipelineManager(
     init {
         // Source links = links sorted by a source link
         // Target links = links sorted by a target link
-        val sourceLinksFile = File(sourceLinksFileName)
-        val targetLinksFile = File(targetLinksFileName)
         linkFilesSizeMB = ((sourceLinksFile.length() + targetLinksFile.length()) / 1024 / 1024).toInt()
 
         inCountingStream = CountingInputStream(FileInputStream(targetLinksFile))
@@ -58,14 +56,21 @@ class LinksPipelineManager(
         val outReaderThread = Thread(outLinksReader, "out-links-reader").apply { start() }
 
         val writerWorker = WriterWorker(linksWriteQueue, writer)
-        Thread(writerWorker, "lpm-writer-worker").apply { start() }
+        val writerWorkerThread = Thread(writerWorker, "lpm-writer-worker").apply { start() }
 
         try {
             run(logger)
         } finally {
-            inReaderThread.interrupt()
-            outReaderThread.interrupt()
+            inReaderThread.join(1_000)
+            if (inReaderThread.isAlive)
+                inReaderThread.interrupt()
+
+            outReaderThread.join(1_000)
+            if (outReaderThread.isAlive)
+                outReaderThread.interrupt()
+
             writerWorker.stop()
+            writerWorkerThread.join()
         }
     }
 

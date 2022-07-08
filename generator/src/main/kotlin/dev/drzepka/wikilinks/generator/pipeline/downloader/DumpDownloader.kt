@@ -23,7 +23,6 @@ import java.io.FileOutputStream
 
 class DumpDownloader(
     private val workingDirectory: File,
-    private val dumpVersion: String,
     provider: HttpClientProvider
 ) : FlowSegment<Store> {
     override val numberOfSteps = if (!Configuration.skipDownloadingDumps) 2 + REQUIRED_FILE_VARIANTS.size else 0
@@ -36,8 +35,7 @@ class DumpDownloader(
             return@runBlocking
 
         logger.startNextStep("Resolving new dumps")
-        val dumps = resolver.resolveForVersion(dumpVersion)
-        store.version = dumps.version
+        val dumps = resolver.resolveForVersion(store.version)
 
         logger.startNextStep("Deleting old dumps")
         deleteOldDumps(dumps.dumps.map { it.fileName })

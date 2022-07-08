@@ -26,7 +26,10 @@ fun generate(version: String) {
     println("Available CPUs: ${availableProcessors()}")
     println("Max heap: ${ManagementFactory.getMemoryMXBean().heapMemoryUsage.max}")
 
-    val flow = GeneratorFlow(Store())
+    val store = Store().apply {
+        this.version = version
+    }
+    val flow = GeneratorFlow(store)
 
     flow.segment(DumpDownloader(workingDirectory, version, HttpClientProvider(Apache)))
     flow.step(InitializeDatabaseStep)
@@ -77,8 +80,8 @@ private object PopulateLinksTableStep : FlowStep<Store> {
 
     override fun run(store: Store, logger: ProgressLogger) {
         val writer = LinksDbWriter(store.db)
-        val sourceFile = "dumps/${LinksFileSorter.SORTED_SOURCE_FILE_NAME}"
-        val targetFile = "dumps/${LinksFileSorter.SORTED_TARGET_FILE_NAME}"
+        val sourceFile = File(workingDirectory, LinksFileSorter.SORTED_SOURCE_FILE_NAME)
+        val targetFile = File(workingDirectory, LinksFileSorter.SORTED_TARGET_FILE_NAME)
         val manager = LinksPipelineManager(writer, sourceFile, targetFile)
         manager.start(logger)
     }
@@ -138,7 +141,7 @@ private object SwapDatabasesStep : FlowStep<Store> {
         val databasePath = Configuration.databasesDirectory ?: "."
         val databasesDirectory = File(databasePath)
         val configRepository = FileConfigRepository(databasesDirectory.canonicalPath)
-        DatabaseSwapper(workingDirectory, File(databasePath), configRepository)
+        DatabaseSwapper(workingDirectory, File(databasePath), configRepository).run(store.version)
     }
 }
 
