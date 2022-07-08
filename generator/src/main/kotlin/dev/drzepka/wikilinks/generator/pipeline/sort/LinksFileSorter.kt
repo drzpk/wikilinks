@@ -3,7 +3,8 @@ package dev.drzepka.wikilinks.generator.pipeline.sort
 import com.google.common.io.CountingInputStream
 import dev.drzepka.wikilinks.generator.availableProcessors
 import dev.drzepka.wikilinks.generator.flow.FlowSegment
-import dev.drzepka.wikilinks.generator.flow.Logger
+import dev.drzepka.wikilinks.generator.flow.FlowRuntime
+import dev.drzepka.wikilinks.generator.flow.FlowStorage
 import dev.drzepka.wikilinks.generator.model.Store
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
 import java.io.*
@@ -25,31 +26,51 @@ class LinksFileSorter(private val file: File) : FlowSegment<Store> {
     private var totalLinks = 0L
 
     override val numberOfSteps = 4
-    private lateinit var logger: Logger
+    private lateinit var runtime: FlowRuntime
 
-    override fun run(store: Store, logger: Logger) {
+    override fun run(store: Store, runtime: FlowRuntime) {
         if (executor.isShutdown)
             throw IllegalStateException("Instance cannot be reused")
 
-        this.logger = logger
+        this.runtime = runtime
 
         try {
-            sort(0, SORTED_SOURCE_FILE_NAME, "source")
-            sort(1, SORTED_TARGET_FILE_NAME, "target")
+            sort(0, SORTED_SOURCE_FILE_NAME, "source", store)
+            sort(1, SORTED_TARGET_FILE_NAME, "target", store)
         } finally {
             executor.shutdown()
         }
     }
 
-    private fun sort(sortColumn: Int, outputFileName: String, progressDescription: String) {
+    private fun sort(sortColumn: Int, outputFileName: String, progressDescription: String, storage: FlowStorage) {
         blockFileSorters.clear()
         totalLinks = 0L
 
-        logger.startNextStep("Creating blocks sorted by $progressDescription link")
-        createBlocks(sortColumn)
+        val run = if (canSkipSort(outputFileName, progressDescription, storage)) {
+            println("Links file is already sorted by $progressDescription, skipping")
+            false
+        } else true
 
-        logger.startNextStep("Merging blocks")
-        mergeBlocks(sortColumn, outputFileName)
+        this.runtime.startNextStep("Creating blocks sorted by $progressDescription link")
+        if (run)
+            createBlocks(sortColumn)
+
+        this.runtime.startNextStep("Merging blocks ($progressDescription)")
+        if (run)
+            mergeBlocks(sortColumn, outputFileName)
+
+        storage[getProgressSaveKey(progressDescription)] = "complete"
+    }
+
+    private fun canSkipSort(outputFileName: String, progressDescription: String, storage: FlowStorage): Boolean {
+        if (storage[getProgressSaveKey(progressDescription)] == null)
+            return false
+
+        val outputFileExists = File(parentDirectory, outputFileName).isFile
+        if (!outputFileExists)
+            println("WARN: progress for $progressDescription was saved, but no output file exists")
+
+        return outputFileExists
     }
 
     private fun createBlocks(sortColumn: Int) {
@@ -70,7 +91,7 @@ class LinksFileSorter(private val file: File) : FlowSegment<Store> {
             totalLinks++
 
             if (++counter % 10000 == 0L)
-                logger.updateProgress((countingStream.count / 1024 / 1024).toInt(), sourceFileSizeMB, "MB")
+                runtime.updateProgress((countingStream.count / 1024 / 1024).toInt(), sourceFileSizeMB, "MB")
 
             if (linkBuffer.size == linksPerBlock) {
                 val oldBuffer = linkBuffer
@@ -125,7 +146,7 @@ class LinksFileSorter(private val file: File) : FlowSegment<Store> {
                 blockFile.close()
 
             if (++counter % 10_000 == 0L)
-                logger.updateProgress((counter / 1000).toInt(), (totalLinks / 1000).toInt(), "k")
+                runtime.updateProgress((counter / 1000).toInt(), (totalLinks / 1000).toInt(), "k")
         }
 
         writer.close()
@@ -151,6 +172,8 @@ class LinksFileSorter(private val file: File) : FlowSegment<Store> {
     }
 
     private fun getBlockSortingThreads(): Int = 2
+
+    private fun getProgressSaveKey(progressDescription: String): String = "links_file_sorter_$progressDescription"
 
     companion object {
         private const val FILE_BUFFER_SIZE = 16 * 1024 * 1024

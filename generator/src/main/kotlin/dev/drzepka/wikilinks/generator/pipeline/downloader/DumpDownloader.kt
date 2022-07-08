@@ -6,7 +6,7 @@ import dev.drzepka.wikilinks.common.dump.HttpClientProvider
 import dev.drzepka.wikilinks.common.model.dump.ArchiveDump
 import dev.drzepka.wikilinks.generator.Configuration
 import dev.drzepka.wikilinks.generator.flow.FlowSegment
-import dev.drzepka.wikilinks.generator.flow.Logger
+import dev.drzepka.wikilinks.generator.flow.FlowRuntime
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
 import io.ktor.client.request.*
@@ -30,20 +30,25 @@ class DumpDownloader(
     private val resolver = DumpResolver.createFromConfig(provider)
     private val http = provider.client
 
-    override fun run(store: Store, logger: Logger) = runBlocking {
+    override fun run(store: Store, runtime: FlowRuntime) = runBlocking {
         if (Configuration.skipDownloadingDumps)
             return@runBlocking
 
-        logger.startNextStep("Resolving new dumps")
+        runtime.startNextStep("Resolving new dumps")
         val dumps = resolver.resolveForVersion(store.version)
 
-        logger.startNextStep("Deleting old dumps")
-        deleteOldDumps(dumps.dumps.map { it.fileName })
+        runtime.startNextStep("Deleting old dumps")
+        if (store["DeleteOldDumps"] == null) {
+            deleteOldDumps(dumps.dumps.map { it.fileName })
+            store["DeleteOldDumps"] = "deleted"
+        } else {
+            println("Already deleted")
+        }
 
         for ((index, dump) in dumps.dumps.withIndex()) {
             val name = dump.fileName
-            logger.startNextStep("Downloading file ${index + 1}/${dumps.dumps.size} ($name)")
-            downloadFile(dump, logger)?.join()
+            runtime.startNextStep("Downloading file ${index + 1}/${dumps.dumps.size} ($name)")
+            downloadFile(dump, runtime)?.join()
         }
     }
 

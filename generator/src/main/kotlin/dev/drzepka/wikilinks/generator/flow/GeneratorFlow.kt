@@ -1,6 +1,6 @@
 package dev.drzepka.wikilinks.generator.flow
 
-class GeneratorFlow<T>(private val store: T) {
+class GeneratorFlow<T : FlowStorage>(private val store: T) {
 
     private val segments = mutableListOf<FlowSegment<T>>()
     private var started = false
@@ -10,9 +10,9 @@ class GeneratorFlow<T>(private val store: T) {
 
         val segment = object : FlowSegment<T> {
             override val numberOfSteps = 1
-            override fun run(store: T, logger: Logger) {
-                logger.startNextStep(step.name)
-                step.run(store, logger)
+            override fun run(store: T, runtime: FlowRuntime) {
+                runtime.startNextStep(step.name)
+                step.run(store, runtime)
             }
         }
 
@@ -28,10 +28,10 @@ class GeneratorFlow<T>(private val store: T) {
         started = true
 
         val stepCount = segments.sumOf { it.numberOfSteps }
-        val logger = Logger(stepCount)
+        val flowRuntime = FlowRuntime(stepCount)
 
-        segments.forEach { it.run(store, logger) }
-        logger.summarize()
+        segments.forEach { it.run(store, flowRuntime) }
+        flowRuntime.summarize()
     }
 
     private fun checkNotStarted() {

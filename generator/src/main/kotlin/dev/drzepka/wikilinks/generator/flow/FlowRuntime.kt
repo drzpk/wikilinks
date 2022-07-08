@@ -13,7 +13,7 @@ import kotlin.math.floor
 
 Total execution time: 0h 3min 21sec
  */
-class Logger(private val totalSteps: Int) : ProgressLogger {
+class FlowRuntime(private val totalSteps: Int) : ProgressLogger {
 
     private var currentStep = 0
     private var needsNewLineAfterStep = false
@@ -79,8 +79,4 @@ class Logger(private val totalSteps: Int) : ProgressLogger {
     companion object {
         private val BATCH_MODE_PROGRESS_INTERVAL = Duration.ofMinutes(1)
     }
-}
-
-interface ProgressLogger {
-    fun updateProgress(current: Int, total: Int, unit: String)
 }

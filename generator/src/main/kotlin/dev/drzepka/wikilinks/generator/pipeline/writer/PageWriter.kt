@@ -23,5 +23,8 @@ class PageWriter(private val pageLookup: PageLookup, db: LinksDatabase) : Abstra
     override fun finalizeWriting() {
         super.finalizeWriting()
         db.pagesQueries.createIndex()
+
+        // Creating an index takes some time, for simplicity's sake let's assume it's 20 seconds.
+        Thread.sleep(20_000)
     }
 }
