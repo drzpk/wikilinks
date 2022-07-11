@@ -7,6 +7,7 @@ plugins {
     kotlin("js") version kotlinVersion  apply false
     kotlin("plugin.serialization") version kotlinVersion  apply false
     id("io.kvision") version kvisionVersion apply false
+    id("com.google.cloud.tools.jib") version "3.2.1" apply false
 }
 
 group = "dev.drzepka"
