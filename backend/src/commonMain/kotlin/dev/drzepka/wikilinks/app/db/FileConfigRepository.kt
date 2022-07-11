@@ -10,22 +10,32 @@ class FileConfigRepository(workingDirectory: String) : ConfigRepository {
     private val maintenanceModeFile = MultiplatformFile("$workingDirectory/$MAINTENANCE_MODE_FILE_NAME")
     private val generatorActiveFile = MultiplatformFile("$workingDirectory/$GENERATOR_ACTIVE_FILE_NAME")
 
+    private var dumpVersion: String? = null
+
     override fun getDumpVersion(): String? {
+        if (dumpVersion != null)
+            return dumpVersion
+
         if (!versionFile.isFile())
             return null
 
-        val version = versionFile.read().trim()
-        log.info { "Current dump version: $version" }
-        return version
+        dumpVersion = versionFile.read().trim()
+        log.info { "Current dump version: $dumpVersion" }
+        return dumpVersion
     }
 
     override fun setDumpVersion(version: String) {
         log.info { "Writing dump version: $version" }
         versionFile.write(version)
+        dumpVersion = version
     }
 
     override fun isMaintenanceModeActive(): Boolean {
         val exists = maintenanceModeFile.isFile()
+
+        if (exists)
+            dumpVersion = null
+
         log.info {
             val status = if (exists) "active" else "inactive"
             "Maintenance mode status: $status"
