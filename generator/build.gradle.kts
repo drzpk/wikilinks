@@ -7,7 +7,7 @@ val ktorVersion: String by System.getProperties()
 
 dependencies {
     implementation(project(":common"))
-    implementation(project(":application"))
+    implementation(project(":backend"))
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.anarres:parallelgzip:1.0.5")
     implementation("io.ktor:ktor-client-core:$ktorVersion")

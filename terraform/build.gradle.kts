@@ -27,14 +27,14 @@ tasks.register<Exec>("uploadGenerator") {
 }
 
 tasks.register<Exec>("uploadApplication") {
-    dependsOn(getBucketName, tasks.findByPath(":application:linkReleaseExecutableLinuxX64"))
+    dependsOn(getBucketName, tasks.findByPath(":backend:linkReleaseExecutableLinuxX64"))
 
     doFirst {
         val name = getBucketName.get().extra["bucketName"]
         commandLine = listOf("aws", "s3", "sync", ".", "s3://$name/application")
     }
 
-    workingDir = project(":application").buildDir.resolve("bin/linuxX64/releaseExecutable")
+    workingDir = project(":backend").buildDir.resolve("bin/linuxX64/releaseExecutable")
 }
 
 val getBucketName by tasks.registering(Exec::class) {
