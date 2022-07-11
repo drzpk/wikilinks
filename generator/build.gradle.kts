@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     application
+    id("com.google.cloud.tools.jib")
 }
 
 val ktorVersion: String by System.getProperties()
@@ -32,6 +33,21 @@ kotlin {
 
 application {
     mainClass.set("dev.drzepka.wikilinks.generator.MainKt")
+}
+
+jib {
+    from {
+        image = "openjdk:11.0.15-jre-slim-buster"
+    }
+    to {
+        image = "wikilinks-generator:${project.version}"
+    }
+    container {
+        creationTime = "USE_CURRENT_TIMESTAMP"
+        environment = mapOf(
+            "FRONTEND_RESOURCES_DIRECTORY" to "" // Required because generator depends on the backend project
+        )
+    }
 }
 
 tasks.withType<Jar> {

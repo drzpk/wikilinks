@@ -14,6 +14,7 @@ group = "dev.drzepka"
 version = "1.0-SNAPSHOT"
 
 subprojects {
+    version = rootProject.version
     repositories {
         mavenCentral()
     }
