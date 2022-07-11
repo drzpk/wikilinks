@@ -7,3 +7,5 @@ enum class Environment {
 expect val environment: Environment
 
 expect fun exit(status: Int): Nothing
+
+expect fun absolutePath(path: String): String

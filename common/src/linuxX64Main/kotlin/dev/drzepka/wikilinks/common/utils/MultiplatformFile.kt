@@ -1,9 +1,6 @@
 package dev.drzepka.wikilinks.common.utils
 
-import kotlinx.cinterop.ByteVar
-import kotlinx.cinterop.allocArray
-import kotlinx.cinterop.memScoped
-import kotlinx.cinterop.toKString
+import kotlinx.cinterop.*
 import platform.posix.*
 
 actual class MultiplatformFile actual constructor(private val path: String) {
@@ -11,24 +8,25 @@ actual class MultiplatformFile actual constructor(private val path: String) {
     actual fun isFile(): Boolean = access(path, F_OK) == 0
 
     actual fun read(): String {
-        val file = fopen(path, "r") ?: throw IllegalArgumentException("Unable to open file for reading")
-        val content = StringBuilder()
+        return readBytes().decodeToString()
+    }
 
-        try {
+    actual fun readBytes(): ByteArray {
+        val file = fopen(path, "rb") ?: throw IllegalArgumentException("Unable to open file for reading")
+
+        return try {
             memScoped {
-                val len = 8 * 1024
+                fseek(file, 0, SEEK_END)
+                val len = ftell(file)
+                rewind(file)
+
                 val buffer = allocArray<ByteVar>(len)
-                do {
-                    val line = fgets(buffer, len, file)?.toKString()
-                    if (line != null)
-                        content.append(line)
-                } while (line != null)
+                fread(buffer, len.toULong(), 1, file)
+                buffer.readBytes(len.toInt())
             }
         } finally {
             fclose(file)
         }
-
-        return content.toString()
     }
 
     actual fun write(content: String) {

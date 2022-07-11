@@ -9,6 +9,8 @@ actual class MultiplatformFile actual constructor(path: String) {
 
     actual fun read(): String = file.readText()
 
+    actual fun readBytes(): ByteArray = file.readBytes()
+
     actual fun write(content: String) {
         file.writer().use {
             it.write(content)

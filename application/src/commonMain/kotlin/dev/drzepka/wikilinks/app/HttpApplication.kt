@@ -1,6 +1,8 @@
 package dev.drzepka.wikilinks.app
 
+import dev.drzepka.wikilinks.app.service.FrontendResourceService
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
@@ -25,8 +27,20 @@ internal expect fun createEmbeddedServer(port: Int, configuration: Application.(
 
 private fun Application.configureRouting() {
     val searchService = getSearchService()
+    val frontendResourceService = FrontendResourceService()
 
     routing {
+        route("app") {
+            get("*") {
+                val path = call.request.path().substringAfter("/app")
+                val resource = frontendResourceService.getResource(path)
+                if (resource != null)
+                    call.respondBytes(resource.content, resource.contentType)
+                else
+                    call.respond(HttpStatusCode.NotFound, "")
+            }
+        }
+
         route("api") {
             route("links") {
                 post("search") {

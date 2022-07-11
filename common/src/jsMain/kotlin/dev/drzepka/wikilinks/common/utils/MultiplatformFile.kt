@@ -9,6 +9,10 @@ actual class MultiplatformFile actual constructor(path: String) {
         throwException()
     }
 
+    actual fun readBytes(): ByteArray {
+        throwException()
+    }
+
     actual fun write(content: String) {
         throwException()
     }
