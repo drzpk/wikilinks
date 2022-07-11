@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.generator.pipeline.pagelookup
+package dev.drzepka.wikilinks.generator.pipeline.lookup
 
 import com.google.common.collect.HashBiMap
 

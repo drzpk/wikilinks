@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.generator.pipeline.pagelookup
+package dev.drzepka.wikilinks.generator.pipeline.lookup
 
 interface PageLookup {
     fun save(id: Int, title: String)

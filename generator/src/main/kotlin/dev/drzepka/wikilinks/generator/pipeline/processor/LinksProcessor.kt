@@ -1,7 +1,7 @@
 package dev.drzepka.wikilinks.generator.pipeline.processor
 
 import dev.drzepka.wikilinks.generator.model.Value
-import dev.drzepka.wikilinks.generator.pipeline.pagelookup.PageLookup
+import dev.drzepka.wikilinks.generator.pipeline.lookup.PageLookup
 
 class LinksProcessor(private val pageLookup: PageLookup) : Processor<Value> {
     override fun process(value: Value): Value? {

@@ -2,7 +2,7 @@ package dev.drzepka.wikilinks.generator.pipeline.writer
 
 import dev.drzepka.wikilinks.db.links.LinksDatabase
 import dev.drzepka.wikilinks.generator.model.Value
-import dev.drzepka.wikilinks.generator.pipeline.pagelookup.PageLookup
+import dev.drzepka.wikilinks.generator.pipeline.lookup.PageLookup
 
 class PageWriter(private val pageLookup: PageLookup, db: LinksDatabase) : AbstractWriter<Value>(db, 1_000_000) {
 
