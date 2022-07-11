@@ -8,7 +8,8 @@ internal class ValueParserTest {
 
     @Test
     fun `should parse source`() {
-        val source = "(10,0,'AccessibleComputing','',1,0,0.33167112649574004,'20220430060236','20220430080215',1002250816,111,'wikitext',NULL)"
+        val source =
+            "(10,0,'AccessibleComputing','',1,0,0.33167112649574004,'20220430060236','20220430080215',1002250816,111,'wikitext',NULL)"
         val values = ValueParser(source).parse()
 
         assertEquals(13, values.size)
@@ -30,12 +31,23 @@ internal class ValueParserTest {
     @Test
     fun `should parse source with offset`() {
         val source = "<garbage>(10,'test',20)<garbage>"
-        val values=  ValueParser(source).parse(9)
+        val values = ValueParser(source).parse(9)
 
         assertEquals(3, values.size)
         assertEquals(10, values[0])
         assertEquals("test", values[1])
         assertEquals(20, values[2])
+    }
+
+    @Test
+    fun `should parse negative numbers`() {
+        val source = "('abc',-1,-3233,'test')"
+        val values = ValueParser(source).parse()
+
+        assertEquals("abc", values[0])
+        assertEquals(-1, values[1])
+        assertEquals(-3233, values[2])
+        assertEquals("test", values[3])
     }
 
     @Test

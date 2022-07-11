@@ -37,6 +37,7 @@ class ValueParser(private val source: String) {
     }
 
     private fun isNumber(): Boolean = source[pos] in DIGIT_ZERO..DIGIT_NINE
+            || source[pos] == MINUS_SIGN && pos + 1 < source.length && source[pos + 1] in DIGIT_ZERO..DIGIT_NINE
 
     private fun isString(): Boolean = source[pos] == APOSTROPHE
 
@@ -118,6 +119,7 @@ class ValueParser(private val source: String) {
         private const val ESCAPE_CHARACTER = '\\'
         private const val DIGIT_ZERO = '0'
         private const val DIGIT_NINE = '9'
+        private const val MINUS_SIGN = '-'
         private const val NULL = "NULL"
         private const val PARAMETER_SEPARATOR = ','
         private const val DECIMAL_SEPARATOR = '.'
