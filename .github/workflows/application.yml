@@ -1,0 +1,18 @@
+name: Application
+on: [workflow_dispatch]
+
+jobs:
+  Create-application-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build and push Docker image
+        run: |
+          chmod +x gradlew
+          ./gradlew jib \
+            -Djib.from.auth.username=${{ github.actor }} \
+            -Djib.from.auth.password=${{ secrets.GITHUB_TOKEN }} \
+            -Djib.to.auth.username=${{ github.actor }} \
+            -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
+        shell: bash

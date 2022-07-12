@@ -5,12 +5,14 @@ plugins {
     id("com.google.cloud.tools.jib")
 }
 
+val imagePrefix: String by System.getProperties()
+
 jib {
     from {
-        image = "docker://wikilinks-app-base:1.0-SNAPSHOT"
+        image = "$imagePrefix/app-base:1.0"
     }
     to {
-        image = "wikilinks-backend:${project.version}"
+        image = "$imagePrefix/application:${project.version}"
     }
     container {
         creationTime = "USE_CURRENT_TIMESTAMP"
