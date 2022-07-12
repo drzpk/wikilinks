@@ -27,11 +27,6 @@ resource "aws_iam_instance_profile" "application" {
   role = aws_iam_role.application.name
 }
 
-resource "aws_iam_instance_profile" "generator" {
-  name = "${var.prefix}Generator"
-  role = aws_iam_role.generator.name
-}
-
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["137112412989"] # Amazon

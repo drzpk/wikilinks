@@ -1,3 +1,7 @@
+locals {
+  generator_job_cpu_count = 2
+}
+
 resource "aws_batch_compute_environment" "generator" {
   compute_environment_name = "${var.prefix}GeneratorEnv"
 
@@ -33,8 +37,20 @@ resource "aws_batch_job_definition" "generator" {
     image       = "${aws_ecr_repository.generator.repository_url}:latest"
     environment = [
       {
-        name  = "SCRIPT_LOCATION"
-        value = "s3://${aws_s3_bucket.bucket.bucket}/generator/generator.sh"
+        name  = "DATABASES_DIRECTORY"
+        value = "/data/databases"
+      },
+      {
+        name  = "WORKING_DIRECTORY"
+        value = "/data/dumps"
+      },
+      {
+        name  = "BATCH_MODE"
+        value = "true"
+      },
+      {
+        name  = "JAVA_TOOL_OPTIONS"
+        value = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0 -XX:ActiveProcessorCount=${local.generator_job_cpu_count}"
       }
     ]
     volumes = [
@@ -63,7 +79,7 @@ resource "aws_batch_job_definition" "generator" {
     resourceRequirements = [
       {
         type  = "VCPU"
-        value = "2"
+        value = tostring(local.generator_job_cpu_count)
       },
       {
         type  = "MEMORY"
@@ -73,16 +89,7 @@ resource "aws_batch_job_definition" "generator" {
     fargatePlatformConfiguration = {
       platformVersion = "1.4.0"
     }
-    executionRoleArn = aws_iam_role.batch_execution.arn
+    executionRoleArn = aws_iam_role.ecs_execution.arn
     jobRoleArn       = aws_iam_role.generator.arn
-  })
-}
-
-resource "local_file" "generator_script" {
-  filename = "${path.cwd}/scripts/processed/generator.sh"
-  content  = templatefile("${path.cwd}/scripts/generator.sh.tftpl", {
-    bucket   = aws_s3_bucket.bucket.bucket,
-    fs_id    = aws_efs_file_system.fs.id,
-    fs_ap_id = aws_efs_access_point.fs_root.id
   })
 }

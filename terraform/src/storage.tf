@@ -51,6 +51,14 @@ resource "aws_ecr_repository" "generator" {
   }
 }
 
+resource "aws_ecr_repository" "application" {
+  name = "${var.prefix}application"
+  image_tag_mutability = "MUTABLE"
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
 output "bucket_name" {
   value = aws_s3_bucket.bucket.bucket
 }

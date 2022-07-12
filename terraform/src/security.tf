@@ -114,7 +114,7 @@ resource "aws_iam_role" "batch_environment" {
   })
 }
 
-resource "aws_iam_role" "batch_execution" {
+resource "aws_iam_role" "ecs_execution" {
   name_prefix = "${var.prefix}GeneratorBatchExecution-"
 
   managed_policy_arns = [
@@ -129,6 +129,27 @@ resource "aws_iam_role" "batch_execution" {
         Action    = "sts:AssumeRole"
         Principal = {
           Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role" "ecs_ec2_node" {
+  name_prefix = "${var.prefix}ECSNode-"
+
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+  ]
+
+  assume_role_policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Action    = "sts:AssumeRole"
+        Principal = {
+          Service = "ec2.amazonaws.com"
         }
       }
     ]
@@ -191,7 +212,10 @@ resource "aws_iam_role" "application" {
         Effect    = "Allow"
         Action    = "sts:AssumeRole"
         Principal = {
-          Service = "ec2.amazonaws.com"
+          Service = [
+            "ec2.amazonaws.com",
+            "ecs-tasks.amazonaws.com"
+          ]
         }
       }
     ]
@@ -233,6 +257,40 @@ resource "aws_security_group" "application" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port       = 8080
+    protocol        = "tcp"
+    to_port         = 8080
+    security_groups = [aws_security_group.api_link.id]
+  }
+
+  egress {
+    from_port   = 0
+    protocol    = "-1"
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "ecs_node" {
+  name   = "${var.prefix}ECS-node"
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    # todo: this rule should probably be removed after testing
+    from_port   = 22
+    protocol    = "tcp"
+    to_port     = 22
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port       = 8080
+    protocol        = "tcp"
+    to_port         = 8080
+    security_groups = [aws_security_group.api_link.id]
+  }
+
   egress {
     from_port   = 0
     protocol    = "-1"
@@ -256,8 +314,21 @@ resource "aws_security_group" "efs" {
   }
 }
 
-resource "aws_ecr_repository_policy" "generator" {
-  repository = aws_ecr_repository.generator.name
+resource "aws_security_group" "api_link" {
+  name   = "${var.prefix}api-link"
+  vpc_id = aws_vpc.vpc.id
+
+  egress {
+    from_port = 0
+    protocol  = "-1"
+    to_port   = 0
+  }
+}
+
+resource "aws_ecr_repository_policy" "policy" {
+  for_each = toset([aws_ecr_repository.application.name, aws_ecr_repository.generator.name])
+
+  repository = each.key
   policy     = jsonencode({
     Version   = "2008-10-17"
     Statement = [
@@ -284,8 +355,8 @@ resource "aws_ecr_repository_policy" "generator" {
         ]
       },
       {
-        Sid = "AWSBatchAccess"
-        Effect = "Allow"
+        Sid       = "AWSBatchAccess"
+        Effect    = "Allow"
         Principal = {
           Service = "batch.amazonaws.com"
         }
