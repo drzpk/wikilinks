@@ -4,9 +4,9 @@ import dev.drzepka.wikilinks.app.cache.PageCacheService
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.app.db.DbLinksRepository
 import dev.drzepka.wikilinks.app.db.DbPagesRepository
-import dev.drzepka.wikilinks.app.search.LinkSearchService
-import dev.drzepka.wikilinks.app.search.PageInfoService
-import dev.drzepka.wikilinks.app.search.PathFinderService
+import dev.drzepka.wikilinks.app.service.search.LinkSearchService
+import dev.drzepka.wikilinks.app.service.search.PageInfoService
+import dev.drzepka.wikilinks.app.service.search.PathFinderService
 import dev.drzepka.wikilinks.app.utils.exit
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 

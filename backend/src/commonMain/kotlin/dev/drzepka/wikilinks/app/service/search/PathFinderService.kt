@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app.search
+package dev.drzepka.wikilinks.app.service.search
 
 import dev.drzepka.wikilinks.app.db.LinksRepository
 import dev.drzepka.wikilinks.app.model.PageVertex

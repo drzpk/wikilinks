@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app.search
+package dev.drzepka.wikilinks.app.service.search
 
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.common.model.searchresult.SearchDuration
