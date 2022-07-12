@@ -12,5 +12,5 @@ object WikiConfig {
     const val USER_AGENT_HEADER = "Api-User-Agent"
 
     const val DUMP_SOURCE = "https://dumps.wikimedia.org/enwiki"
-    val REQUIRED_FILE_VARIANTS = listOf("page", "pagelinks")
+    val REQUIRED_FILE_VARIANTS = listOf("page", "pagelinks", "redirect")
 }

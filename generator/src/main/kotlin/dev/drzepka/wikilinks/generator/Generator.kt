@@ -12,12 +12,14 @@ import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
 import dev.drzepka.wikilinks.generator.pipeline.downloader.DumpDownloader
-import dev.drzepka.wikilinks.generator.pipeline.pagelookup.PageLookupFactory
+import dev.drzepka.wikilinks.generator.pipeline.lookup.InMemoryRedirectLookup
+import dev.drzepka.wikilinks.generator.pipeline.lookup.PageLookupFactory
 import dev.drzepka.wikilinks.generator.pipeline.processor.LinksProcessor
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
 import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksDbWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksFileWriter
+import dev.drzepka.wikilinks.generator.pipeline.writer.PageRedirectsWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.PageWriter
 import io.ktor.client.engine.apache.*
 import java.io.File
@@ -39,8 +41,10 @@ fun generate(version: String) {
     flow.segment(DumpDownloader(workingDirectory, HttpClientProvider(Apache)))
     flow.step(InitializeDatabaseStep)
     flow.step(PopulatePageTable)
+    flow.step(PopulatePageRedirects)
+    flow.step(LoadLookupsFromDatabase)
     flow.step(ExtractLinksFromDumpStep)
-    flow.step(ClearPageLookup)
+    flow.step(ClearLookups)
     flow.segment(LinksFileSorter(File(workingDirectory, LinksFileWriter.LINKS_FILE_NAME)))
     flow.step(PopulateLinksTableStep)
     flow.step(SwapDatabasesStep)
@@ -82,7 +86,7 @@ private object PopulatePageTable : FlowStep<Store> {
             store[key] = "done"
         } else {
             println("Page table already populated, loading existing data into memory")
-            loadFromDb(store)
+            LoadLookupsFromDatabase.loadPageLookup = true
         }
     }
 
@@ -92,14 +96,54 @@ private object PopulatePageTable : FlowStep<Store> {
         val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
         manager.start(logger)
     }
+}
 
-    private fun loadFromDb(store: Store) {
+private object PopulatePageRedirects : FlowStep<Store> {
+    override val name = "Populating page redirects"
+
+    override fun run(store: Store, logger: ProgressLogger) {
+        store.redirectLookup = InMemoryRedirectLookup()
+
+        val key = "PopulatePageRedirects"
+        if (store[key] == null) {
+            populate(store, logger)
+            store[key] = "done"
+        } else {
+            println("Redirects have already been populated, skipping")
+            LoadLookupsFromDatabase.loadRedirectLookup = true
+        }
+    }
+
+    private fun populate(store: Store, logger: ProgressLogger) {
+        val writer = PageRedirectsWriter(store.pageLookup, store.redirectLookup, store.db)
+        val dumpFile = getDumpFile("redirect")
+        val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
+        manager.start(logger)
+    }
+}
+
+private object LoadLookupsFromDatabase : FlowStep<Store> {
+    override val name = "Loading lookups from database"
+
+    var loadPageLookup = false
+    var loadRedirectLookup = false
+
+    override fun run(store: Store, logger: ProgressLogger) {
+        if (!loadPageLookup && !loadRedirectLookup) {
+            println("Nothing to load, skipping")
+            return
+        }
+
         val cursor = store.db.pagesQueries.all().execute()
-
         while (cursor.next()) {
             val id = cursor.getLong(0)!!
             val title = cursor.getString(1)!!
-            store.pageLookup.save(id.toInt(), title)
+            val redirectsTo = cursor.getLong(2)
+
+            if (loadPageLookup)
+                store.pageLookup.save(id.toInt(), title)
+            if (loadRedirectLookup && redirectsTo != null)
+                store.redirectLookup[id.toInt()] = redirectsTo.toInt()
         }
 
         cursor.close()
@@ -137,21 +181,29 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
 
         val dumpFile = getDumpFile("pagelinks")
         val writer = LinksFileWriter(workingDirectory)
-        val processor = LinksProcessor(store.pageLookup)
+        val processor = LinksProcessor(store.pageLookup, store.redirectLookup)
 
         val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer, processor)
         manager.start(logger)
+
         store[key] = "done"
+        store["source_link_redirects"] = processor.sourceRedirects.toString()
+        store["target_link_redirects"] = processor.targetRedirects.toString()
     }
 }
 
-private object ClearPageLookup : FlowStep<Store> {
-    override val name = "Clearing page lookup"
+private object ClearLookups : FlowStep<Store> {
+    override val name = "Clearing lookups"
 
     override fun run(store: Store, logger: ProgressLogger) {
         // Save some memory
         try {
             store.pageLookup.clear()
+        } catch (ignored: UninitializedPropertyAccessException) {
+        }
+
+        try {
+            store.redirectLookup.clear()
         } catch (ignored: UninitializedPropertyAccessException) {
         }
     }

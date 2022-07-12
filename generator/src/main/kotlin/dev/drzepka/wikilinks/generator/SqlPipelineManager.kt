@@ -28,6 +28,7 @@ class SqlPipelineManager(
 
     private val sqlWorkers = mutableListOf<SqlWorker>()
     private lateinit var writerWorker: WriterWorker<Value>
+    private lateinit var writerWorkerThread: Thread
     private lateinit var logger: ProgressLogger
 
     fun start(logger: ProgressLogger) {
@@ -49,7 +50,7 @@ class SqlPipelineManager(
         }
 
         writerWorker = WriterWorker(valueQueue, writer)
-        Thread(writerWorker).apply {
+        writerWorkerThread = Thread (writerWorker).apply {
             name = "writer-worker"
             start()
         }
@@ -61,6 +62,7 @@ class SqlPipelineManager(
 
         sqlWorkers.forEach { it.stop() }
         writerWorker.stop()
+        writerWorkerThread.join()
     }
 
     private fun readFile() {

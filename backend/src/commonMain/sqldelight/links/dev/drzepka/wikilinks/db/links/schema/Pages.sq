@@ -1,14 +1,17 @@
 CREATE TABLE Pages (
     id INTEGER NOT NULL PRIMARY KEY,
     title TEXT NOT NULL,
-    is_redirect INTEGER NOT NULL
+    redirects_to INTEGER
 );
 
 createIndex:
 CREATE INDEX idx_articles_title ON Pages(title);
 
 insert:
-INSERT INTO Pages VALUES (?, ?, ?);
+INSERT INTO Pages VALUES (:id, :title, NULL);
+
+setRedirect:
+UPDATE Pages SET redirects_to = :target WHERE id = :id;
 
 all:
 SELECT * FROM Pages;

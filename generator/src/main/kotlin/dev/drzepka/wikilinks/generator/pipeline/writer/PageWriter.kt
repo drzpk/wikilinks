@@ -14,17 +14,13 @@ class PageWriter(private val pageLookup: PageLookup, db: LinksDatabase) : Abstra
     override fun insert(value: List<Any?>) {
         val id = value[0] as Int
         val title = value[2] as String
-        val isRedirect = value[4] as Int
 
-        db.pagesQueries.insert(id.toLong(), title, isRedirect.toLong())
+        db.pagesQueries.insert(id.toLong(), title)
         pageLookup.save(id, title)
     }
 
     override fun finalizeWriting() {
         super.finalizeWriting()
         db.pagesQueries.createIndex()
-
-        // Creating an index takes some time, for simplicity's sake let's assume it's 20 seconds.
-        Thread.sleep(20_000)
     }
 }
