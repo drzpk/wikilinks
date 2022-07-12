@@ -46,6 +46,6 @@ jib {
 tasks.withType<JibTask> {
     dependsOn(
         tasks.findByPath(":backend:linkReleaseExecutableLinuxX64"),
-        tasks.findByPath(":frontend:browserProductionWebpack")
+        tasks.findByPath(":frontend:zip")
     )
 }
