@@ -21,6 +21,6 @@ class PageRedirectsWriter(
         val to = pageLookup.getId(value[2] as String) ?: return
 
         redirectLookup[from] = to
-        db.pagesQueries.setRedirect(from.toLong(), to.toLong())
+        db.pagesQueries.setRedirect(to.toLong(), from.toLong())
     }
 }
