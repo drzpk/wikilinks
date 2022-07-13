@@ -9,7 +9,7 @@ val imagePrefix: String by System.getProperties()
 
 jib {
     from {
-        image = "$imagePrefix/app-base:1.0"
+        image = "$imagePrefix/app-base:1.1"
     }
     to {
         image = "$imagePrefix/application:${project.version}"
