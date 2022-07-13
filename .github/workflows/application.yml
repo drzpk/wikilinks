@@ -18,8 +18,8 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: |
-            :application:jib \
-            -Djib.from.auth.username=${{ github.actor }} \
-            -Djib.from.auth.password=${{ secrets.GITHUB_TOKEN }} \
-            -Djib.to.auth.username=${{ github.actor }} \
+            :application:jib
+            -Djib.from.auth.username=${{ github.actor }}
+            -Djib.from.auth.password=${{ secrets.GITHUB_TOKEN }}
+            -Djib.to.auth.username=${{ github.actor }}
             -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}

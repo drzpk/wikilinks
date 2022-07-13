@@ -18,7 +18,8 @@ object MockLinkSearchService : LinkSearchService {
             degrees,
             paths,
             getRandomPageInfo(paths.flatMap { it.pages }.toSet()),
-            getRandomDuration()
+            getRandomDuration(),
+            0.5f
         )
 
         return Promise { resolve, _ ->
