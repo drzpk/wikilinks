@@ -11,13 +11,15 @@ jobs:
         with:
           distribution: temurin
           java-version: 11
-          cache: gradle
+      - name: Prepare Gradle
+        run: chmod +x gradlew
+        shell: bash
       - name: Build and push Docker image
-        run: |
-          chmod +x gradlew
-          ./gradlew :application:jib \
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: |
+            :application:jib \
             -Djib.from.auth.username=${{ github.actor }} \
             -Djib.from.auth.password=${{ secrets.GITHUB_TOKEN }} \
             -Djib.to.auth.username=${{ github.actor }} \
             -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
-        shell: bash
