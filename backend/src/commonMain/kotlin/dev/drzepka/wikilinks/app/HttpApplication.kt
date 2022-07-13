@@ -30,6 +30,10 @@ private fun Application.configureRouting() {
     val frontendResourceService = FrontendResourceService()
 
     routing {
+        get("/") {
+            call.respondRedirect("app/index.html", permanent = false)
+        }
+
         route("app") {
             get("*") {
                 val path = call.request.path().substringAfter("/app")
