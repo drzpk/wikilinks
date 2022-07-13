@@ -1,6 +1,11 @@
 package dev.drzepka.wikilinks.app
 
+import dev.drzepka.wikilinks.app.config.Configuration
+import dev.drzepka.wikilinks.app.db.DatabaseProvider
+import dev.drzepka.wikilinks.app.db.DbHistoryRepository
+import dev.drzepka.wikilinks.app.db.FileConfigRepository
 import dev.drzepka.wikilinks.app.service.FrontendResourceService
+import dev.drzepka.wikilinks.app.service.HistoryService
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -10,6 +15,7 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.Clock
 
 fun httpApplication() {
     println("Starting HTTP server")
@@ -28,6 +34,10 @@ internal expect fun createEmbeddedServer(port: Int, configuration: Application.(
 private fun Application.configureRouting() {
     val searchService = getSearchService()
     val frontendResourceService = FrontendResourceService()
+
+    val historyRepository = DbHistoryRepository(DatabaseProvider.getHistoryDatabase())
+    val configRepository = FileConfigRepository(Configuration.databasesDirectory!!)
+    val historyService = HistoryService(historyRepository, configRepository)
 
     routing {
         get("/") {
@@ -49,7 +59,9 @@ private fun Application.configureRouting() {
             route("links") {
                 post("search") {
                     val request = call.receive<LinkSearchRequest>()
+                    val searchDate = Clock.System.now()
                     val result = searchService.search(request.source, request.target)
+                    historyService.addResult(searchDate, result)
                     call.respond(result)
                 }
             }

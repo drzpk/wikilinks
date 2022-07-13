@@ -1,0 +1,18 @@
+CREATE TABLE SearchHistory (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  date INTEGER NOT NULL,
+  version TEXT NOT NULL,
+  source INTEGER,
+  target INTEGER,
+  path_count INTEGER NOT NULL,
+  degs_of_separation INTEGER NOT NULL,
+  search_duration_paths_ms INTEGER NOT NULL,
+  search_duration_total_ms INTEGER NOT NULL,
+  cache_hit_ratio REAL NOT NULL
+);
+
+CREATE INDEX idx_search_history_date ON SearchHistory(date);
+
+add:
+INSERT INTO SearchHistory (date, version, source, target, path_count, degs_of_separation, search_duration_paths_ms, search_duration_total_ms, cache_hit_ratio)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);

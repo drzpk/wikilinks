@@ -20,7 +20,7 @@ class LinkSearchService(
         }
 
         val paths = pathTimedValue.value
-        val pageInfo = pageInfoService.collectInfo(paths)
+        val pageInfoResult = pageInfoService.collectInfo(paths)
 
         val totalDuration = totalDurationMark.elapsedNow()
         val searchDuration = SearchDuration(
@@ -31,8 +31,9 @@ class LinkSearchService(
         return LinkSearchResult(
             paths.firstOrNull()?.let { it.pages.size - 1 } ?: 0,
             paths,
-            pageInfo,
-            searchDuration
+            pageInfoResult.pages,
+            searchDuration,
+            pageInfoResult.cacheHitRatio
         )
     }
 }

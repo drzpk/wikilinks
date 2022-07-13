@@ -3,6 +3,7 @@ package dev.drzepka.wikilinks.app.service.search
 import dev.drzepka.wikilinks.app.cache.PageCacheService
 import dev.drzepka.wikilinks.app.db.PagesRepository
 import dev.drzepka.wikilinks.app.model.PageCacheHit
+import dev.drzepka.wikilinks.app.model.PageInfoResult
 import dev.drzepka.wikilinks.app.utils.http
 import dev.drzepka.wikilinks.common.WikiConfig
 import dev.drzepka.wikilinks.common.model.Path
@@ -21,7 +22,7 @@ import kotlin.time.measureTimedValue
 class PageInfoService(private val pagesRepository: PagesRepository, private val cacheService: PageCacheService) {
     private val log = KotlinLogging.logger {}
 
-    fun collectInfo(paths: Collection<Path>): Map<Int, PageInfo> {
+    fun collectInfo(paths: Collection<Path>): PageInfoResult {
         val uniquePageIds = paths
             .asSequence()
             .flatMap { it.pages }
@@ -30,11 +31,12 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
         return getPagesInfo(uniquePageIds)
     }
 
-    private fun getPagesInfo(pageIds: Collection<Int>): Map<Int, PageInfo> {
+    private fun getPagesInfo(pageIds: Collection<Int>): PageInfoResult {
         val cacheHits = cacheService.getCache(pageIds)
         val pagesToDownload = pageIds - cacheHits.keys
+        val cacheHitRatio = cacheHits.size.toFloat() / pageIds.size
         log.debug {
-            val percentage = floor(cacheHits.size / pageIds.size.toFloat() * 1000) / 10
+            val percentage = floor(cacheHitRatio * 1000) / 10
             "Cache hit ratio: ${cacheHits.size}/${pageIds.size} ($percentage%)"
         }
 
@@ -46,7 +48,7 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
             .map { it.value.toPageInfo() }
             .forEach { downloadedPages[it.id] = it }
 
-        return downloadedPages
+        return PageInfoResult(downloadedPages, cacheHitRatio)
     }
 
     private fun fetchPages(pageIds: List<Int>): MutableMap<Int, PageInfo> {

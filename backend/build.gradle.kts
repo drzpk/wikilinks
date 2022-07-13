@@ -89,6 +89,11 @@ sqldelight {
         sourceFolders = listOf("sqldelight/cache")
         schemaOutputDirectory = file("build/dbs")
     }
+    database("HistoryDatabase") {
+        packageName = "dev.drzepka.wikilinks.db.history"
+        sourceFolders = listOf("sqldelight/history")
+        schemaOutputDirectory = file("build/dbs")
+    }
 
     linkSqlite = true
 }

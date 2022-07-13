@@ -7,6 +7,7 @@ import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.app.utils.Environment
 import dev.drzepka.wikilinks.app.utils.environment
 import dev.drzepka.wikilinks.db.cache.CacheDatabase
+import dev.drzepka.wikilinks.db.history.HistoryDatabase
 import dev.drzepka.wikilinks.db.links.LinksDatabase
 import mu.KotlinLogging
 
@@ -14,6 +15,7 @@ import mu.KotlinLogging
 object DatabaseProvider {
     const val LINKS_DATABASE_NAME = "links.db"
     const val CACHE_DATABASE_NAME = "cache.db"
+    const val HISTORY_DATABASE_NAME = "history.db"
 
     private val log = KotlinLogging.logger {}
 
@@ -32,6 +34,12 @@ object DatabaseProvider {
         val driver = getDbDriver(CACHE_DATABASE_NAME, false)
         CacheDatabase.Schema.createIfNecessary(driver, "cache")
         return CacheDatabase.invoke(driver)
+    }
+
+    fun getHistoryDatabase(): HistoryDatabase {
+        val driver = getDbDriver(HISTORY_DATABASE_NAME, false)
+        HistoryDatabase.Schema.createIfNecessary(driver, "history")
+        return HistoryDatabase.invoke(driver)
     }
 
     private fun getDbDriver(dbName: String, disableProtection: Boolean, overrideDirectory: String? = null): SqlDriver {
