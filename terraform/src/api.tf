@@ -18,7 +18,7 @@ resource "aws_apigatewayv2_stage" "default" {
 resource "aws_apigatewayv2_integration" "proxy" {
   api_id               = aws_apigatewayv2_api.api.id
   integration_type     = "HTTP_PROXY"
-  integration_method   = "GET"
+  integration_method   = "ANY"
   integration_uri      = aws_service_discovery_service.application.arn
   passthrough_behavior = "WHEN_NO_MATCH"
 

@@ -250,17 +250,10 @@ resource "aws_security_group" "application" {
   vpc_id = aws_vpc.vpc.id
 
   ingress {
-    # todo: this rule should probably be removed after testing
-    from_port   = 22
-    protocol    = "tcp"
-    to_port     = 22
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
     from_port       = 8080
     protocol        = "tcp"
     to_port         = 8080
+    //cidr_blocks = ["0.0.0.0/0"]
     security_groups = [aws_security_group.api_link.id]
   }
 
@@ -285,9 +278,9 @@ resource "aws_security_group" "ecs_node" {
   }
 
   ingress {
-    from_port       = 8080
-    protocol        = "tcp"
-    to_port         = 8080
+    from_port       = 0
+    protocol        = "-1"
+    to_port         = 0
     security_groups = [aws_security_group.api_link.id]
   }
 
@@ -309,7 +302,8 @@ resource "aws_security_group" "efs" {
     to_port         = 2049
     security_groups = [
       aws_security_group.generator.id,
-      aws_security_group.application.id
+      aws_security_group.application.id,
+      aws_security_group.ecs_node.id
     ]
   }
 }
@@ -317,12 +311,15 @@ resource "aws_security_group" "efs" {
 resource "aws_security_group" "api_link" {
   name   = "${var.prefix}api-link"
   vpc_id = aws_vpc.vpc.id
+}
 
-  egress {
-    from_port = 0
-    protocol  = "-1"
-    to_port   = 0
-  }
+resource "aws_security_group_rule" "api_link_egress_rule" {
+  security_group_id        = aws_security_group.api_link.id
+  type                     = "egress"
+  from_port                = 0
+  protocol                 = "-1"
+  to_port                  = 0
+  source_security_group_id = aws_security_group.ecs_node.id
 }
 
 resource "aws_ecr_repository_policy" "policy" {
@@ -335,7 +332,7 @@ resource "aws_ecr_repository_policy" "policy" {
       {
         Effect = "Allow"
         Principal : {
-          AWS = data.aws_caller_identity.id.user_id
+          AWS = data.aws_caller_identity.id.arn
         }
         Action = [
           "ecr:GetDownloadUrlForLayer",

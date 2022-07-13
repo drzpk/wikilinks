@@ -1,16 +1,24 @@
+locals {
+  ecs_application_container_name = "application"
+  ecs_application_container_port = 8080
+}
+
 resource "aws_ecs_service" "application" {
   name            = "${var.prefix}application"
   cluster         = aws_ecs_cluster.cluster.id
   task_definition = aws_ecs_task_definition.application.arn
   desired_count   = 1
 
-  network_configuration {
-    subnets         = [aws_subnet.public.id]
-    security_groups = [aws_security_group.application.id]
+  service_registries {
+    registry_arn   = aws_service_discovery_service.application.arn
+    container_name = local.ecs_application_container_name
+    container_port = local.ecs_application_container_port
   }
 
-  service_registries {
-    registry_arn = aws_service_discovery_service.application.arn
+  capacity_provider_strategy {
+    capacity_provider = aws_ecs_capacity_provider.provider.name
+    base              = 1
+    weight            = 100
   }
 }
 
@@ -26,12 +34,6 @@ resource "aws_ecs_cluster" "cluster" {
 resource "aws_ecs_cluster_capacity_providers" "providers" {
   cluster_name       = aws_ecs_cluster.cluster.name
   capacity_providers = [aws_ecs_capacity_provider.provider.name]
-
-  default_capacity_provider_strategy {
-    capacity_provider = aws_ecs_capacity_provider.provider.name
-    base              = 1
-    weight            = 100
-  }
 }
 
 resource "aws_ecs_capacity_provider" "provider" {
@@ -63,6 +65,12 @@ resource "aws_autoscaling_group" "application" {
     key                 = "AmazonECSManaged"
     value               = true
     propagate_at_launch = true
+  }
+
+  lifecycle {
+    ignore_changes = [
+      desired_capacity
+    ]
   }
 }
 
@@ -100,13 +108,13 @@ resource "aws_launch_template" "ecs_node" {
 
 resource "aws_ecs_task_definition" "application" {
   family             = "${var.prefix}Application"
-  network_mode       = "awsvpc"
+  network_mode       = "bridge"
   execution_role_arn = aws_iam_role.ecs_execution.arn
   task_role_arn      = aws_iam_role.application.arn
 
   container_definitions = jsonencode([
     {
-      name        = "application"
+      name        = local.ecs_application_container_name
       image       = "${aws_ecr_repository.application.repository_url}:latest",
       memory      = 512
       cpu         = 1024
@@ -119,7 +127,8 @@ resource "aws_ecs_task_definition" "application" {
       ]
       portMappings = [
         {
-          containerPort = 8080
+          containerPort = local.ecs_application_container_port
+          hostPort      = 0
         }
       ]
       mountPoints = [
@@ -131,8 +140,8 @@ resource "aws_ecs_task_definition" "application" {
       ]
       logConfiguration = {
         logDriver = "awslogs"
-        options = {
-          awslogs-group = aws_cloudwatch_log_group.application.name
+        options   = {
+          awslogs-group  = aws_cloudwatch_log_group.application.name
           awslogs-region = var.aws_region
         }
       }
@@ -161,7 +170,7 @@ resource "aws_service_discovery_service" "application" {
 
     dns_records {
       ttl  = 10
-      type = "A"
+      type = "SRV"
     }
 
     routing_policy = "MULTIVALUE"
