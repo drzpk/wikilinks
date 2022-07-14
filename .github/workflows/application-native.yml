@@ -1,8 +1,8 @@
-name: Application
+name: Application native
 on: [workflow_dispatch]
 
 jobs:
-  Create-application-image:
+  Create-application-native-image:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,6 +19,7 @@ jobs:
         with:
           arguments: |
             :application:jib
+            -DjibConfiguration=NATIVE
             -Djib.from.auth.username=${{ github.actor }}
             -Djib.from.auth.password=${{ secrets.GITHUB_TOKEN }}
             -Djib.to.auth.username=${{ github.actor }}

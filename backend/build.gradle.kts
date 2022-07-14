@@ -78,6 +78,13 @@ kotlin {
     }
 }
 
+val exposedJvmRuntimeClasspath: Configuration by configurations.creating {
+    // Configuration must be exposed to be used in another modules
+    isCanBeConsumed = true
+    isCanBeResolved = false
+    extendsFrom(configurations["jvmRuntimeClasspath"])
+}
+
 sqldelight {
     database("LinksDatabase") {
         packageName = "dev.drzepka.wikilinks.db.links"

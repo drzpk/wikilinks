@@ -13,6 +13,17 @@ plugins {
 group = "dev.drzepka"
 version = "1.0-SNAPSHOT"
 
+allprojects {
+    tasks.register("printConfigurations") {
+        doLast {
+            println("Configurations of project ${project.name}:")
+            configurations.forEach {
+                println("    ${it.name}")
+            }
+        }
+    }
+}
+
 subprojects {
     version = rootProject.version
     repositories {
