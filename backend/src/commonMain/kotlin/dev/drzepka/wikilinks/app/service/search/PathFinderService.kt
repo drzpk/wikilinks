@@ -27,6 +27,8 @@ class PathFinderService(
         while (sourceDepth + targetDepth < maxSearchDepth) {
             val outLinksCount = linksRepository.getOutLinksCount(*sourceHead.keys.toIntArray())
             val inLinksCount = linksRepository.getInLinksCount(*targetHead.keys.toIntArray())
+            println("out link count from ${sourceHead.keys}: $outLinksCount")
+            println("in link count from ${targetHead.keys}: $inLinksCount")
 
             if (outLinksCount <= inLinksCount) {
                 sourceDepth++

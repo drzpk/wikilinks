@@ -2,11 +2,14 @@ import com.google.cloud.tools.jib.gradle.JibTask
 
 plugins {
     application
+    kotlin("jvm")
     id("com.google.cloud.tools.jib")
 }
 
 val kotlinVersion: String by System.getProperties()
 val imagePrefix: String by System.getProperties()
+val coroutinesVersion: String by System.getProperties()
+val ktorVersion: String by System.getProperties()
 
 enum class JibConfiguration(val baseImage: String, val classifier: String) {
     JVM("openjdk:11.0.15-jre-slim-buster", "jvm"),
@@ -25,9 +28,22 @@ val jibConfiguration = System.getProperty("jibConfiguration")?.let {
 val backendJvmRuntimeClasspath: Configuration by configurations.creating {}
 
 dependencies {
+    implementation(project(":common"))
     implementation(project(":backend"))
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     backendJvmRuntimeClasspath(project(mapOf("path" to ":backend", "configuration" to "exposedJvmRuntimeClasspath")))
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+    testImplementation("org.testcontainers:testcontainers:1.17.3")
+    testImplementation("org.testcontainers:mockserver:1.17.3")
+    testImplementation("org.mock-server:mockserver-client-java:5.13.2")
+    testImplementation("org.testcontainers:junit-jupiter:1.17.3")
+    testImplementation("org.apache.logging.log4j:log4j-core:2.18.0")
+    testImplementation("org.apache.logging.log4j:log4j-slf4j-impl:2.18.0")
+
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+    testImplementation("io.ktor:ktor-client-core:$ktorVersion")
+    testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    testImplementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 }
 
 jib {
@@ -52,10 +68,18 @@ jib {
     extraDirectories {
         paths {
             path {
-                setFrom(project.projectDir.resolve("src"))
+                setFrom(project.projectDir.resolve("src/docker"))
                 into = "/app"
                 includes.add(entrypointFileName)
             }
+
+            if (jibConfiguration == JibConfiguration.JVM) {
+                path {
+                    setFrom(project(":backend").buildDir.resolve("processedResources/jvm/main"))
+                    into = "/app/resources"
+                }
+            }
+
             path {
                 setFrom(project.buildDir.resolve("frontend"))
                 into = "/app/frontend"
@@ -101,4 +125,11 @@ tasks.withType<JibTask> {
         dependencies.add(tasks.findByPath(":backend:jvmJar"))
 
     dependsOn(*dependencies.toTypedArray())
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform {
+        systemProperty("imagePrefix", imagePrefix)
+        systemProperty("imageVersion", project.version)
+    }
 }

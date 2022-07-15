@@ -21,6 +21,6 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
-          context: application/src
+          context: application/src/docker
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/app-base:${{ env.APP_BASE_IMAGE_VERSION }}
           push: true

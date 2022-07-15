@@ -13,6 +13,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
+import mu.KotlinLogging
 import org.koin.core.context.startKoin
 
 fun httpApplication() {
@@ -22,7 +23,12 @@ fun httpApplication() {
         install(ContentNegotiation) {
             json()
         }
-        install(StatusPages)
+        install(StatusPages) {
+            val log = KotlinLogging.logger("exception-handler")
+            exception { call: ApplicationCall, cause: Throwable ->
+                log.error(cause) { "Uncaught error while processing request: ${call.request.uri}" }
+            }
+        }
         configureKoin()
         configureRouting()
     }

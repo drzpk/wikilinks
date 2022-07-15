@@ -1,11 +1,11 @@
 package dev.drzepka.wikilinks.app.service.search
 
 import dev.drzepka.wikilinks.app.cache.PageCacheService
+import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.app.db.PagesRepository
 import dev.drzepka.wikilinks.app.model.PageCacheHit
 import dev.drzepka.wikilinks.app.model.PageInfoResult
 import dev.drzepka.wikilinks.app.utils.http
-import dev.drzepka.wikilinks.common.WikiConfig
 import dev.drzepka.wikilinks.common.model.Path
 import dev.drzepka.wikilinks.common.model.searchresult.PageInfo
 import io.ktor.client.call.*
@@ -34,7 +34,10 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
     private fun getPagesInfo(pageIds: Collection<Int>): PageInfoResult {
         val cacheHits = cacheService.getCache(pageIds)
         val pagesToDownload = pageIds - cacheHits.keys
-        val cacheHitRatio = cacheHits.size.toFloat() / pageIds.size
+        var cacheHitRatio = cacheHits.size.toFloat() / pageIds.size
+        if (cacheHitRatio.isNaN())
+            cacheHitRatio = 0f
+
         log.debug {
             val percentage = floor(cacheHitRatio * 1000) / 10
             "Cache hit ratio: ${cacheHits.size}/${pageIds.size} ($percentage%)"
@@ -88,7 +91,7 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
     private fun downloadPagesChunkFromWikipedia(pageIds: Collection<Int>): Collection<PageInfo> {
         // https://www.mediawiki.org/w/api.php?action=help&modules=query
         val obj = runBlocking {
-            val response = http.get(WikiConfig.ACTION_API_URL) {
+            val response = http.get(Configuration.wikipediaActionApiUrl) {
                 parameter("action", "query")
                 parameter("format", "json")
                 parameter("prop", "info|pageterms|pageimages")

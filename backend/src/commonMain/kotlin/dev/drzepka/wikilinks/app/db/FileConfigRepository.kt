@@ -76,7 +76,7 @@ class FileConfigRepository(workingDirectory: String) : ConfigRepository {
     }
 
     companion object {
-        private const val DUMP_VERSION_FILE_NAME = "dump_version.txt"
+        const val DUMP_VERSION_FILE_NAME = "dump_version.txt"
         private const val MAINTENANCE_MODE_FILE_NAME = "maintenance_mode"
         private const val GENERATOR_ACTIVE_FILE_NAME = "generator_active"
     }
