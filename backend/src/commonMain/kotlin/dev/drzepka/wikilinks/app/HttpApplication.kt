@@ -1,11 +1,8 @@
 package dev.drzepka.wikilinks.app
 
-import dev.drzepka.wikilinks.app.config.Configuration
-import dev.drzepka.wikilinks.app.db.DatabaseProvider
-import dev.drzepka.wikilinks.app.db.DbHistoryRepository
-import dev.drzepka.wikilinks.app.db.FileConfigRepository
-import dev.drzepka.wikilinks.app.service.FrontendResourceService
-import dev.drzepka.wikilinks.app.service.HistoryService
+import dev.drzepka.wikilinks.app.KoinApp.frontendResourceService
+import dev.drzepka.wikilinks.app.KoinApp.historyService
+import dev.drzepka.wikilinks.app.KoinApp.searchService
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -16,6 +13,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
+import org.koin.core.context.startKoin
 
 fun httpApplication() {
     println("Starting HTTP server")
@@ -25,20 +23,20 @@ fun httpApplication() {
             json()
         }
         install(StatusPages)
+        configureKoin()
         configureRouting()
     }
 }
 
 internal expect fun createEmbeddedServer(port: Int, configuration: Application.() -> Unit)
 
+private fun configureKoin() {
+    startKoin {
+        modules(coreModule, fullModule)
+    }
+}
+
 private fun Application.configureRouting() {
-    val searchService = getSearchService()
-    val frontendResourceService = FrontendResourceService()
-
-    val historyRepository = DbHistoryRepository(DatabaseProvider.getHistoryDatabase())
-    val configRepository = FileConfigRepository(Configuration.databasesDirectory!!)
-    val historyService = HistoryService(historyRepository, configRepository)
-
     routing {
         get("/") {
             call.respondRedirect("app/index.html", permanent = false)

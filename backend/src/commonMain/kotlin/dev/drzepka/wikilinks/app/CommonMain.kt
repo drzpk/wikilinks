@@ -1,14 +1,9 @@
 package dev.drzepka.wikilinks.app
 
-import dev.drzepka.wikilinks.app.cache.PageCacheService
-import dev.drzepka.wikilinks.app.db.DatabaseProvider
-import dev.drzepka.wikilinks.app.db.DbLinksRepository
-import dev.drzepka.wikilinks.app.db.DbPagesRepository
-import dev.drzepka.wikilinks.app.service.search.LinkSearchService
-import dev.drzepka.wikilinks.app.service.search.PageInfoService
-import dev.drzepka.wikilinks.app.service.search.PathFinderService
+import dev.drzepka.wikilinks.app.KoinApp.searchService
 import dev.drzepka.wikilinks.app.utils.exit
-import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
+import dev.drzepka.wikilinks.common.model.Path
+import org.koin.core.context.startKoin
 
 fun commonMain(args: Array<String>) {
     if (args.isNotEmpty() && args[0] == "http")
@@ -32,7 +27,7 @@ fun searchAndPrint(startPage: Int, targetPage: Int) {
     println("Searching for paths between pages: $startPage -> $targetPage")
 
     val result = search(startPage, targetPage)
-    val paths = result.paths
+    val paths = result.first
 
     if (paths.isNotEmpty()) {
         println("Found ${paths.size} path(s):")
@@ -41,24 +36,13 @@ fun searchAndPrint(startPage: Int, targetPage: Int) {
         println("No paths found")
     }
 
-    println("\nSearch duration: ${result.duration.totalMillis / 1000.0} seconds")
+    println("\nSearch duration: ${result.second / 1000.0} seconds")
 }
 
-fun search(startPage: Int, targetPage: Int): LinkSearchResult {
-    return getSearchService().search(startPage, targetPage)
-}
+fun search(startPage: Int, targetPage: Int): Pair<List<Path>, Long> {
+    startKoin {
+        modules(coreModule)
+    }
 
-fun getSearchService(): LinkSearchService {
-    val linksDatabase = DatabaseProvider.getLinksDatabase()
-    val cacheDatabase = DatabaseProvider.getCacheDatabase()
-
-    val linksRepository = DbLinksRepository(linksDatabase)
-    val pagesRepository = DbPagesRepository(linksDatabase)
-
-    val cacheService = PageCacheService(cacheDatabase)
-
-    val pathFinderService = PathFinderService(linksRepository)
-    val pageInfoService = PageInfoService(pagesRepository, cacheService)
-
-    return LinkSearchService(pathFinderService, pageInfoService)
+    return searchService.simpleSearch(startPage, targetPage)
 }
