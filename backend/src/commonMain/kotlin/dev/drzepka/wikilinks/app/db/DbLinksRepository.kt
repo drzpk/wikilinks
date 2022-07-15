@@ -7,12 +7,12 @@ class DbLinksRepository(private val database: LinksDatabase) : LinksRepository {
 
     override fun getInLinksCount(vararg pageIds: Int): Int {
         val ids = pageIds.map{it.toLong()}
-        return database.linksQueries.countInLinks(ids).executeAsOne().SUM!!.toInt()
+        return database.linksQueries.countInLinks(ids).executeAsOneOrNull()?.SUM?.toInt() ?: 0
     }
 
     override fun getOutLinksCount(vararg pageIds: Int): Int {
         val ids = pageIds.map{it.toLong()}
-        return database.linksQueries.countOutLinks(ids).executeAsOne().SUM!!.toInt()
+        return database.linksQueries.countOutLinks(ids).executeAsOneOrNull()?.SUM?.toInt() ?: 0
     }
 
     override fun getInLinks(vararg pageIds: Int): List<Link> {
