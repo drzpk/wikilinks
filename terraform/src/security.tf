@@ -222,6 +222,42 @@ resource "aws_iam_role" "application" {
   })
 }
 
+resource "aws_iam_role" "event_bridge_generator_invoker" {
+  name_prefix = "${var.prefix}EventBridgeGeneratorInvoker-"
+
+  inline_policy {
+    name   = "AllowInvokingGeneratorBatchJob"
+    policy = jsonencode({
+      Version   = "2012-10-17"
+      Statement = [
+        {
+          Effect   = "Allow"
+          Action   = "batch:SubmitJob"
+          Resource = [
+            aws_batch_job_definition.generator.arn,
+            aws_batch_job_queue.queue.arn
+          ]
+        }
+      ]
+    })
+  }
+
+  assume_role_policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Action    = "sts:AssumeRole"
+        Principal = {
+          Service = [
+            "events.amazonaws.com"
+          ]
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_security_group" "generator" {
   name   = "${var.prefix}generator"
   vpc_id = aws_vpc.vpc.id
