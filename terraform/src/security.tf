@@ -262,6 +262,22 @@ resource "aws_security_group" "generator" {
   name   = "${var.prefix}generator"
   vpc_id = aws_vpc.vpc.id
 
+  egress {
+    from_port   = 0
+    protocol    = "-1"
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_security_group" "bastion" {
+  name   = "${var.prefix}Bastion"
+  vpc_id = aws_vpc.vpc.id
+
   ingress {
     from_port   = 22
     protocol    = "tcp"
@@ -281,36 +297,15 @@ resource "aws_security_group" "generator" {
   }
 }
 
-resource "aws_security_group" "application" {
-  name   = "${var.prefix}Application"
-  vpc_id = aws_vpc.vpc.id
-
-  ingress {
-    from_port       = 8080
-    protocol        = "tcp"
-    to_port         = 8080
-    //cidr_blocks = ["0.0.0.0/0"]
-    security_groups = [aws_security_group.api_link.id]
-  }
-
-  egress {
-    from_port   = 0
-    protocol    = "-1"
-    to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 resource "aws_security_group" "ecs_node" {
   name   = "${var.prefix}ECS-node"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
-    # todo: this rule should probably be removed after testing
-    from_port   = 22
-    protocol    = "tcp"
-    to_port     = 22
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 22
+    protocol        = "tcp"
+    to_port         = 22
+    security_groups = [aws_security_group.bastion.id]
   }
 
   ingress {
@@ -338,8 +333,8 @@ resource "aws_security_group" "efs" {
     to_port         = 2049
     security_groups = [
       aws_security_group.generator.id,
-      aws_security_group.application.id,
-      aws_security_group.ecs_node.id
+      aws_security_group.ecs_node.id,
+      aws_security_group.bastion.id
     ]
   }
 }
