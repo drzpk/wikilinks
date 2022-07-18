@@ -5,6 +5,7 @@ plugins {
 }
 
 val ktorVersion: String by System.getProperties()
+val imagePrefix: String by System.getProperties()
 
 dependencies {
     implementation(project(":common"))
@@ -40,7 +41,7 @@ jib {
         image = "openjdk:11.0.15-jre-slim-buster"
     }
     to {
-        image = "wikilinks-generator:${project.version}"
+        image = "$imagePrefix/generator:${project.version}"
     }
     container {
         creationTime = "USE_CURRENT_TIMESTAMP"
