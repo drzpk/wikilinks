@@ -13,12 +13,6 @@ resource "aws_instance" "bastion" {
   associate_public_ip_address = true
   key_name                    = local.key_name
 
-  user_data = base64encode(templatefile("${path.cwd}/scripts/application.sh.tftpl", {
-    bucket   = aws_s3_bucket.bucket.bucket,
-    fs_id    = aws_efs_file_system.fs.id,
-    fs_ap_id = aws_efs_access_point.fs_root.id
-  }))
-
   tags = {
     Name = "${var.prefix}Bastion"
   }

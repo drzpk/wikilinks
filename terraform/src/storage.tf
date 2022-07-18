@@ -38,10 +38,6 @@ resource "aws_efs_mount_target" "public" {
   security_groups = [aws_security_group.efs.id]
 }
 
-resource "aws_s3_bucket" "bucket" {
-  bucket_prefix = "${var.prefix}wikilinks-"
-}
-
 # todo: lifecycle policy
 resource "aws_ecr_repository" "generator" {
   name                 = "${var.prefix}generator"
@@ -57,8 +53,4 @@ resource "aws_ecr_repository" "application" {
   image_scanning_configuration {
     scan_on_push = true
   }
-}
-
-output "bucket_name" {
-  value = aws_s3_bucket.bucket.bucket
 }

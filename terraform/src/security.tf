@@ -1,37 +1,3 @@
-resource "aws_iam_role" "api_gateway" {
-  name_prefix = "${var.prefix}APIGateway-"
-
-  inline_policy {
-    name   = "S3FrontendApp"
-    policy = jsonencode({
-      Version   = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "s3:Get*",
-            "s3:List*"
-          ]
-          Resource = "${aws_s3_bucket.bucket.arn}/frontend/*"
-        }
-      ]
-    })
-  }
-
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      {
-        Effect    = "Allow"
-        Action    = "sts:AssumeRole"
-        Principal = {
-          Service = "apigateway.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
 resource "aws_iam_role" "generator" {
   name_prefix = "${var.prefix}Generator-"
 
@@ -53,27 +19,6 @@ resource "aws_iam_role" "generator" {
             "elasticfilesystem:DescribeMountTargets"
           ]
           Resource = aws_efs_file_system.fs.arn
-        }
-      ]
-    })
-  }
-
-  inline_policy {
-    name   = "S3GeneratorApp"
-    policy = jsonencode({
-      Version   = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "s3:Get*",
-            "s3:List*"
-          ]
-          Resource = [
-            aws_s3_bucket.bucket.arn,
-            "${aws_s3_bucket.bucket.arn}/generator",
-            "${aws_s3_bucket.bucket.arn}/generator/*"
-          ]
         }
       ]
     })
@@ -177,29 +122,6 @@ resource "aws_iam_role" "application" {
             "elasticfilesystem:DescribeMountTargets"
           ]
           Resource = aws_efs_file_system.fs.arn
-        }
-      ]
-    })
-  }
-
-  inline_policy {
-    name   = "S3Application"
-    policy = jsonencode({
-      Version   = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "s3:Get*",
-            "s3:List*"
-          ]
-          Resource = [
-            aws_s3_bucket.bucket.arn,
-            "${aws_s3_bucket.bucket.arn}/application/",
-            "${aws_s3_bucket.bucket.arn}/application/*",
-            "${aws_s3_bucket.bucket.arn}/updater/",
-            "${aws_s3_bucket.bucket.arn}/updater/*"
-          ]
         }
       ]
     })
