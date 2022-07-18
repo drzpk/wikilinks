@@ -92,4 +92,8 @@ resource "aws_batch_job_definition" "generator" {
     executionRoleArn = aws_iam_role.ecs_execution.arn
     jobRoleArn       = aws_iam_role.generator.arn
   })
+
+  timeout {
+    attempt_duration_seconds = 3 * 60 * 60
+  }
 }
