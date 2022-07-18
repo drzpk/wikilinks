@@ -12,5 +12,8 @@
         <Logger name="dev.drzepka.wikilinks" level="DEBUG" additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
+        <Logger name="dev.drzepka.wikilinks.app.db.FileConfigRepository" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
     </Loggers>
 </Configuration>

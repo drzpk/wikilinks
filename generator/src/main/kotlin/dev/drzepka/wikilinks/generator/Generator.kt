@@ -66,7 +66,7 @@ private object InitializeDatabaseStep : FlowStep<Store> {
             store[key] = "done"
         }
 
-        store.db = DatabaseProvider.getLinksDatabase(
+        store.db = DatabaseProvider().getLinksDatabase(
             createSchema = true,
             disableProtection = true,
             overrideDirectory = workingDirectory.canonicalPath

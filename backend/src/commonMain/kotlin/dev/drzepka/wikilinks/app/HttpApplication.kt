@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.app
 
+import dev.drzepka.wikilinks.app.KoinApp.availabilityService
 import dev.drzepka.wikilinks.app.KoinApp.frontendResourceService
 import dev.drzepka.wikilinks.app.KoinApp.historyService
 import dev.drzepka.wikilinks.app.KoinApp.searchService
@@ -12,6 +13,7 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import org.koin.core.context.startKoin
@@ -25,25 +27,36 @@ fun httpApplication() {
         }
         install(StatusPages) {
             val log = KotlinLogging.logger("exception-handler")
+            exception { call: ApplicationCall, _: MaintenanceModeException ->
+                log.warn { "Unable to complete request ${call.request.uri} because of maintenance mode" }
+                call.respond(HttpStatusCode.ServiceUnavailable, "Application is being updated, please try again later.")
+            }
             exception { call: ApplicationCall, cause: Throwable ->
                 log.error(cause) { "Uncaught error while processing request: ${call.request.uri}" }
             }
         }
-        configureKoin()
+        configureKoin(this)
         configureRouting()
     }
 }
 
 internal expect fun createEmbeddedServer(port: Int, configuration: Application.() -> Unit)
 
-private fun configureKoin() {
+private fun configureKoin(scope: CoroutineScope) {
     startKoin {
-        modules(coreModule, fullModule)
+        modules(coreModule(), fullModule(scope))
     }
 }
 
 private fun Application.configureRouting() {
     routing {
+        intercept(ApplicationCallPipeline.Plugins) {
+            if (availabilityService.isUpdateInProgress()) {
+                call.respond(HttpStatusCode.ServiceUnavailable, "Update in progress")
+                finish()
+            }
+        }
+
         get("/") {
             call.respondRedirect("app/index.html", permanent = false)
         }

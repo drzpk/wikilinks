@@ -36,7 +36,7 @@ class FileConfigRepository(workingDirectory: String) : ConfigRepository {
         if (exists)
             dumpVersion = null
 
-        log.info {
+        log.debug {
             val status = if (exists) "active" else "inactive"
             "Maintenance mode status: $status"
         }

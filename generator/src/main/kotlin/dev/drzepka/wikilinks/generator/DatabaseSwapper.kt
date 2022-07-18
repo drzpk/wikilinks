@@ -13,7 +13,8 @@ import kotlin.time.Duration.Companion.seconds
 class DatabaseSwapper(
     private val dumpDirectory: File,
     private val databasesDirectory: File,
-    private val configRepository: ConfigRepository
+    private val configRepository: ConfigRepository,
+    private val maintenanceLockWaitTime: Duration = Configuration.databaseDisconnectTimeout
 ) {
     private val oldDatabasesDirectory = File(databasesDirectory, "_old")
 
@@ -40,6 +41,8 @@ class DatabaseSwapper(
 
     private fun activateMaintenanceLock() {
         configRepository.setMaintenanceMode(true)
+        println("Waiting $maintenanceLockWaitTime for the application to detect maintenance mode")
+        Thread.sleep(maintenanceLockWaitTime.inWholeMilliseconds)
     }
 
     private fun moveOldDatabases() {
@@ -103,7 +106,7 @@ class DatabaseSwapper(
                 break
             } catch (e: Exception) {
                 println("Move attempt $attempt failed (${e.message})")
-                Thread.sleep(1000)
+                Thread.sleep(5000)
             }
         }
 

@@ -41,7 +41,7 @@ fun searchAndPrint(startPage: Int, targetPage: Int) {
 
 fun search(startPage: Int, targetPage: Int): Pair<List<Path>, Long> {
     startKoin {
-        modules(coreModule)
+        modules(coreModule())
     }
 
     return searchService.simpleSearch(startPage, targetPage)

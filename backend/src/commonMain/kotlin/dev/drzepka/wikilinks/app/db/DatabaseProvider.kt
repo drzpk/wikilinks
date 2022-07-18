@@ -5,6 +5,7 @@ import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.db.use
 import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.app.utils.Environment
+import dev.drzepka.wikilinks.app.utils.MultiplatformWeakReference
 import dev.drzepka.wikilinks.app.utils.environment
 import dev.drzepka.wikilinks.db.cache.CacheDatabase
 import dev.drzepka.wikilinks.db.history.HistoryDatabase
@@ -12,12 +13,27 @@ import dev.drzepka.wikilinks.db.links.LinksDatabase
 import mu.KotlinLogging
 
 @Suppress("MemberVisibilityCanBePrivate")
-object DatabaseProvider {
-    const val LINKS_DATABASE_NAME = "links.db"
-    const val CACHE_DATABASE_NAME = "cache.db"
-    const val HISTORY_DATABASE_NAME = "history.db"
-
+class DatabaseProvider {
     private val log = KotlinLogging.logger {}
+    private val drivers = mutableSetOf<MultiplatformWeakReference<SqlDriver>>()
+
+    fun closeAllConnections() {
+        val iterator = drivers.iterator()
+        var closedCount = 0
+
+        while (iterator.hasNext()) {
+            val driver = iterator.next().getValue()
+            if (driver != null) {
+                driver.close()
+                closedCount++
+            }
+            else {
+                iterator.remove()
+            }
+        }
+
+        log.info { "Closed $closedCount database connections" }
+    }
 
     fun getLinksDatabase(
         createSchema: Boolean = false,
@@ -43,6 +59,13 @@ object DatabaseProvider {
     }
 
     private fun getDbDriver(dbName: String, disableProtection: Boolean, overrideDirectory: String? = null): SqlDriver {
+        val factory = { doGetDbDriver(dbName, disableProtection, overrideDirectory) }
+        val driver = ReusableDriver(factory)
+        drivers.add(MultiplatformWeakReference(driver))
+        return driver
+    }
+
+    private fun doGetDbDriver(dbName: String, disableProtection: Boolean, overrideDirectory: String? = null): SqlDriver {
         val dir = overrideDirectory ?: Configuration.databasesDirectory
         val driver = getDriver(dir, dbName)
 
@@ -94,6 +117,12 @@ object DatabaseProvider {
     }
 
     private fun SqlDriver.executeQuery(sql: String): SqlCursor = executeQuery(null, sql, 0)
+
+    companion object {
+        const val LINKS_DATABASE_NAME = "links.db"
+        const val CACHE_DATABASE_NAME = "cache.db"
+        const val HISTORY_DATABASE_NAME = "history.db"
+    }
 }
 
 internal expect fun getDriver(basePath: String?, databaseName: String): SqlDriver

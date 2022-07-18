@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.io.File
 import java.nio.file.Files
+import kotlin.time.Duration.Companion.seconds
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class DatabaseSwapperTest {
@@ -43,7 +44,7 @@ internal class DatabaseSwapperTest {
         val dumpDir = File(testDirectory, dumpsDirectoryName)
         val databasesDir = File(testDirectory, databasesDirectoryName)
         val repository = FileConfigRepository(databasesDir.absolutePath)
-        return DatabaseSwapper(dumpDir, databasesDir, repository)
+        return DatabaseSwapper(dumpDir, databasesDir, repository, 1.seconds)
     }
 
     private fun initializeTestDirectory(): File {

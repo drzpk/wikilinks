@@ -102,7 +102,7 @@ abstract class BaseLinkSearchTest(imageVariant: String) {
 
     private fun initializeDatabase() {
         val linksDb =
-            DatabaseProvider.getLinksDatabase(createSchema = true, overrideDirectory = databasesDirectory.absolutePath)
+            DatabaseProvider().getLinksDatabase(createSchema = true, overrideDirectory = databasesDirectory.absolutePath)
         linksDb.pagesQueries.insert(1, "title_1")
         linksDb.pagesQueries.insert(2, "title_2")
         linksDb.pagesQueries.insert(3, "title_3")
