@@ -34,7 +34,7 @@ resource "aws_batch_job_definition" "generator" {
 
   container_properties = jsonencode({
     command     = []
-    image       = "${aws_ecr_repository.generator.repository_url}:latest"
+    image       = "ghcr.io/drzpk/wikilinks/generator:${var.versions.generator}"
     environment = [
       {
         name  = "DATABASES_DIRECTORY"

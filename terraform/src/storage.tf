@@ -37,20 +37,3 @@ resource "aws_efs_mount_target" "public" {
   subnet_id       = aws_subnet.public.id
   security_groups = [aws_security_group.efs.id]
 }
-
-# todo: lifecycle policy
-resource "aws_ecr_repository" "generator" {
-  name                 = "${var.prefix}generator"
-  image_tag_mutability = "MUTABLE"
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-}
-
-resource "aws_ecr_repository" "application" {
-  name = "${var.prefix}application"
-  image_tag_mutability = "MUTABLE"
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-}

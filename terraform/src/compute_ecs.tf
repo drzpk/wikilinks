@@ -115,7 +115,7 @@ resource "aws_ecs_task_definition" "application" {
   container_definitions = jsonencode([
     {
       name        = local.ecs_application_container_name
-      image       = "${aws_ecr_repository.application.repository_url}:latest",
+      image       = "ghcr.io/drzpk/wikilinks/application-native:${var.versions.application}",
       memory      = 512
       cpu         = 1024
       essential   = true
