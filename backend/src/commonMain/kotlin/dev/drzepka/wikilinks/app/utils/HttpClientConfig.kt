@@ -9,7 +9,6 @@ import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
 
 val http = HttpClient(getHttpEngine()) {
-    // todo: create shared http client for backend and frontend
     install(ContentNegotiation) {
         json()
     }
