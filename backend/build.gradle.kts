@@ -27,7 +27,6 @@ kotlin {
             dependencies {
                 implementation(project(":common"))
                 implementation(kotlin("stdlib-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
                 implementation("io.github.microutils:kotlin-logging:2.1.23")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 implementation("io.ktor:ktor-client-core:$ktorVersion")

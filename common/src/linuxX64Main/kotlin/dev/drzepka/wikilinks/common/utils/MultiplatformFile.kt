@@ -1,11 +1,25 @@
 package dev.drzepka.wikilinks.common.utils
 
 import kotlinx.cinterop.*
+import kotlinx.datetime.Instant
 import platform.posix.*
 
 actual class MultiplatformFile actual constructor(private val path: String) {
 
     actual fun isFile(): Boolean = access(path, F_OK) == 0
+
+    actual fun getModificationTime(): Instant? {
+        if (!isFile())
+            return null
+
+        val time = memScoped {
+            val statResult = alloc<stat>()
+            stat(path, statResult.ptr)
+            Pair(statResult.st_mtim.tv_sec, statResult.st_mtim.tv_nsec)
+        }
+
+        return Instant.fromEpochSeconds(time.first, time.second)
+    }
 
     actual fun read(): String {
         return readBytes().decodeToString()

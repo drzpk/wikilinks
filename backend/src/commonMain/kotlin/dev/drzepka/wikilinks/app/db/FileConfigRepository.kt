@@ -1,8 +1,13 @@
 package dev.drzepka.wikilinks.app.db
 
+import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.common.utils.MultiplatformFile
+import kotlinx.datetime.Clock
 import mu.KotlinLogging
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class FileConfigRepository(workingDirectory: String) : ConfigRepository {
     private val log = KotlinLogging.logger {}
 
@@ -31,10 +36,19 @@ class FileConfigRepository(workingDirectory: String) : ConfigRepository {
     }
 
     override fun isMaintenanceModeActive(): Boolean {
-        val exists = maintenanceModeFile.isFile()
+        var exists = maintenanceModeFile.isFile()
 
-        if (exists)
+        if (exists) {
             dumpVersion = null
+
+            val limit = Configuration.maintenanceModeTimeoutSeconds.seconds
+            val deadline = maintenanceModeFile.getModificationTime()!! + limit
+            if (Clock.System.now() > deadline) {
+                log.warn { "Maintenance mode duration has exceeded the configured limit of $limit, and will be forcefully disabled" }
+                setMaintenanceMode(false)
+                exists = false
+            }
+        }
 
         log.debug {
             val status = if (exists) "active" else "inactive"
@@ -55,7 +69,6 @@ class FileConfigRepository(workingDirectory: String) : ConfigRepository {
     }
 
     override fun isGeneratorActive(): Boolean {
-        // todo: return false if file modification time is older than generator max run time
         val exists = generatorActiveFile.isFile()
         log.info {
             val status = if (exists) "active" else "inactive"

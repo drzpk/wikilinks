@@ -1,7 +1,13 @@
 package dev.drzepka.wikilinks.common.utils
 
+import kotlinx.datetime.Instant
+
 actual class MultiplatformFile actual constructor(path: String) {
     actual fun isFile(): Boolean {
+        throwException()
+    }
+
+    actual fun getModificationTime(): Instant? {
         throwException()
     }
 
