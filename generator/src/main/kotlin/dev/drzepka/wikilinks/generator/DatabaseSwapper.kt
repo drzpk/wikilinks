@@ -19,7 +19,9 @@ class DatabaseSwapper(
     private val oldDatabasesDirectory = File(databasesDirectory, "_old")
 
     fun run(newVersion: String) {
+        ensureDatabasesDirectoryExists()
         activateMaintenanceLock()
+
         try {
             moveOldDatabases()
             moveNewLinksDatabase()
@@ -36,6 +38,13 @@ class DatabaseSwapper(
             throw e
         } finally {
             deactivateMaintenanceLock()
+        }
+    }
+
+    private fun ensureDatabasesDirectoryExists() {
+        if (!databasesDirectory.isDirectory) {
+            println("Databases directory doesn't exist, creating")
+            databasesDirectory.mkdir()
         }
     }
 
