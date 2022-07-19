@@ -21,4 +21,4 @@ val http = HttpClient(getHttpEngine()) {
     }
 }
 
-expect fun <T : HttpClientEngineConfig> getHttpEngine(): HttpClientEngineFactory<T>
+expect fun getHttpEngine(): HttpClientEngineFactory<HttpClientEngineConfig>

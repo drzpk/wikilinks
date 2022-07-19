@@ -7,7 +7,7 @@ import dev.drzepka.wikilinks.common.utils.MultiplatformFile
 import io.ktor.http.*
 
 class FrontendResourceService {
-    private val rootPath = absolutePath(Configuration.frontendResourcesDirectory!!)
+    private val rootPath = absolutePath(Configuration.frontendResourcesDirectory)
 
     fun getResource(path: String): Resource? {
         val resolved = absolutePath("$rootPath/$path")

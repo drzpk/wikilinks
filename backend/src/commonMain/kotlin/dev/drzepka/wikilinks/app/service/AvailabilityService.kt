@@ -2,22 +2,25 @@ package dev.drzepka.wikilinks.app.service
 
 import dev.drzepka.wikilinks.app.db.ConfigRepository
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
-import kotlinx.coroutines.*
+import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class)
+@OptIn(ExperimentalTime::class)
 class AvailabilityService(
     scope: CoroutineScope,
     private val configRepository: ConfigRepository,
     private val databaseProvider: DatabaseProvider
 ) {
     private val log = KotlinLogging.logger {}
-    private val progressContext = newSingleThreadContext("AvailabilityService_progress")
-    private var updateInProgress = false
+    private val updateInProgress = atomic(false)
 
     init {
         scope.launch {
@@ -27,7 +30,7 @@ class AvailabilityService(
         }
     }
 
-    suspend fun isUpdateInProgress(): Boolean = withContext(progressContext) { updateInProgress }
+    fun isUpdateInProgress(): Boolean = updateInProgress.value
 
     private suspend fun checkForMaintenanceMode() {
         // This solution is not ideal, because there may be cases when more time is required
@@ -40,17 +43,13 @@ class AvailabilityService(
             return
 
         log.info { "Maintenance mode detected" }
-        withContext(progressContext) {
-            updateInProgress = true
-        }
+        updateInProgress.value = true
 
         databaseProvider.closeAllConnections()
         waitForMaintenanceModeToTurnOff()
 
         log.info { "Maintenance mode disabled" }
-        withContext(progressContext) {
-            updateInProgress = false
-        }
+        updateInProgress.value = false
     }
 
     private suspend fun waitForMaintenanceModeToTurnOff() {

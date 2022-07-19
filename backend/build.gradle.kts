@@ -7,6 +7,7 @@ plugins {
 val coroutinesVersion: String by System.getProperties()
 val ktorVersion: String by System.getProperties()
 val koinVersion: String by System.getProperties()
+val atomicfuVersion: String by System.getProperties()
 
 kotlin {
     /* Targets configuration omitted. 
@@ -37,6 +38,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
                 implementation("io.insert-koin:koin-core:$koinVersion")
+                implementation("org.jetbrains.kotlinx:atomicfu:$atomicfuVersion")
             }
         }
         val commonTest by getting {
