@@ -2,6 +2,7 @@ package dev.drzepka.wikilinks.app
 
 import dev.drzepka.wikilinks.app.KoinApp.availabilityService
 import dev.drzepka.wikilinks.app.KoinApp.frontendResourceService
+import dev.drzepka.wikilinks.app.KoinApp.healthService
 import dev.drzepka.wikilinks.app.KoinApp.historyService
 import dev.drzepka.wikilinks.app.KoinApp.searchService
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
@@ -51,7 +52,7 @@ private fun configureKoin(scope: CoroutineScope) {
 private fun Application.configureRouting() {
     routing {
         intercept(ApplicationCallPipeline.Plugins) {
-            if (availabilityService.isUpdateInProgress()) {
+            if (!call.request.path().endsWith("api/health")  && availabilityService.isUpdateInProgress()) {
                 call.respond(HttpStatusCode.ServiceUnavailable, "Update in progress")
                 finish()
             }
@@ -81,6 +82,10 @@ private fun Application.configureRouting() {
                     historyService.addResult(searchDate, result)
                     call.respond(result)
                 }
+            }
+
+            get("health") {
+                call.respond(healthService.getHealth())
             }
         }
     }

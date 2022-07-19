@@ -5,6 +5,7 @@ import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.app.db.*
 import dev.drzepka.wikilinks.app.service.AvailabilityService
 import dev.drzepka.wikilinks.app.service.FrontendResourceService
+import dev.drzepka.wikilinks.app.service.HealthService
 import dev.drzepka.wikilinks.app.service.HistoryService
 import dev.drzepka.wikilinks.app.service.search.LinkSearchService
 import dev.drzepka.wikilinks.app.service.search.PageInfoService
@@ -38,6 +39,7 @@ fun fullModule(scope: CoroutineScope) = module {
     single { HistoryService(get(), get()) }
     single { FrontendResourceService() }
     single(createdAtStart = true) { AvailabilityService(scope, get(), get()) }
+    single(createdAtStart = true) { HealthService(get()) }
 }
 
 object KoinApp : KoinComponent {
@@ -45,4 +47,5 @@ object KoinApp : KoinComponent {
     val frontendResourceService: FrontendResourceService by inject()
     val historyService: HistoryService by inject()
     val availabilityService: AvailabilityService by inject()
+    val healthService: HealthService by inject()
 }
