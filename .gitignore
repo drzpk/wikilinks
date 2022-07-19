@@ -2,5 +2,9 @@
 .gradle
 build
 *.db
+*.db-shm
+*.db-wal
+*.backup
+dump_version.txt
 
 /dumps
