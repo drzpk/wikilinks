@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    id("com.github.gmazzo.buildconfig") version "3.1.0"
 }
 
 val kotlinxSerializationVersion: String by System.getProperties()
@@ -30,4 +31,10 @@ kotlin {
             }
         }
     }
+}
+
+buildConfig {
+    packageName("dev.drzepka.wikilinks.common")
+    buildConfigField("String", "VERSION", "\"${project.version}\"")
+    buildConfigField("long", "BUILT_AT", "${System.currentTimeMillis()}L")
 }
