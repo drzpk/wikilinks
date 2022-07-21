@@ -18,10 +18,19 @@ class LinksGraph(result: LinkSearchResult) : Div() {
     private val nodes = result.toNodes()
     private val edges = result.toEdges(nodes)
     private val nodeRows = nodes.countRows()
+    private val scale: Double
 
     init {
         id = CONTAINER_ID
         tag(TAG.SVG)
+
+        // Scale down so that the nodes can fit into the largest row
+        val factor = 1.3
+        val largestRowSize = nodeRows.maxOrNull()!!
+        val maxMatchingNodeRadius = (GRAPH_HEIGHT - VERTICAL_PADDING) / largestRowSize.toDouble() / 2
+        scale = if (maxMatchingNodeRadius < NODE_RADIUS)
+            maxMatchingNodeRadius / NODE_RADIUS * factor
+        else 1.0
 
         if (result.paths.isNotEmpty())
             window.setTimeout({ initializeD3() })
@@ -53,15 +62,17 @@ class LinksGraph(result: LinkSearchResult) : Div() {
             .attr("preserveAspectRatio", "xMinYMin meet")
             .attr("viewBox", arrayOf(0, 0, GRAPH_WIDTH, GRAPH_HEIGHT))
 
-        d3Edges = svg.selectAll("g.edge")
+        val root = svg.append("g")
+
+        d3Edges = root.selectAll("g.edge")
             .data(edges.toTypedArray())
             .join("g")
             .attr("class", "edge")
             .append("line")
             .style("stroke", "black")
-            .style("stroke-width", 1)
+            .style("stroke-width", scale)
 
-        d3Nodes = svg.selectAll("g.node")
+        d3Nodes = root.selectAll("g.node")
             .data(nodes.toTypedArray())
             .join("g")
             .attr("class", "node")
@@ -86,6 +97,12 @@ class LinksGraph(result: LinkSearchResult) : Div() {
             .attr("height") { d -> d.bbox.height }
             .attr("transform", "translate(" + NODE_RADIUS * 1.2 + ", " + NODE_RADIUS / 2 + ")")
             .style("fill", "#ffffff73")
+
+        val zoom = d3.zoom()
+            .extent(arrayOf(arrayOf(0, 0), arrayOf(GRAPH_WIDTH, GRAPH_HEIGHT)))
+            .scaleExtent(arrayOf(1, 6))
+            .on("zoom") { data -> root.attr("transform", data.transform) }
+        svg.call(zoom)
     }
 
     private fun setNodePositions(nodes: Collection<Node>) {
@@ -127,7 +144,7 @@ class LinksGraph(result: LinkSearchResult) : Div() {
             .attr("y2") { d -> d.target.y }
 
         d3Nodes
-            .attr("transform") { d -> "translate(" + d.x + ", " + d.y + ")" }
+            .attr("transform") { d -> "translate(${d.x}, ${d.y}) scale($scale)" }
     }
 
     private fun drag(simulation: dynamic): dynamic {
