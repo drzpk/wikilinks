@@ -102,7 +102,7 @@ class LinksGraph(result: LinkSearchResult) : Div() {
 
         val zoom = d3.zoom()
             .extent(arrayOf(arrayOf(0, 0), arrayOf(GRAPH_WIDTH, GRAPH_HEIGHT)))
-            .scaleExtent(arrayOf(1, 6))
+            .scaleExtent(arrayOf(0.5, 6))
             .on("zoom") { data -> root.attr("transform", data.transform) }
         svg.call(zoom)
     }
@@ -231,12 +231,12 @@ class LinksGraph(result: LinkSearchResult) : Div() {
         private const val SIMULATION_ACTIVE = true
 
         // Graph width and height are only used to determine aspect ratio of the svg element
-        private const val GRAPH_WIDTH = 1000
+        private const val GRAPH_WIDTH = 1200
         private const val GRAPH_HEIGHT = 400
-        private const val PADDING_TOP = 40
-        private const val PADDING_BOTTOM = 40
+        private const val PADDING_TOP = 20
+        private const val PADDING_BOTTOM = 20
         private const val PADDING_LEFT = 20
-        private const val PADDING_RIGHT = 80
+        private const val PADDING_RIGHT = 100
         private const val NODE_RADIUS = 8
 
         private const val VERTICAL_PADDING = PADDING_TOP + PADDING_BOTTOM
