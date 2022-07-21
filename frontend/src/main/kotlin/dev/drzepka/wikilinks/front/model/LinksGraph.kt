@@ -24,16 +24,6 @@ data class Edge(
     val target: Node
 )
 
-data class LinksGraphData(
-    val containerId: String,
-    val nodes: List<Node>,
-    val edges: List<Edge>,
-    val rows: List<Int>,
-    val cols: Int,
-    val nodeRadius: Int,
-    val padding: Int
-)
-
 fun LinkSearchResult.toNodes(): List<Node> {
     if (paths.isEmpty())
         return emptyList()
