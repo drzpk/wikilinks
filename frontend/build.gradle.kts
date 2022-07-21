@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnResolution
+import org.jetbrains.kotlin.gradle.targets.js.yarn.yarn
 
 
 plugins {
@@ -48,6 +50,8 @@ kotlin {
             }
         }
         binaries.executable()
+
+        yarn.resolutions.add(YarnResolution("**/terser").apply { include(">=5.14.2") }) // Dependabot alert #2
     }
     sourceSets["main"].dependencies {
         implementation(project(":common"))
