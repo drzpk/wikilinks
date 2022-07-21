@@ -21,6 +21,7 @@ class SearchResultComponent(result: ObservableState<LinkSearchResult?>) : Div(cl
                 displayedPaths.setState(it.paths.take(pathDisplayIncrement))
 
                 add(ResultDescription(it))
+                add(LinksGraph(it))
                 div("Found paths:", className = "found-paths-text")
                 div(className = "paths").bindEach(displayedPaths) { path ->
                     add(ResultPath(path, it.pages))

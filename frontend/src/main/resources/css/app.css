@@ -225,3 +225,8 @@ header h1 {
     text-align: center;
     margin-bottom: 2em;
 }
+
+#links-graph-container {
+    width: 60%;
+    margin: auto;
+}
