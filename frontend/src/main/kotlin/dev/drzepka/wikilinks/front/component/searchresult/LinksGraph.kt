@@ -88,7 +88,9 @@ class LinksGraph(result: LinkSearchResult) : Div() {
             .text { d -> d.text }
             .attr("transform", "translate(" + NODE_RADIUS * 1.2 + ", " + NODE_RADIUS / 2 + ")")
             .attr("font-family", "system-ui")
+            .style("cursor", "pointer")
             .each(js("function (d) { d.bbox = this.getBBox(); }"))
+            .on("click") { _, d -> window.open(d.url as String, "_blank") }
 
         d3Rects
             .attr("x") { d -> d.bbox.x }

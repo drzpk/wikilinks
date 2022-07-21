@@ -12,7 +12,9 @@ data class Node(
     @JsName("fixed")
     val fixed: Boolean,
     @JsName("text")
-    val text: String
+    val text: String,
+    @JsName("url")
+    val url: String
 )
 
 data class Edge(
@@ -44,7 +46,8 @@ fun LinkSearchResult.toNodes(): List<Node> {
                     column,
                     posInColumn,
                     nodeId == startNodeId || nodeId == endNodeId,
-                    pages[nodeId]!!.title
+                    pages[nodeId]!!.title,
+                    pages[nodeId]!!.url
                 )
                 nodes[nodeId] = node
             }
