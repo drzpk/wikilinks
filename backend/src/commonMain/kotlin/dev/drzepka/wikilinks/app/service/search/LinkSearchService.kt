@@ -29,7 +29,8 @@ class LinkSearchService(
         val totalDuration = totalDurationMark.elapsedNow()
         val searchDuration = SearchDuration(
             totalDuration.inWholeMilliseconds.toInt(),
-            pathTimedValue.duration.inWholeMilliseconds.toInt()
+            pathTimedValue.duration.inWholeMilliseconds.toInt(),
+            pageInfoResult.pageFetchMs
         )
 
         return LinkSearchResult(

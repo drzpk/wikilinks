@@ -100,6 +100,63 @@ header h1 {
     margin: auto auto 3em;
 }
 
+.search-result .result-description .search-duration {
+    position: relative;
+}
+
+.search-result .result-description .search-duration .details-container {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 1em);
+
+    transition: opacity 0.2s linear, visibility 0.2s linear;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.search-result .result-description .search-duration .details-container.visible {
+    visibility: visible;
+    opacity: 1;
+}
+
+.search-result .result-description .search-duration .details-container:before {
+    content: " ";
+    position: absolute;
+    border: 2px solid black;
+    background-color: #e5e5e5;
+    width: 1em;
+    height: 1em;
+    left: calc(50% - 0.5em);
+    top: -0.5em;
+    transform: rotate(45deg);
+}
+
+.search-result .result-description .search-duration .details-container .details {
+    position: relative;
+    display: table;
+    z-index: 2;
+    white-space: nowrap;
+    padding: 0.5em;
+    border: 2px solid black;
+    border-radius: 0.5em;
+    font-size: 0.9em;
+    background-color: #e5e5e5;
+}
+
+.search-result .result-description .search-duration .details-container .details > div {
+    display: table-row;
+}
+
+.search-result .result-description .search-duration .details-container .details > div > span {
+    display: table-cell;
+    padding-right: 0.8em;
+    text-align: end;
+}
+
+.search-result .result-description .search-duration .details-container .details > div > strong {
+    display: table-cell;
+}
+
 .search-result .found-paths-text {
     text-align: center;
     margin-bottom: 1em;
@@ -224,7 +281,6 @@ header h1 {
 
 #links-graph-container {
     width: 70%;
-    margin: auto;
     border: 1px solid gray;
-    margin-bottom: 2em;
+    margin: auto auto 2em;
 }

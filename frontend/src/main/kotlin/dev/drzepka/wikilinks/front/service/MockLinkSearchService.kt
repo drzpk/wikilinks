@@ -41,6 +41,10 @@ object MockLinkSearchService : LinkSearchService {
 
     private fun getRandomDuration(): SearchDuration =
         Random.nextInt(600, 30_000).let { totalTime ->
-            SearchDuration(totalTime, Random.nextInt((totalTime * 0.5).toInt(), (totalTime * 0.9).toInt()))
+            SearchDuration(
+                totalTime,
+                Random.nextInt((totalTime * 0.5).toInt(), (totalTime * 0.9).toInt()),
+                Random.nextInt((totalTime * 0.2).toInt(), (totalTime * 0.5).toInt())
+            )
         }
 }

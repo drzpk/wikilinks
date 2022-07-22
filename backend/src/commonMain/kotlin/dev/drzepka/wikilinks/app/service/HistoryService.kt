@@ -17,8 +17,8 @@ class HistoryService(private val historyRepository: HistoryRepository, private v
             pages?.lastOrNull(),
             result.paths.size,
             result.degreesOfSeparation,
-            result.duration.pathMillis,
-            result.duration.totalMillis,
+            result.duration.graphMs,
+            result.duration.totalMs,
             result.cacheHitRatio.toDouble()
         )
 

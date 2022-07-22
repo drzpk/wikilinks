@@ -15,7 +15,9 @@ import kotlinx.serialization.json.*
 import mu.KotlinLogging
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.TimedValue
 import kotlin.time.measureTimedValue
 
 @OptIn(ExperimentalTime::class)
@@ -43,7 +45,7 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
             "Cache hit ratio: ${cacheHits.size}/${pageIds.size} ($percentage%)"
         }
 
-        val downloadedPages = fetchPages(pagesToDownload)
+        val (downloadedPages, downloadTime) = fetchPages(pagesToDownload)
         cacheService.putCache(downloadedPages.values.map { it.toCacheHit() })
 
         cacheHits
@@ -51,10 +53,15 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
             .map { it.value.toPageInfo() }
             .forEach { downloadedPages[it.id] = it }
 
-        return PageInfoResult(downloadedPages, cacheHitRatio)
+        return PageInfoResult(downloadedPages, cacheHitRatio, downloadTime.inWholeMilliseconds.toInt())
     }
 
-    private fun fetchPages(pageIds: List<Int>): MutableMap<Int, PageInfo> {
+    private fun fetchPages(pageIds: List<Int>): TimedValue<MutableMap<Int, PageInfo>> {
+        if (pageIds.isEmpty()) {
+            log.trace { "No pages to download" }
+            return TimedValue(mutableMapOf(), Duration.ZERO)
+        }
+
         val value = measureTimedValue {
             downloadPagesFromWikipedia(pageIds).associateByTo(HashMap()) { it.id }
         }
@@ -68,7 +75,7 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
         }
 
         setPageUrlTitles(downloaded)
-        return downloaded
+        return TimedValue(downloaded, value.duration)
     }
 
     private fun downloadPagesFromWikipedia(pageIds: List<Int>): Collection<PageInfo> {
