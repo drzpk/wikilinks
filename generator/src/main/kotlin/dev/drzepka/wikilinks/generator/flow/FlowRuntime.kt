@@ -11,6 +11,9 @@ import kotlin.math.floor
         52.3%    2012/3925MB    00:93
 [ 3/10] Do something
 
+Execution time summary
+  1. Test:      3m 2s
+  2. Step name: 22s
 Total execution time: 0h 3min 21sec
  */
 class FlowRuntime(private val totalSteps: Int) : ProgressLogger {
@@ -18,11 +21,11 @@ class FlowRuntime(private val totalSteps: Int) : ProgressLogger {
     private var currentStep = 0
     private var needsNewLineAfterStep = false
     private var stepStartTime = Instant.now()
-    private var firstStepStartTime: Instant? = null
     private var lastProgressUpdate = Instant.MIN
 
     private val totalStepsLength = totalSteps.toString().length
     private val progressPadding = " ".repeat(4 + totalStepsLength * 2)
+    private val stepExecutionTimePoints = mutableListOf<Pair<String, Instant>>()
 
     fun startNextStep(name: String) {
         if (needsNewLineAfterStep) {
@@ -34,13 +37,12 @@ class FlowRuntime(private val totalSteps: Int) : ProgressLogger {
         println("[$paddedCurrentStep/$totalSteps] $name")
 
         stepStartTime = Instant.now()
+        stepExecutionTimePoints.add(Pair(name, stepStartTime))
         lastProgressUpdate = Instant.MIN
-        if (firstStepStartTime == null)
-            firstStepStartTime = stepStartTime
     }
 
     fun summarize() {
-        if (firstStepStartTime == null)
+        if (stepExecutionTimePoints.isEmpty())
             return
 
         if (needsNewLineAfterStep) {
@@ -48,13 +50,28 @@ class FlowRuntime(private val totalSteps: Int) : ProgressLogger {
             needsNewLineAfterStep = false
         }
 
-        val duration = Duration.between(firstStepStartTime!!, Instant.now())
-        val hours = if (duration.toHours() > 0) duration.toHours().toString() + "h " else ""
-        val minutes = duration.toMinutesPart().toString()
-        val seconds = duration.toSecondsPart().toString()
+        val labelWidth = stepExecutionTimePoints.maxOf { it.first.length } + ":".length
+        val stepNoWidth = stepExecutionTimePoints.size.toString().length
+        val timePoints = stepExecutionTimePoints.map { it.second }.toMutableList().apply { add(Instant.now()) }
 
         println()
-        println("Total execution time: $hours${minutes}m ${seconds}s")
+        println("Execution time summary:")
+        timePoints
+            .windowed(2)
+            .map { Duration.between(it[0], it[1]).format(padZeros = true) }
+            .forEachIndexed { index, time ->
+                val no = (index + 1).toString().padStart(stepNoWidth, ' ')
+                val label = (stepExecutionTimePoints[index].first + ":").padEnd(labelWidth, ' ')
+                println("  $no. $label $time")
+            }
+
+        val totalStartPadding = " ".repeat(2 + stepNoWidth + 2)
+        val totalLabel = "TOTAL:".padEnd(labelWidth - "00h ".length, ' ')
+        val totalDuration = Duration.between(timePoints.first(), timePoints.last()).format(
+            includeHours = true,
+            padZeros = true
+        )
+        println("$totalStartPadding$totalLabel $totalDuration")
     }
 
     override fun updateProgress(current: Int, total: Int, unit: String) {
@@ -63,10 +80,8 @@ class FlowRuntime(private val totalSteps: Int) : ProgressLogger {
 
         val percentage = floor(current.toFloat() / total * 1000) / 10
         val duration = Duration.between(stepStartTime, Instant.now())
-        val minutes = duration.toMinutes().toString().padStart(2, '0')
-        val seconds = duration.toSecondsPart().toString().padStart(2, '0')
 
-        val progressText = "$progressPadding$percentage%    $current/$total$unit    $minutes:$seconds    "
+        val progressText = "$progressPadding$percentage%    $current/$total$unit    ${duration.format()}    "
         if (Configuration.batchMode)
             println(progressText)
         else
@@ -74,6 +89,30 @@ class FlowRuntime(private val totalSteps: Int) : ProgressLogger {
 
         needsNewLineAfterStep = needsNewLineAfterStep || !Configuration.batchMode
         lastProgressUpdate = Instant.now()
+    }
+
+    private fun Duration.format(includeHours: Boolean = false, padZeros: Boolean = false): String {
+        var hours = ""
+
+
+        if (includeHours) {
+            hours += toHours().toString()
+            if (padZeros)
+                hours = hours.padStart(2, '0')
+            hours += "h "
+        }
+
+        var minutes = (if (includeHours) toMinutesPart() else toMinutes()).toString()
+        if (padZeros)
+            minutes = minutes.padStart(2, '0')
+        minutes += "m "
+
+        var seconds = toSecondsPart().toString()
+        if (padZeros)
+            seconds = seconds.padStart(2, '0')
+        seconds += "s"
+
+        return "$hours$minutes$seconds"
     }
 
     companion object {
