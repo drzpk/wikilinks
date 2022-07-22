@@ -24,7 +24,7 @@ class DumpDownloader(
     private val workingDirectory: File,
     provider: HttpClientProvider
 ) : FlowSegment<Store> {
-    override val numberOfSteps =  REQUIRED_FILE_VARIANTS.size
+    override val numberOfSteps =  2 + REQUIRED_FILE_VARIANTS.size
 
     private val resolver = DumpResolver.createFromConfig(provider)
     private val http = provider.client
