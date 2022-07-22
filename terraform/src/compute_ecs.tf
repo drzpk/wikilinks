@@ -126,7 +126,7 @@ resource "aws_ecs_task_definition" "application" {
         },
         {
           name  = "GENERATOR_TIMEOUT"
-          value = tostring(aws_batch_job_definition.generator.timeout.attempt_duration_seconds)
+          value = tostring(aws_batch_job_definition.generator.timeout[0].attempt_duration_seconds)
         }
       ]
       portMappings = [
