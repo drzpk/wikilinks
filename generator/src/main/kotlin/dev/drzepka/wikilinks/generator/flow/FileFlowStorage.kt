@@ -35,6 +35,10 @@ class FileFlowStorage(hash: String, workingDirectory: File) : FlowStorage {
         flush()
     }
 
+    override fun clearStorage() {
+        storageFile.delete()
+    }
+
     private fun flush() {
         FileOutputStream(storageFile, false).use {
             mapper.writeValue(it, model)

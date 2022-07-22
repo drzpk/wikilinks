@@ -242,12 +242,17 @@ private object DeleteTemporaryDataStep : FlowStep<Store> {
     override val name = "Deleting temporary data"
 
     override fun run(store: Store, logger: ProgressLogger) {
+        if (Configuration.skipDeletingDumps)
+            println("Source Wikipedia dumps won't be deleted")
+
         workingDirectory.listFiles()!!
-            .filter { it.name.endsWith(".gz") }
+            .filter { it.name.endsWith(".gz") && (!Configuration.skipDeletingDumps || !it.name.startsWith("enwiki-")) }
             .forEach {
                 println("Deleting temporary file $it")
                 it.delete()
             }
+
+        store.clearStorage()
     }
 }
 

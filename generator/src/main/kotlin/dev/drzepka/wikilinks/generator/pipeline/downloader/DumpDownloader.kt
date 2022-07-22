@@ -4,9 +4,8 @@ import dev.drzepka.wikilinks.common.WikiConfig.REQUIRED_FILE_VARIANTS
 import dev.drzepka.wikilinks.common.dump.DumpResolver
 import dev.drzepka.wikilinks.common.dump.HttpClientProvider
 import dev.drzepka.wikilinks.common.model.dump.ArchiveDump
-import dev.drzepka.wikilinks.generator.Configuration
-import dev.drzepka.wikilinks.generator.flow.FlowSegment
 import dev.drzepka.wikilinks.generator.flow.FlowRuntime
+import dev.drzepka.wikilinks.generator.flow.FlowSegment
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
 import dev.drzepka.wikilinks.generator.model.Store
 import io.ktor.client.request.*
@@ -25,15 +24,12 @@ class DumpDownloader(
     private val workingDirectory: File,
     provider: HttpClientProvider
 ) : FlowSegment<Store> {
-    override val numberOfSteps = if (!Configuration.skipDownloadingDumps) 2 + REQUIRED_FILE_VARIANTS.size else 0
+    override val numberOfSteps =  REQUIRED_FILE_VARIANTS.size
 
     private val resolver = DumpResolver.createFromConfig(provider)
     private val http = provider.client
 
     override fun run(store: Store, runtime: FlowRuntime) = runBlocking {
-        if (Configuration.skipDownloadingDumps)
-            return@runBlocking
-
         runtime.startNextStep("Resolving new dumps")
         val dumps = resolver.resolveForVersion(store.version)
 
