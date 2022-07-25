@@ -40,7 +40,10 @@ abstract class AbstractWriter<T>(protected val db: LinksDatabase, private val bu
         // is fine, because the PageWriter itself is not multithreaded.
 
         isFlushing.set(true)
-        Thread(InsertExecutor(inactiveBuffer)).start()
+        Thread(InsertExecutor(inactiveBuffer)).apply {
+            name = "insert-executor"
+            start()
+        }
     }
 
     abstract fun insert(value: T)

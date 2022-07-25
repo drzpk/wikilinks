@@ -64,7 +64,7 @@ class DatabaseSwapper(
 
         val waitTime = 30.seconds
         for (database in databases) {
-            println("Moving database: ${database.name}")
+            println("Moving old database: ${database.name}")
             tryToMoveFile(database, oldDatabasesDirectory, waitTime)
         }
     }
@@ -82,6 +82,7 @@ class DatabaseSwapper(
         if (!databaseFile.isFile)
             throw IllegalStateException("Links database file wasn't found at: $databaseFile")
 
+        println("Moving new database: ${databaseFile.name}")
         tryToMoveFile(databaseFile, databasesDirectory, 10.seconds)
     }
 

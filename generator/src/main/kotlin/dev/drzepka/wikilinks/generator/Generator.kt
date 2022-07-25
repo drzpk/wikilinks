@@ -1,8 +1,5 @@
 package dev.drzepka.wikilinks.generator
 
-import com.squareup.sqldelight.Transacter
-import com.squareup.sqldelight.TransacterImpl
-import com.squareup.sqldelight.db.SqlDriver
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.app.db.FileConfigRepository
 import dev.drzepka.wikilinks.common.dump.HttpClientProvider
@@ -26,6 +23,7 @@ import java.io.File
 import java.lang.management.ManagementFactory
 
 private val workingDirectory = File(Configuration.workingDirectory)
+private val databaseProvider = DatabaseProvider()
 
 fun generate(version: String) {
     println("Starting generator with dump version=$version")
@@ -66,7 +64,7 @@ private object InitializeDatabaseStep : FlowStep<Store> {
             store[key] = "done"
         }
 
-        store.db = DatabaseProvider().getLinksDatabase(
+        store.db = databaseProvider.getLinksDatabase(
             createSchema = true,
             disableProtection = true,
             overrideDirectory = workingDirectory.canonicalPath
@@ -219,7 +217,7 @@ private object SwapDatabasesStep : FlowStep<Store> {
             return
         }
 
-        closeDatabaseConnection(store.db)
+        databaseProvider.closeAllConnections()
 
         val databasePath = Configuration.databasesDirectory ?: "."
         val databasesDirectory = File(databasePath)
@@ -227,14 +225,6 @@ private object SwapDatabasesStep : FlowStep<Store> {
 
         DatabaseSwapper(workingDirectory, File(databasePath), configRepository).run(store.version)
         store[key] = "done"
-    }
-
-    private fun closeDatabaseConnection(db: Transacter) {
-        // Let's cheat for now
-        val field = TransacterImpl::class.java.getDeclaredField("driver")
-        field.isAccessible = true
-        val driver = field.get(db) as SqlDriver
-        driver.close()
     }
 }
 

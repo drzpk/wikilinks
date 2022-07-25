@@ -14,7 +14,10 @@ class ReusableDriver(private val factory: () -> SqlDriver) : SqlDriver {
     private var delegate: SqlDriver? = null
 
     override fun close() {
-        delegate?.close()
+        val closed = delegate != null && nativeClose(delegate!!)
+        if (!closed)
+            delegate?.close()
+
         delegate = null
     }
 
@@ -32,7 +35,17 @@ class ReusableDriver(private val factory: () -> SqlDriver) : SqlDriver {
         binders: (SqlPreparedStatement.() -> Unit)?
     ): SqlCursor = getOrCreateDelegate().executeQuery(identifier, sql, parameters, binders)
 
-    override fun newTransaction(): Transacter.Transaction = getOrCreateDelegate().newTransaction()
+    override fun newTransaction(): Transacter.Transaction {
+        val thisDelegate = getOrCreateDelegate()
+        val transaction = thisDelegate.newTransaction()
+
+        // For some reason, Jdbc driver doesn't close the connection after completing a transaction,
+        // which prevents from moving database file in one of the last generator stages.
+        transaction.afterCommit { nativeClose(thisDelegate) }
+        transaction.afterRollback { nativeClose(thisDelegate) }
+
+        return transaction
+    }
 
     private fun getOrCreateDelegate(): SqlDriver {
         if (delegate == null)
@@ -40,3 +53,4 @@ class ReusableDriver(private val factory: () -> SqlDriver) : SqlDriver {
         return delegate!!
     }
 }
+expect fun nativeClose(driver: SqlDriver): Boolean
