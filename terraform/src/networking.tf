@@ -3,7 +3,7 @@ resource "aws_vpc" "vpc" {
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags                 = {
-    Name = "${var.prefix}VPC"
+    Name = "${local.prefix}VPC"
   }
 }
 
@@ -11,7 +11,7 @@ resource "aws_subnet" "public" {
   vpc_id     = aws_vpc.vpc.id
   cidr_block = "192.168.100.0/24"
   tags       = {
-    Name = "${var.prefix}public"
+    Name = "${local.prefix}public"
   }
 }
 

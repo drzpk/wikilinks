@@ -3,7 +3,7 @@ locals {
 }
 
 resource "aws_batch_compute_environment" "generator" {
-  compute_environment_name = "${var.prefix}GeneratorEnv"
+  compute_environment_name = "${local.prefix}GeneratorEnv"
 
   compute_resources {
     type = "FARGATE_SPOT"
@@ -19,7 +19,7 @@ resource "aws_batch_compute_environment" "generator" {
 }
 
 resource "aws_batch_job_queue" "queue" {
-  name                 = "${var.prefix}Generator"
+  name                 = "${local.prefix}Generator"
   state                = "ENABLED"
   priority             = 1
   compute_environments = [
@@ -28,7 +28,7 @@ resource "aws_batch_job_queue" "queue" {
 }
 
 resource "aws_batch_job_definition" "generator" {
-  name                  = "${var.prefix}Generator"
+  name                  = "${local.prefix}Generator"
   type                  = "container"
   platform_capabilities = ["FARGATE"]
 

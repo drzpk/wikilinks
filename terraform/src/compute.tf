@@ -1,5 +1,5 @@
 locals {
-  key_name = "${var.prefix}ec2-key"
+  key_name = "${local.prefix}ec2-key"
 }
 
 resource "aws_instance" "bastion" {
@@ -14,12 +14,12 @@ resource "aws_instance" "bastion" {
   key_name                    = local.key_name
 
   tags = {
-    Name = "${var.prefix}Bastion"
+    Name = "${local.prefix}Bastion"
   }
 }
 
 resource "aws_iam_instance_profile" "bastion" {
-  name = "${var.prefix}Bastion"
+  name = "${local.prefix}Bastion"
   // Use the same role as the application
   role = aws_iam_role.application.name
 }

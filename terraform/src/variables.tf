@@ -8,10 +8,14 @@ variable "aws_profile" {
   default = "default"
 }
 
-variable "prefix" {
+variable "resource_name_prefix" {
   type        = string
   description = "Prefix prepend to resource names"
   default     = ""
+  validation {
+    condition     = length(var.resource_name_prefix) == 0 || length(var.resource_name_prefix) > 1 && substr(var.resource_name_prefix, -1, 1) == "-"
+    error_message = "Resource name prefix must be empty or end with dash."
+  }
 }
 
 variable "owner" {
@@ -35,4 +39,8 @@ variable "versions" {
     application = "1.0-snapshot"
     generator   = "1.0-snapshot"
   }
+}
+
+locals {
+  prefix = "${var.resource_name_prefix}wikilinks-"
 }

@@ -1,5 +1,5 @@
 resource "aws_iam_role" "generator" {
-  name_prefix = "${var.prefix}Generator-"
+  name_prefix = "${local.prefix}Generator-"
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
@@ -39,7 +39,7 @@ resource "aws_iam_role" "generator" {
 }
 
 resource "aws_iam_role" "batch_environment" {
-  name_prefix = "${var.prefix}GeneratorBatch-"
+  name_prefix = "${local.prefix}GeneratorBatch-"
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
@@ -60,7 +60,7 @@ resource "aws_iam_role" "batch_environment" {
 }
 
 resource "aws_iam_role" "ecs_execution" {
-  name_prefix = "${var.prefix}GeneratorBatchExecution-"
+  name_prefix = "${local.prefix}GeneratorBatchExec-"
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
@@ -81,7 +81,7 @@ resource "aws_iam_role" "ecs_execution" {
 }
 
 resource "aws_iam_role" "ecs_ec2_node" {
-  name_prefix = "${var.prefix}ECSNode-"
+  name_prefix = "${local.prefix}ECSNode-"
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
@@ -102,7 +102,7 @@ resource "aws_iam_role" "ecs_ec2_node" {
 }
 
 resource "aws_iam_role" "application" {
-  name_prefix = "${var.prefix}Application-"
+  name_prefix = "${local.prefix}Application-"
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
@@ -145,7 +145,7 @@ resource "aws_iam_role" "application" {
 }
 
 resource "aws_iam_role" "event_bridge_generator_invoker" {
-  name_prefix = "${var.prefix}EventBridgeGeneratorInvoker-"
+  name_prefix = "${local.prefix}EvtBridgeGenInvoker-"
 
   inline_policy {
     name   = "AllowInvokingGeneratorBatchJob"
@@ -181,7 +181,7 @@ resource "aws_iam_role" "event_bridge_generator_invoker" {
 }
 
 resource "aws_security_group" "generator" {
-  name   = "${var.prefix}generator"
+  name   = "${local.prefix}generator"
   vpc_id = aws_vpc.vpc.id
 
   egress {
@@ -197,7 +197,7 @@ resource "aws_security_group" "generator" {
 }
 
 resource "aws_security_group" "bastion" {
-  name   = "${var.prefix}Bastion"
+  name   = "${local.prefix}Bastion"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -220,7 +220,7 @@ resource "aws_security_group" "bastion" {
 }
 
 resource "aws_security_group" "ecs_node" {
-  name   = "${var.prefix}ECS-node"
+  name   = "${local.prefix}ECS-node"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -246,7 +246,7 @@ resource "aws_security_group" "ecs_node" {
 }
 
 resource "aws_security_group" "efs" {
-  name   = "${var.prefix}efs"
+  name   = "${local.prefix}efs"
   vpc_id = aws_vpc.vpc.id
 
   ingress {
@@ -262,7 +262,7 @@ resource "aws_security_group" "efs" {
 }
 
 resource "aws_security_group" "api_link" {
-  name   = "${var.prefix}api-link"
+  name   = "${local.prefix}api-link"
   vpc_id = aws_vpc.vpc.id
 }
 

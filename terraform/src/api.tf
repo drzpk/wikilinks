@@ -1,5 +1,5 @@
 resource "aws_apigatewayv2_api" "api" {
-  name          = "${var.prefix}api"
+  name          = "${local.prefix}api"
   protocol_type = "HTTP"
 
 }
@@ -33,7 +33,7 @@ resource "aws_apigatewayv2_route" "root" {
 }
 
 resource "aws_apigatewayv2_vpc_link" "link" {
-  name               = "${var.prefix}link"
+  name               = "${local.prefix}link"
   security_group_ids = [aws_security_group.api_link.id]
   subnet_ids         = [aws_subnet.public.id]
 }

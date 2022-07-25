@@ -4,7 +4,7 @@ locals {
 }
 
 resource "aws_ecs_service" "application" {
-  name            = "${var.prefix}application"
+  name            = "${local.prefix}application"
   cluster         = aws_ecs_cluster.cluster.id
   task_definition = aws_ecs_task_definition.application.arn
   desired_count   = 1
@@ -23,7 +23,7 @@ resource "aws_ecs_service" "application" {
 }
 
 resource "aws_ecs_cluster" "cluster" {
-  name = "${var.prefix}Application"
+  name = "${local.prefix}Application"
 
   setting {
     name  = "containerInsights"
@@ -37,7 +37,7 @@ resource "aws_ecs_cluster_capacity_providers" "providers" {
 }
 
 resource "aws_ecs_capacity_provider" "provider" {
-  name = "${var.prefix}app-provider"
+  name = "${local.prefix}app-provider"
 
   auto_scaling_group_provider {
     auto_scaling_group_arn         = aws_autoscaling_group.application.arn
@@ -51,7 +51,7 @@ resource "aws_ecs_capacity_provider" "provider" {
 }
 
 resource "aws_autoscaling_group" "application" {
-  name             = "${var.prefix}application"
+  name             = "${local.prefix}application"
   min_size         = 0
   max_size         = 1
   desired_capacity = 0
@@ -75,7 +75,7 @@ resource "aws_autoscaling_group" "application" {
 }
 
 resource "aws_launch_template" "ecs_node" {
-  name                                 = "${var.prefix}ecs-node"
+  name                                 = "${local.prefix}ecs-node"
   instance_type                        = "t3.micro"
   image_id                             = data.aws_ssm_parameter.ecs_optimized_ami.value
   key_name                             = local.key_name
@@ -101,13 +101,13 @@ resource "aws_launch_template" "ecs_node" {
     resource_type = "instance"
     tags          = {
       Owner = var.owner
-      Name  = "${var.prefix}ecs-node"
+      Name  = "${local.prefix}ecs-node"
     }
   }
 }
 
 resource "aws_ecs_task_definition" "application" {
-  family             = "${var.prefix}Application"
+  family             = "${local.prefix}Application"
   network_mode       = "bridge"
   execution_role_arn = aws_iam_role.ecs_execution.arn
   task_role_arn      = aws_iam_role.application.arn
@@ -167,7 +167,7 @@ resource "aws_ecs_task_definition" "application" {
 }
 
 resource "aws_service_discovery_service" "application" {
-  name = "${var.prefix}application"
+  name = "${local.prefix}application"
 
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.namespace.id
@@ -182,12 +182,12 @@ resource "aws_service_discovery_service" "application" {
 }
 
 resource "aws_service_discovery_private_dns_namespace" "namespace" {
-  name = "${var.prefix}application.local"
+  name = "${local.prefix}application.local"
   vpc  = aws_vpc.vpc.id
 }
 
 resource "aws_iam_instance_profile" "ecs_node" {
-  name = "${var.prefix}ECSNode"
+  name = "${local.prefix}ECSNode"
   role = aws_iam_role.ecs_ec2_node.name
 }
 
