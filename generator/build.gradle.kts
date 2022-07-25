@@ -49,9 +49,6 @@ jib {
     }
     container {
         creationTime = "USE_CURRENT_TIMESTAMP"
-        environment = mapOf(
-            "FRONTEND_RESOURCES_DIRECTORY" to "" // Required because generator depends on the backend project
-        )
     }
 }
 
