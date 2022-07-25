@@ -41,7 +41,11 @@ jib {
         image = "openjdk:11.0.15-jre-slim-buster"
     }
     to {
-        image = "$imagePrefix/generator:${project.version}"
+        image = "$imagePrefix/generator"
+        tags = setOf(
+            project.version.toString(),
+            "latest"
+        )
     }
     container {
         creationTime = "USE_CURRENT_TIMESTAMP"

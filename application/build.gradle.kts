@@ -53,7 +53,11 @@ jib {
         image = jibConfiguration.baseImage
     }
     to {
-        image = "$imagePrefix/application-${jibConfiguration.classifier}:${project.version}"
+        image = "$imagePrefix/application-${jibConfiguration.classifier}"
+        tags = setOf(
+            project.version.toString(),
+            "latest"
+        )
     }
     container {
         creationTime = "USE_CURRENT_TIMESTAMP"
