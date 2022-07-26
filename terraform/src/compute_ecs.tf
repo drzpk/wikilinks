@@ -67,6 +67,12 @@ resource "aws_autoscaling_group" "application" {
     propagate_at_launch = true
   }
 
+  tag {
+    key                 = "Project"
+    value               = local.project_name
+    propagate_at_launch = true
+  }
+
   lifecycle {
     ignore_changes = [
       desired_capacity
