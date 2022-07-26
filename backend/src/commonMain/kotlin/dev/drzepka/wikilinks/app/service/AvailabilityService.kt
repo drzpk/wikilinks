@@ -21,8 +21,13 @@ class AvailabilityService(
 ) {
     private val log = KotlinLogging.logger {}
     private val updateInProgress = atomic(false)
+    private var dumpVersion = configRepository.getDumpVersion()
 
     init {
+        log.info { "Current dump version: $dumpVersion" }
+        if (dumpVersion == null)
+            log.warn { "Dump version is null, launching the generator is required" }
+
         scope.launch {
             while (isActive) {
                 checkForMaintenanceMode()
@@ -50,6 +55,8 @@ class AvailabilityService(
 
         log.info { "Maintenance mode disabled" }
         updateInProgress.value = false
+
+        updateDumpVersion()
     }
 
     private suspend fun waitForMaintenanceModeToTurnOff() {
@@ -78,5 +85,15 @@ class AvailabilityService(
         val endTime = Clock.System.now()
         val diff = endTime - startTime
         log.info { "Waiting for maintenance mode to turn off ended after $diff" }
+    }
+
+    private fun updateDumpVersion() {
+        val newDumpVersion = configRepository.getDumpVersion()
+        if (dumpVersion != newDumpVersion)
+            log.info { "Dump version has changed from $dumpVersion to $newDumpVersion" }
+        else
+            log.warn { "Dump version ($dumpVersion) was not changed" }
+
+        dumpVersion = newDumpVersion
     }
 }

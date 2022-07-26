@@ -19,8 +19,10 @@ import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import org.koin.core.context.startKoin
 
+private val log = KotlinLogging.logger("HttpApplication")
+
 fun httpApplication() {
-    println("Starting HTTP server")
+    log.info { "Starting HTTP server" }
 
     createEmbeddedServer(port = 8080) {
         install(ContentNegotiation) {
@@ -52,7 +54,7 @@ private fun configureKoin(scope: CoroutineScope) {
 private fun Application.configureRouting() {
     routing {
         intercept(ApplicationCallPipeline.Plugins) {
-            if (!call.request.path().endsWith("api/health")  && availabilityService.isUpdateInProgress()) {
+            if (!call.request.path().endsWith("api/health") && availabilityService.isUpdateInProgress()) {
                 call.respond(HttpStatusCode.ServiceUnavailable, "Update in progress")
                 finish()
             }

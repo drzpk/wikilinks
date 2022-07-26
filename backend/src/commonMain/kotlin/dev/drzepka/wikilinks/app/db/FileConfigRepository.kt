@@ -25,7 +25,7 @@ class FileConfigRepository(workingDirectory: String) : ConfigRepository {
             return null
 
         dumpVersion = versionFile.read().trim()
-        log.info { "Current dump version: $dumpVersion" }
+        log.debug { "Current dump version: $dumpVersion" }
         return dumpVersion
     }
 

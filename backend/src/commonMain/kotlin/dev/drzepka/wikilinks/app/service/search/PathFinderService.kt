@@ -27,8 +27,9 @@ class PathFinderService(
         while (sourceDepth + targetDepth < maxSearchDepth) {
             val outLinksCount = linksRepository.getOutLinksCount(*sourceHead.keys.toIntArray())
             val inLinksCount = linksRepository.getInLinksCount(*targetHead.keys.toIntArray())
-            println("out link count from ${sourceHead.keys}: $outLinksCount")
-            println("in link count from ${targetHead.keys}: $inLinksCount")
+
+            log.trace { "out link count from ${sourceHead.keys}: $outLinksCount" }
+            log.trace { "in link count from ${targetHead.keys}: $inLinksCount" }
 
             if (outLinksCount <= inLinksCount) {
                 sourceDepth++
@@ -39,8 +40,10 @@ class PathFinderService(
             }
 
             val paths = constructPaths(sourceHead, targetHead)
-            if (paths.isNotEmpty())
+            if (paths.isNotEmpty()) {
+                log.info { "Found ${paths.size} paths between pages $sourcePage and $targetPage" }
                 return paths
+            }
         }
 
         log.warn { "Maximum search depth of $maxSearchDepth has been reached for search: $sourcePage -> $targetPage" }
@@ -99,7 +102,7 @@ class PathFinderService(
         val pages = ArrayList<Int>(left.pages.size + right.pages.size - 1)
         pages.addAll(left.pages)
 
-        for (i in right.pages.size - 2 downTo  0)
+        for (i in right.pages.size - 2 downTo 0)
             pages.add(right.pages[i])
 
         return Path(pages)
