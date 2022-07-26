@@ -45,7 +45,7 @@ The `DATABASES_DIRECTORY` variable must point to the same host directory.
 Generator requires minimum 6GB of heap memory. This is because at some point it needs to store
 all pageId-pageTitle mappings in memory.
 
-### Standalone: Docker images
+### Docker images
 
 Generator:
 
@@ -77,10 +77,55 @@ docker run \
   -p 8080:8080 \
   -v "$(pwd)/databases:/databases" \
   -e DATABASES_DIRECTORY=/databases \
-  ghcr.io/drzpk/wikilinks/application-jvm:1.0-SNAPSHOT
+  ghcr.io/drzpk/wikilinks/application-jvm:latest
 ```
 
 ### AWS
+
+WikiLinks uses Terraform to define AWS infrastructure. The most notable resources include:
+
+* **EC2 instances**:
+    * ECS node, t3.micro, the application module is deployed here
+    * Bastion host, t3.micro, disabled by default (used for debugging only)
+* **Batch** - defines the generator job
+* **EFS** - used to store all databases and temporary files
+* **HTTP API** - exposes the application to the Internet
+* **EventBridge Rule** - periodically launches the generator job
+
+#### Creating the infrastructure
+
+Required software:
+
+* [AWS CLI](https://aws.amazon.com/cli/)
+* [Terraform](https://www.terraform.io/downloads)
+
+Inside the `terraform/src` directory, create a new file named `terraform.tfvars` with the following content:
+
+```
+aws_region = "eu-west-1"
+```
+
+Value of `aws_region` may be any available AWS region. To see all available variables, refer
+to `terraform/src/variables.tf`.
+
+After [configuring AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html),
+type the following command to provision the infrastructure:
+
+```
+terraform apply -auto-approve
+```
+
+**Note**, that after the initial provisioning, it's necessary to manually to submit the generator job. This is a
+one-time action. It can be done either from the AWS Console (by using the *"submit new job"* button in the job
+definition details) or by using the following command:
+
+```shell
+#!/bin/bash
+state=$(terraform show -json)
+jobDefn=$(echo $state | jq -r '.values.root_module.resources | map(select(.address == "aws_batch_job_definition.generator"))[0].values | .name + ":" + (.revision | tostring)')
+jobQueue=$(echo $state | jq -r '.values.root_module.resources | map(select(.address == "aws_batch_job_queue.queue"))[0].values.name')
+aws batch submit-job --job-definition $jobDefn --job-queue $jobQueue --job-name generator-init
+```
 
 ## Development guide
 

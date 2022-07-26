@@ -36,8 +36,8 @@ variable "versions" {
   })
   description = "Image versions of WikiLinks modules to use"
   default     = {
-    application = "1.0-snapshot"
-    generator   = "1.0-snapshot"
+    application = "latest"
+    generator   = "latest"
   }
 }
 
