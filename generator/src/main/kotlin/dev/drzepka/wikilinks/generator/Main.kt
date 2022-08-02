@@ -16,7 +16,7 @@ fun main(args: Array<String>) {
         workingDirectory.mkdir()
 
     val configRepository = FileConfigRepository(workingDirectory.absolutePath)
-    val updateChecker = UpdateChecker(configRepository)
+    val updateChecker = UpdateChecker()
 
     registerShutdownHook(configRepository)
 

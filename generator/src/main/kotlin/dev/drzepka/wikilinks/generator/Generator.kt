@@ -1,8 +1,9 @@
 package dev.drzepka.wikilinks.generator
 
 import dev.drzepka.wikilinks.app.db.DatabaseProvider
-import dev.drzepka.wikilinks.app.db.FileConfigRepository
 import dev.drzepka.wikilinks.common.dump.HttpClientProvider
+import dev.drzepka.wikilinks.common.model.database.DatabaseFile
+import dev.drzepka.wikilinks.common.model.database.DatabaseType
 import dev.drzepka.wikilinks.generator.flow.FileFlowStorage
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
@@ -21,6 +22,9 @@ import dev.drzepka.wikilinks.generator.pipeline.writer.PageWriter
 import io.ktor.client.engine.apache.*
 import java.io.File
 import java.lang.management.ManagementFactory
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 
 private val workingDirectory = File(Configuration.workingDirectory)
 private val databaseProvider = DatabaseProvider()
@@ -32,7 +36,7 @@ fun generate(version: String) {
 
     val storage = FileFlowStorage(version, workingDirectory)
     val store = Store(storage).apply {
-        this.version = version
+        linksDatabaseFile = DatabaseFile.create(DatabaseType.LINKS, version)
     }
     val flow = GeneratorFlow(store)
 
@@ -45,7 +49,7 @@ fun generate(version: String) {
     flow.step(ClearLookups)
     flow.segment(LinksFileSorter(File(workingDirectory, LinksFileWriter.LINKS_FILE_NAME)))
     flow.step(PopulateLinksTableStep)
-    flow.step(SwapDatabasesStep)
+    flow.step(MoveDatabaseStep)
     flow.step(DeleteTemporaryDataStep)
 
     flow.start()
@@ -57,7 +61,7 @@ private object InitializeDatabaseStep : FlowStep<Store> {
     override fun run(store: Store, logger: ProgressLogger) {
         val key = "InitializeDatabaseStep"
         if (store[key] == null) {
-            File(DatabaseProvider.LINKS_DATABASE_NAME).apply {
+            File(store.linksDatabaseFile.fileName).apply {
                 if (isFile)
                     delete()
             }
@@ -65,7 +69,7 @@ private object InitializeDatabaseStep : FlowStep<Store> {
         }
 
         store.db = databaseProvider.getLinksDatabase(
-            createSchema = true,
+            fixedVersion = store.linksDatabaseFile.version!!,
             disableProtection = true,
             overrideDirectory = workingDirectory.canonicalPath
         )
@@ -207,23 +211,25 @@ private object ClearLookups : FlowStep<Store> {
     }
 }
 
-private object SwapDatabasesStep : FlowStep<Store> {
-    override val name = "Swapping application databases"
+private object MoveDatabaseStep : FlowStep<Store> {
+    override val name = "Moving database to target location"
 
     override fun run(store: Store, logger: ProgressLogger) {
-        val key = "SwapDatabasesStep"
+        val key = "MoveDatabaseStep"
         if (store[key] != null) {
-            println("Databases have already been swapped, skipping")
+            println("Database has already been moved, skipping")
             return
         }
 
         databaseProvider.closeAllConnections()
+        val databaseFile = File(workingDirectory, store.linksDatabaseFile.fileName)
+        Files.move(
+            databaseFile.toPath(),
+            Paths.get(Configuration.databasesDirectory, databaseFile.name),
+            StandardCopyOption.ATOMIC_MOVE,
+            StandardCopyOption.REPLACE_EXISTING
+        )
 
-        val databasePath = Configuration.databasesDirectory ?: "."
-        val databasesDirectory = File(databasePath)
-        val configRepository = FileConfigRepository(databasesDirectory.canonicalPath)
-
-        DatabaseSwapper(workingDirectory, File(databasePath), configRepository).run(store.version)
         store[key] = "done"
     }
 }

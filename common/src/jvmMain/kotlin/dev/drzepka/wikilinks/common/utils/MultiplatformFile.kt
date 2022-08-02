@@ -6,6 +6,10 @@ import java.io.File
 actual class MultiplatformFile actual constructor(path: String) {
     private val file = File(path)
 
+    actual fun getName(): String = file.name
+
+    actual fun getFullPath(): String = file.absolutePath
+
     actual fun isFile(): Boolean = file.isFile
 
     actual fun getModificationTime(): Instant? {

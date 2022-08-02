@@ -7,6 +7,8 @@ import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.app.utils.Environment
 import dev.drzepka.wikilinks.app.utils.MultiplatformWeakReference
 import dev.drzepka.wikilinks.app.utils.environment
+import dev.drzepka.wikilinks.common.model.database.DatabaseFile
+import dev.drzepka.wikilinks.common.model.database.DatabaseType
 import dev.drzepka.wikilinks.db.cache.CacheDatabase
 import dev.drzepka.wikilinks.db.history.HistoryDatabase
 import dev.drzepka.wikilinks.db.links.LinksDatabase
@@ -26,8 +28,7 @@ class DatabaseProvider {
             if (driver != null) {
                 driver.close()
                 closedCount++
-            }
-            else {
+            } else {
                 iterator.remove()
             }
         }
@@ -36,36 +37,69 @@ class DatabaseProvider {
     }
 
     fun getLinksDatabase(
-        createSchema: Boolean = false,
+        fixedVersion: String? = null,
         disableProtection: Boolean = false,
         overrideDirectory: String? = null
     ): LinksDatabase {
-        val driver = getDbDriver(LINKS_DATABASE_NAME, disableProtection, overrideDirectory)
-        if (createSchema)
-            LinksDatabase.Schema.createOrMigrateIfNecessary(driver, "links", LINKS_DATABASE_VERSION)
+        val nameResolver = { resolveDatabaseName(DatabaseType.LINKS, fixedVersion, overrideDirectory) }
+        val driver = getDbDriver(nameResolver, disableProtection, overrideDirectory)
+        LinksDatabase.Schema.createOrMigrateIfNecessary(driver, "links", LINKS_DATABASE_VERSION)
         return LinksDatabase.invoke(driver)
     }
 
     fun getCacheDatabase(): CacheDatabase {
-        val driver = getDbDriver(CACHE_DATABASE_NAME, false)
+        val nameResolver = { resolveDatabaseName(DatabaseType.CACHE) }
+        val driver = getDbDriver(nameResolver, false)
         CacheDatabase.Schema.createOrMigrateIfNecessary(driver, "cache", CACHE_DATABASE_VERSION)
         return CacheDatabase.invoke(driver)
     }
 
     fun getHistoryDatabase(): HistoryDatabase {
-        val driver = getDbDriver(HISTORY_DATABASE_NAME, false)
+        val nameResolver = { resolveDatabaseName(DatabaseType.HISTORY) }
+        val driver = getDbDriver(nameResolver, false)
         HistoryDatabase.Schema.createOrMigrateIfNecessary(driver, "history", HISTORY_DATABASE_VERSION)
         return HistoryDatabase.invoke(driver)
     }
 
-    private fun getDbDriver(dbName: String, disableProtection: Boolean, overrideDirectory: String? = null): SqlDriver {
-        val factory = { doGetDbDriver(dbName, disableProtection, overrideDirectory) }
+    private fun resolveDatabaseName(
+        type: DatabaseType,
+        fixedVersion: String? = null,
+        overrideDirectory: String? = null
+    ): String {
+        val dir = overrideDirectory ?: Configuration.databasesDirectory!!
+
+        return if (type.versioned) {
+            if (fixedVersion != null) {
+                DatabaseFile.create(type, version = fixedVersion).fileName
+            } else {
+                DatabaseResolver.resolveDatabaseName(dir, type)
+                    ?: throw IllegalStateException("Database of type $type doesn't exist")
+            }
+        } else {
+            DatabaseFile.create(type).fileName
+        }
+    }
+
+    private fun getDbDriver(
+        dbNameResolver: () -> String,
+        disableProtection: Boolean,
+        overrideDirectory: String? = null
+    ): SqlDriver {
+        val factory = {
+            val dbName = dbNameResolver()
+            doGetDbDriver(dbName, disableProtection, overrideDirectory)
+        }
+
         val driver = ReusableDriver(factory)
         drivers.add(MultiplatformWeakReference(driver))
         return driver
     }
 
-    private fun doGetDbDriver(dbName: String, disableProtection: Boolean, overrideDirectory: String? = null): SqlDriver {
+    private fun doGetDbDriver(
+        dbName: String,
+        disableProtection: Boolean,
+        overrideDirectory: String? = null
+    ): SqlDriver {
         val dir = overrideDirectory ?: Configuration.databasesDirectory
         val driver = getDriver(dir, dbName)
 
@@ -124,10 +158,6 @@ class DatabaseProvider {
     private fun SqlDriver.executeQuery(sql: String): SqlCursor = executeQuery(null, sql, 0)
 
     companion object {
-        const val LINKS_DATABASE_NAME = "links.db"
-        const val CACHE_DATABASE_NAME = "cache.db"
-        const val HISTORY_DATABASE_NAME = "history.db"
-
         private const val LINKS_DATABASE_VERSION = 1
         private const val CACHE_DATABASE_VERSION = 1
         private const val HISTORY_DATABASE_VERSION = 2

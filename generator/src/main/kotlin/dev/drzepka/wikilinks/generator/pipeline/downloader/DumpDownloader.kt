@@ -31,7 +31,7 @@ class DumpDownloader(
 
     override fun run(store: Store, runtime: FlowRuntime) = runBlocking {
         runtime.startNextStep("Resolving new dumps")
-        val dumps = resolver.resolveForVersion(store.version)
+        val dumps = resolver.resolveForVersion(store.linksDatabaseFile.version!!)
 
         runtime.startNextStep("Deleting old dumps")
         if (store["DeleteOldDumps"] == null) {
