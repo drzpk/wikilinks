@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
@@ -50,7 +51,13 @@ class DumpUpdaterService(
         if (files.isEmpty())
             return
 
-        updateDatabase(files)
+        try {
+            updateDatabase(files)
+        } catch (e: Exception) {
+            val cooldown = 1.hours
+            log.error(e) { "Uncaught exception occurred while updating database, pausing update checking for $cooldown" }
+            delay(cooldown)
+        }
     }
 
     private suspend fun updateDatabase(files: List<MultiplatformFile>) {
