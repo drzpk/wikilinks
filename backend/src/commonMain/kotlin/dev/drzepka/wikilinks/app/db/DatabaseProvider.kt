@@ -42,22 +42,31 @@ class DatabaseProvider {
         overrideDirectory: String? = null
     ): LinksDatabase {
         val nameResolver = { resolveDatabaseName(DatabaseType.LINKS, fixedVersion, overrideDirectory) }
-        val driver = getDbDriver(nameResolver, disableProtection, overrideDirectory)
-        LinksDatabase.Schema.createOrMigrateIfNecessary(driver, "links", LINKS_DATABASE_VERSION)
+        val initializer = { driver: SqlDriver ->
+            LinksDatabase.Schema.createOrMigrateIfNecessary(driver, "links", LINKS_DATABASE_VERSION)
+        }
+
+        val driver = getDbDriver(nameResolver, initializer, disableProtection, overrideDirectory)
         return LinksDatabase.invoke(driver)
     }
 
     fun getCacheDatabase(): CacheDatabase {
         val nameResolver = { resolveDatabaseName(DatabaseType.CACHE) }
-        val driver = getDbDriver(nameResolver, false)
-        CacheDatabase.Schema.createOrMigrateIfNecessary(driver, "cache", CACHE_DATABASE_VERSION)
+        val initializer = { driver: SqlDriver ->
+            CacheDatabase.Schema.createOrMigrateIfNecessary(driver, "cache", CACHE_DATABASE_VERSION)
+        }
+
+        val driver = getDbDriver(nameResolver, initializer, false)
         return CacheDatabase.invoke(driver)
     }
 
     fun getHistoryDatabase(): HistoryDatabase {
         val nameResolver = { resolveDatabaseName(DatabaseType.HISTORY) }
-        val driver = getDbDriver(nameResolver, false)
-        HistoryDatabase.Schema.createOrMigrateIfNecessary(driver, "history", HISTORY_DATABASE_VERSION)
+        val initializer = { driver: SqlDriver ->
+            HistoryDatabase.Schema.createOrMigrateIfNecessary(driver, "history", HISTORY_DATABASE_VERSION)
+        }
+
+        val driver = getDbDriver(nameResolver, initializer, false)
         return HistoryDatabase.invoke(driver)
     }
 
@@ -82,12 +91,15 @@ class DatabaseProvider {
 
     private fun getDbDriver(
         dbNameResolver: () -> String,
+        postInitializationHandler: (driver: SqlDriver) -> Unit,
         disableProtection: Boolean,
         overrideDirectory: String? = null
     ): SqlDriver {
         val factory = {
             val dbName = dbNameResolver()
-            doGetDbDriver(dbName, disableProtection, overrideDirectory)
+            val driver = doGetDbDriver(dbName, disableProtection, overrideDirectory)
+            postInitializationHandler(driver)
+            driver
         }
 
         val driver = ReusableDriver(factory)
