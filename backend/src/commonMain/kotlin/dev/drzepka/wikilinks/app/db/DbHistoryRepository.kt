@@ -8,6 +8,7 @@ class DbHistoryRepository(private val historyDatabase: HistoryDatabase) : Histor
     override fun save(entry: HistoryEntry) {
         historyDatabase.searchHistoryQueries.add(
             entry.date,
+            "en",
             entry.version,
             entry.source?.toLong(),
             entry.target?.toLong(),

@@ -42,19 +42,19 @@ class DatabaseProvider {
     ): LinksDatabase {
         val driver = getDbDriver(LINKS_DATABASE_NAME, disableProtection, overrideDirectory)
         if (createSchema)
-            LinksDatabase.Schema.createIfNecessary(driver, "links")
+            LinksDatabase.Schema.createOrMigrateIfNecessary(driver, "links", LINKS_DATABASE_VERSION)
         return LinksDatabase.invoke(driver)
     }
 
     fun getCacheDatabase(): CacheDatabase {
         val driver = getDbDriver(CACHE_DATABASE_NAME, false)
-        CacheDatabase.Schema.createIfNecessary(driver, "cache")
+        CacheDatabase.Schema.createOrMigrateIfNecessary(driver, "cache", CACHE_DATABASE_VERSION)
         return CacheDatabase.invoke(driver)
     }
 
     fun getHistoryDatabase(): HistoryDatabase {
         val driver = getDbDriver(HISTORY_DATABASE_NAME, false)
-        HistoryDatabase.Schema.createIfNecessary(driver, "history")
+        HistoryDatabase.Schema.createOrMigrateIfNecessary(driver, "history", HISTORY_DATABASE_VERSION)
         return HistoryDatabase.invoke(driver)
     }
 
@@ -80,11 +80,16 @@ class DatabaseProvider {
         return driver
     }
 
-    private fun SqlDriver.Schema.createIfNecessary(driver: SqlDriver, name: String) {
-        if (driver.getVersion() == 0) {
+    private fun SqlDriver.Schema.createOrMigrateIfNecessary(driver: SqlDriver, name: String, currentVersion: Int) {
+        val schemaVersion = driver.getVersion()
+        if (schemaVersion == 0) {
             log.info { "Creating schema $name" }
             create(driver)
             driver.setVersion(0, 1)
+        } else if (schemaVersion < currentVersion) {
+            log.info { "Migrating schema $name from $schemaVersion to $currentVersion" }
+            migrate(driver, schemaVersion, currentVersion)
+            driver.setVersion(schemaVersion, currentVersion)
         }
     }
 
@@ -122,6 +127,10 @@ class DatabaseProvider {
         const val LINKS_DATABASE_NAME = "links.db"
         const val CACHE_DATABASE_NAME = "cache.db"
         const val HISTORY_DATABASE_NAME = "history.db"
+
+        private const val LINKS_DATABASE_VERSION = 1
+        private const val CACHE_DATABASE_VERSION = 1
+        private const val HISTORY_DATABASE_VERSION = 2
     }
 }
 
