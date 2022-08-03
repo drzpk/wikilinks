@@ -1,14 +1,14 @@
 package dev.drzepka.wikilinks.generator.pipeline.sort
 
 import com.google.common.io.CountingInputStream
+import dev.drzepka.wikilinks.generator.availableHeap
 import dev.drzepka.wikilinks.generator.availableProcessors
-import dev.drzepka.wikilinks.generator.flow.FlowSegment
 import dev.drzepka.wikilinks.generator.flow.FlowRuntime
+import dev.drzepka.wikilinks.generator.flow.FlowSegment
 import dev.drzepka.wikilinks.generator.flow.FlowStorage
 import dev.drzepka.wikilinks.generator.model.Store
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
 import java.io.*
-import java.lang.management.ManagementFactory
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
@@ -21,7 +21,7 @@ class LinksFileSorter(private val file: File) : FlowSegment<Store> {
     private val executor = Executors.newFixedThreadPool((availableProcessors() / 2).coerceAtLeast(1))
     private val blockFileSorters = mutableListOf<BlockFileSorter>()
 
-    private val sourceFileSizeMB = (file.length() / 1024 / 1024).toInt()
+    private val sourceFileSizeMB by lazy { (file.length() / 1024 / 1024).toInt() }
     private val parentDirectory = file.parentFile
     private var totalLinks = 0L
 
@@ -166,7 +166,7 @@ class LinksFileSorter(private val file: File) : FlowSegment<Store> {
     private fun getLinksPerBlock(): Int {
         // Based on tests with a profiler
         val linksPerGBHeap = 5_000_000 / 6.0
-        val maxHeapBytes = ManagementFactory.getMemoryMXBean().heapMemoryUsage.max
+        val maxHeapBytes = availableHeap()
         val maxHeapGB = maxHeapBytes.toDouble() / 1024 / 1024 / 1024
         return floor(linksPerGBHeap * maxHeapGB + 0.5).toInt()
     }
