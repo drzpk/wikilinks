@@ -4,6 +4,7 @@ import dev.drzepka.wikilinks.common.WikiConfig.REQUIRED_FILE_VARIANTS
 import dev.drzepka.wikilinks.common.dump.DumpResolver
 import dev.drzepka.wikilinks.common.dump.HttpClientProvider
 import dev.drzepka.wikilinks.common.model.dump.ArchiveDump
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.generator.flow.FlowRuntime
 import dev.drzepka.wikilinks.generator.flow.FlowSegment
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
@@ -24,18 +25,18 @@ class DumpDownloader(
     private val workingDirectory: File,
     provider: HttpClientProvider
 ) : FlowSegment<Store> {
-    override val numberOfSteps =  2 + REQUIRED_FILE_VARIANTS.size
+    override val numberOfSteps = 2 + REQUIRED_FILE_VARIANTS.size
 
-    private val resolver = DumpResolver.createFromConfig(provider)
+    private val resolver = DumpResolver(provider)
     private val http = provider.client
 
     override fun run(store: Store, runtime: FlowRuntime) = runBlocking {
         runtime.startNextStep("Resolving new dumps")
-        val dumps = resolver.resolveForVersion(store.linksDatabaseFile.version!!)
+        val dumps = resolver.resolveForVersion(store.linksDatabaseFile.language!!, store.linksDatabaseFile.version!!)
 
         runtime.startNextStep("Deleting old dumps")
         if (store["DeleteOldDumps"] == null) {
-            deleteOldDumps(dumps.dumps.map { it.fileName })
+            deleteOldDumps(store.linksDatabaseFile.language!!, dumps.dumps.map { it.fileName })
             store["DeleteOldDumps"] = "deleted"
         } else {
             println("Already deleted")
@@ -48,9 +49,9 @@ class DumpDownloader(
         }
     }
 
-    private fun deleteOldDumps(currentDumpNames: List<String>) {
+    private fun deleteOldDumps(language: DumpLanguage, currentDumpNames: List<String>) {
         workingDirectory.listFiles()!!
-            .filter { it.name.endsWith(".gz") && it.name !in currentDumpNames }
+            .filter { it.name.startsWith(language.getFilePrefix()) && it.name.endsWith(".gz") && it.name !in currentDumpNames }
             .forEach {
                 println("Deleting file: $it")
                 if (!it.delete())

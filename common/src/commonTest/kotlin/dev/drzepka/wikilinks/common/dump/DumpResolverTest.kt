@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.common.dump
 
 import dev.drzepka.wikilinks.common.model.dump.ArchiveDump
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.testRunBlocking
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
@@ -28,14 +29,14 @@ internal class DumpResolverTest {
             }
         }
 
-        val resolver = DumpResolver(HttpClientProvider(mockEngine), ds, variants)
-        val dumps = testRunBlocking { resolver.resolveLatestDumps() }
+        val resolver = DumpResolver(HttpClientProvider(mockEngine), variants)
+        val dumps = testRunBlocking { resolver.resolveLatestDumps(DumpLanguage.EN) }
         val archives = dumps.dumps
 
         assertEquals("20220620", dumps.version)
         assertEquals(2, archives.size)
-        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-page.sql.gz", 123, false)))
-        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-pagelinks.sql.gz", 456, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/enwiki/20220620/enwiki-20220620-page.sql.gz", 123, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/enwiki/20220620/enwiki-20220620-pagelinks.sql.gz", 456, false)))
     }
 
     @Test
@@ -54,14 +55,14 @@ internal class DumpResolverTest {
             }
         }
 
-        val resolver = DumpResolver(HttpClientProvider(mockEngine), ds, variants)
-        val dumps = testRunBlocking { resolver.resolveLatestDumps() }
+        val resolver = DumpResolver(HttpClientProvider(mockEngine), variants)
+        val dumps = testRunBlocking { resolver.resolveLatestDumps(DumpLanguage.EN) }
         val archives = dumps.dumps
 
         assertEquals("20220601", dumps.version)
         assertEquals(2, archives.size)
-        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-page.sql.gz", 2, false)))
-        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-pagelinks.sql.gz", 3, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/enwiki/20220601/enwiki-20220601-page.sql.gz", 2, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/enwiki/20220601/enwiki-20220601-pagelinks.sql.gz", 3, false)))
     }
 
     private fun MockRequestHandleScope.respondWithLength(length: Long): HttpResponseData {

@@ -2,6 +2,8 @@ package dev.drzepka.wikilinks.generator
 
 import dev.drzepka.wikilinks.app.db.ConfigRepository
 import dev.drzepka.wikilinks.app.db.FileConfigRepository
+import dev.drzepka.wikilinks.common.BuildConfig
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.generator.version.UpdateChecker
 import java.io.File
 import kotlin.concurrent.thread
@@ -9,59 +11,90 @@ import kotlin.system.exitProcess
 
 
 private val workingDirectory = File(Configuration.workingDirectory)
-private var turnOffGeneratorFlagOnExit = true
 
 fun main(args: Array<String>) {
     if (!workingDirectory.isDirectory)
         workingDirectory.mkdir()
 
+    println("WikiLinks Generator ${BuildConfig.VERSION}")
+    println("Available CPUs: ${availableProcessors()}")
+    println("Max heap: ${availableHeap()}")
+    println()
+
     val configRepository = FileConfigRepository(workingDirectory.absolutePath)
-    val updateChecker = UpdateChecker()
+    if (configRepository.isGeneratorActive()) {
+        println("Previous generator instance is still working")
+        exitProcess(1)
+    }
 
     registerShutdownHook(configRepository)
 
-    if (configRepository.isGeneratorActive()) {
-        println("Previous generator instance is still working")
-        turnOffGeneratorFlagOnExit = false
+    val languages = getLanguages(args)
+    if (languages.isEmpty())
+        exitProcess(1)
+
+    val versionUpdates = getVersions(args, languages)
+    if (versionUpdates.isEmpty()) {
+        println("No new versions were found")
         return
     }
 
-    val newVersion = if (args.isNotEmpty()) {
-        println("Exact version was specified in program arguments")
-        args[0]
-    } else {
-        updateChecker.getNewVersion()
+    configRepository.setGeneratorActive(true)
+    for (versionUpdate in versionUpdates) {
+        val status = startGenerator(versionUpdate.key, versionUpdate.value)
+        if (!status)
+            exitProcess(1)
     }
-
-    val result: Boolean = if (newVersion != null) {
-        println("Found new version: $newVersion")
-        startGenerator(newVersion, configRepository)
-    } else {
-        println("No new version was found")
-        true
-    }
-
-    if (!result)
-        exitProcess(1)
 }
 
-private fun startGenerator(version: String, configRepository: ConfigRepository): Boolean {
+private fun getLanguages(args: Array<String>): List<DumpLanguage> {
+    val languagesArg = getCmdArgument(args, "language")
+    if (languagesArg == null || languagesArg.isBlank()) {
+        println("At least one language is required")
+        return emptyList()
+    }
+
+    val list = mutableListOf<DumpLanguage>()
+    for (raw in languagesArg.split(',')) {
+        val parsed = DumpLanguage.fromString(raw)
+        if (parsed == null) {
+            val supportedLanguages = DumpLanguage.values().joinToString(separator = ",") { it.name.lowercase() }
+            println("\"raw\" is not a valid language. Supported languages: $supportedLanguages")
+            return emptyList()
+        }
+
+        list.add(parsed)
+    }
+
+    return list
+}
+
+private fun getVersions(args: Array<String>, languages: List<DumpLanguage>): Map<DumpLanguage, String> {
+    val versionArg = getCmdArgument(args, "version")
+    return if (versionArg != null) {
+        println("Exact version was specified in program arguments: $versionArg")
+        languages.associateWith { versionArg }
+    } else {
+        UpdateChecker().getNewVersions(languages)
+    }
+}
+
+private fun startGenerator(language: DumpLanguage, version: String): Boolean {
     return try {
-        configRepository.setGeneratorActive(true)
-        generate(version)
+        println()
+        generate(language, version)
+        println()
         true
     } catch (e: Throwable) {
-        println("Uncaught exception occurred in generator")
+        println("Uncaught exception occurred during generator execution")
         e.printStackTrace()
         false
-    } finally {
-        configRepository.setGeneratorActive(false)
     }
 }
 
 private fun registerShutdownHook(configRepository: ConfigRepository) {
     val thread = thread(start = false) {
-        println("Shutdown request received, switching off generator flag")
+        println("\nShutting down the generator")
         configRepository.setGeneratorActive(false)
     }
     Runtime.getRuntime().addShutdownHook(thread)

@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.common.model.database
 
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import kotlin.js.JsName
 import kotlin.test.*
 
@@ -7,31 +8,50 @@ class DatabaseFileTest {
 
     @Test
     @JsName("test1")
-    fun `should parse not versioned database file name`() {
+    fun `should parse not language-specific and not versioned database file name`() {
+        assertFalse(DatabaseType.HISTORY.languageSpecific)
         assertFalse(DatabaseType.HISTORY.versioned)
 
         val parsed = DatabaseFile.parse("history.db")
         assertNotNull(parsed)
         assertEquals("history.db", parsed.fileName)
         assertEquals(DatabaseType.HISTORY, parsed.type)
+        assertNull(parsed.language)
         assertNull(parsed.version)
     }
 
     @Test
     @JsName("test2")
-    fun `should parse versioned database file name`() {
-        assertTrue(DatabaseType.LINKS.versioned)
+    fun `should parse language-specific database file name`() {
+        assertTrue(DatabaseType.CACHE.languageSpecific)
+        assertFalse(DatabaseType.CACHE.versioned)
 
-        val parsed = DatabaseFile.parse("links-1234.db")
+        val parsed = DatabaseFile.parse("cache-en.db")
         assertNotNull(parsed)
-        assertEquals("links-1234.db", parsed.fileName)
-        assertEquals(DatabaseType.LINKS, parsed.type)
-        assertEquals("1234", parsed.version)
+        assertEquals("cache-en.db", parsed.fileName)
+        assertEquals(DatabaseType.CACHE, parsed.type)
+        assertEquals(DumpLanguage.EN, parsed.language)
+        assertNull(parsed.version)
     }
 
     @Test
     @JsName("test3")
+    fun `should parse versioned and language-specific database file name`() {
+        assertTrue(DatabaseType.LINKS.versioned)
+        assertTrue(DatabaseType.LINKS.languageSpecific)
+
+        val parsed = DatabaseFile.parse("links-en-1234.db")
+        assertNotNull(parsed)
+        assertEquals("links-en-1234.db", parsed.fileName)
+        assertEquals(DatabaseType.LINKS, parsed.type)
+        assertEquals(DumpLanguage.EN, parsed.language)
+        assertEquals("1234", parsed.version)
+    }
+
+    @Test
+    @JsName("test4")
     fun `should not parse file name with wrong extension`() {
+        assertFalse(DatabaseType.HISTORY.languageSpecific)
         assertFalse(DatabaseType.HISTORY.versioned)
 
         val parsed = DatabaseFile.parse("history.dbx")
@@ -39,16 +59,17 @@ class DatabaseFileTest {
     }
 
     @Test
-    @JsName("test4")
+    @JsName("test5")
     fun `should not parse versioned file type when file name doesn't contain version`() {
         assertTrue(DatabaseType.LINKS.versioned)
+        assertTrue(DatabaseType.LINKS.languageSpecific)
 
-        val parsed = DatabaseFile.parse("links.db")
+        val parsed = DatabaseFile.parse("links-en.db")
         assertNull(parsed)
     }
 
     @Test
-    @JsName("test5")
+    @JsName("test6")
     fun `should create not versioned database file`() {
         assertFalse(DatabaseType.HISTORY.versioned)
 
@@ -59,13 +80,14 @@ class DatabaseFileTest {
     }
 
     @Test
-    @JsName("test6")
-    fun `should create versioned database file`() {
-        assertTrue(DatabaseType.LINKS.versioned)
+    @JsName("test7")
+    fun `should create language-specific database file`() {
+        assertTrue(DatabaseType.CACHE.languageSpecific)
+        assertFalse(DatabaseType.CACHE.versioned)
 
-        val file = DatabaseFile.create(DatabaseType.LINKS, version = "890")
-        assertEquals(DatabaseType.LINKS, file.type)
-        assertEquals("890", file.version)
-        assertEquals("links-890.db", file.fileName)
+        val file = DatabaseFile.create(DatabaseType.CACHE, language = DumpLanguage.EN)
+        assertEquals(DatabaseType.CACHE, file.type)
+        assertEquals(DumpLanguage.EN, file.language)
+        assertEquals("cache-en.db", file.fileName)
     }
 }

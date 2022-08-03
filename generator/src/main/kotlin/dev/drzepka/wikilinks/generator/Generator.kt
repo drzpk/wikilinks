@@ -4,6 +4,7 @@ import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.common.dump.HttpClientProvider
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.generator.flow.FileFlowStorage
 import dev.drzepka.wikilinks.generator.flow.FlowStep
 import dev.drzepka.wikilinks.generator.flow.GeneratorFlow
@@ -21,7 +22,6 @@ import dev.drzepka.wikilinks.generator.pipeline.writer.PageRedirectsWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.PageWriter
 import io.ktor.client.engine.apache.*
 import java.io.File
-import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
@@ -29,14 +29,12 @@ import java.nio.file.StandardCopyOption
 private val workingDirectory = File(Configuration.workingDirectory)
 private val databaseProvider = DatabaseProvider()
 
-fun generate(version: String) {
-    println("Starting generator with dump version=$version")
-    println("Available CPUs: ${availableProcessors()}")
-    println("Max heap: ${ManagementFactory.getMemoryMXBean().heapMemoryUsage.max}")
+fun generate(language: DumpLanguage, version: String) {
+    println("Starting generator with language=$language and version=$version")
 
     val storage = FileFlowStorage(version, workingDirectory)
     val store = Store(storage).apply {
-        linksDatabaseFile = DatabaseFile.create(DatabaseType.LINKS, version)
+        linksDatabaseFile = DatabaseFile.create(DatabaseType.LINKS, language, version)
     }
     val flow = GeneratorFlow(store)
 
@@ -69,6 +67,7 @@ private object InitializeDatabaseStep : FlowStep<Store> {
         }
 
         store.db = databaseProvider.getLinksDatabase(
+            store.linksDatabaseFile.language!!,
             fixedVersion = store.linksDatabaseFile.version!!,
             disableProtection = true,
             overrideDirectory = workingDirectory.canonicalPath
@@ -94,7 +93,7 @@ private object PopulatePageTable : FlowStep<Store> {
 
     private fun populate(store: Store, logger: ProgressLogger) {
         val writer = PageWriter(store.pageLookup, store.db)
-        val dumpFile = getDumpFile("page")
+        val dumpFile = getDumpFile(store, "page")
         val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
         manager.start(logger)
     }
@@ -118,7 +117,7 @@ private object PopulatePageRedirects : FlowStep<Store> {
 
     private fun populate(store: Store, logger: ProgressLogger) {
         val writer = PageRedirectsWriter(store.pageLookup, store.redirectLookup, store.db)
-        val dumpFile = getDumpFile("redirect")
+        val dumpFile = getDumpFile(store, "redirect")
         val manager = SqlPipelineManager(dumpFile, { stream -> SqlDumpReader(stream) }, writer)
         manager.start(logger)
     }
@@ -181,7 +180,7 @@ private object ExtractLinksFromDumpStep : FlowStep<Store> {
             return
         }
 
-        val dumpFile = getDumpFile("pagelinks")
+        val dumpFile = getDumpFile(store, "pagelinks")
         val writer = LinksFileWriter(workingDirectory)
         val processor = LinksProcessor(store.pageLookup, store.redirectLookup)
 
@@ -238,11 +237,16 @@ private object DeleteTemporaryDataStep : FlowStep<Store> {
     override val name = "Deleting temporary data"
 
     override fun run(store: Store, logger: ProgressLogger) {
-        if (Configuration.skipDeletingDumps)
+        val skippedLanguages = DumpLanguage.values().toMutableSet()
+        if (!Configuration.skipDeletingDumps)
+            skippedLanguages -= store.linksDatabaseFile.language!!
+        else
             println("Source Wikipedia dumps won't be deleted")
 
+        val prefixesToKeep = skippedLanguages.map { it.getFilePrefix() }
         workingDirectory.listFiles()!!
-            .filter { it.name.endsWith(".gz") && (!Configuration.skipDeletingDumps || !it.name.startsWith("enwiki-")) }
+            .filter { it.name.endsWith(".gz") }
+            .filter { file -> prefixesToKeep.none { prefix -> file.name.startsWith(prefix) } }
             .forEach {
                 println("Deleting temporary file $it")
                 it.delete()
@@ -252,7 +256,8 @@ private object DeleteTemporaryDataStep : FlowStep<Store> {
     }
 }
 
-private fun getDumpFile(name: String): File {
+private fun getDumpFile(store: Store, name: String): File {
+    val namePrefix = store.linksDatabaseFile.language!!.getFilePrefix()
     return workingDirectory.listFiles()!!
-        .find { it.name.startsWith("enwiki-") && it.name.endsWith("$name.sql.gz") }!!
+        .find { it.name.startsWith(namePrefix) && it.name.endsWith("$name.sql.gz") }!!
 }

@@ -9,6 +9,7 @@ import dev.drzepka.wikilinks.app.utils.MultiplatformWeakReference
 import dev.drzepka.wikilinks.app.utils.environment
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.db.cache.CacheDatabase
 import dev.drzepka.wikilinks.db.history.HistoryDatabase
 import dev.drzepka.wikilinks.db.links.LinksDatabase
@@ -37,11 +38,12 @@ class DatabaseProvider {
     }
 
     fun getLinksDatabase(
+        language: DumpLanguage,
         fixedVersion: String? = null,
         disableProtection: Boolean = false,
         overrideDirectory: String? = null
     ): LinksDatabase {
-        val nameResolver = { resolveDatabaseName(DatabaseType.LINKS, fixedVersion, overrideDirectory) }
+        val nameResolver = { resolveDatabaseName(DatabaseType.LINKS, language, fixedVersion, overrideDirectory) }
         val initializer = { driver: SqlDriver ->
             LinksDatabase.Schema.createOrMigrateIfNecessary(driver, "links", LINKS_DATABASE_VERSION)
         }
@@ -50,8 +52,8 @@ class DatabaseProvider {
         return LinksDatabase.invoke(driver)
     }
 
-    fun getCacheDatabase(): CacheDatabase {
-        val nameResolver = { resolveDatabaseName(DatabaseType.CACHE) }
+    fun getCacheDatabase(language: DumpLanguage): CacheDatabase {
+        val nameResolver = { resolveDatabaseName(DatabaseType.CACHE, language) }
         val initializer = { driver: SqlDriver ->
             CacheDatabase.Schema.createOrMigrateIfNecessary(driver, "cache", CACHE_DATABASE_VERSION)
         }
@@ -72,6 +74,7 @@ class DatabaseProvider {
 
     private fun resolveDatabaseName(
         type: DatabaseType,
+        language: DumpLanguage? = null,
         fixedVersion: String? = null,
         overrideDirectory: String? = null
     ): String {
@@ -79,13 +82,13 @@ class DatabaseProvider {
 
         return if (type.versioned) {
             if (fixedVersion != null) {
-                DatabaseFile.create(type, version = fixedVersion).fileName
+                DatabaseFile.create(type, language = language, version = fixedVersion).fileName
             } else {
-                DatabaseResolver.resolveDatabaseName(dir, type)
+                DatabaseResolver.resolveDatabaseName(dir, type, language)
                     ?: throw IllegalStateException("Database of type $type doesn't exist")
             }
         } else {
-            DatabaseFile.create(type).fileName
+            DatabaseFile.create(type, language).fileName
         }
     }
 

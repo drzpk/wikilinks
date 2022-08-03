@@ -5,6 +5,7 @@ import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.app.db.DatabaseResolver
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.utils.MultiplatformDirectory
 import dev.drzepka.wikilinks.common.utils.MultiplatformFile
 import kotlinx.atomicfu.atomic
@@ -126,7 +127,11 @@ class DumpUpdaterService(
     }
 
     private fun refreshDumpVersion() {
-        val linksFile = DatabaseResolver.resolveDatabaseFile(Configuration.databasesDirectory!!, DatabaseType.LINKS)
+        val linksFile = DatabaseResolver.resolveDatabaseFile(
+            Configuration.databasesDirectory!!,
+            DatabaseType.LINKS,
+            DumpLanguage.EN // todo
+        )
         dumpVersion = linksFile?.version
     }
 }

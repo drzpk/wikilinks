@@ -1,17 +1,31 @@
 package dev.drzepka.wikilinks.common.model.database
 
-class DatabaseFile private constructor(val fileName: String, val type: DatabaseType, val version: String?) {
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+
+class DatabaseFile private constructor(
+    val fileName: String,
+    val type: DatabaseType,
+    val language: DumpLanguage?,
+    val version: String?
+) {
 
     companion object {
         private const val EXTENSION = ".db"
         private const val PART_SEPARATOR = '-'
 
-        fun create(type: DatabaseType, version: String? = null): DatabaseFile {
+        fun create(type: DatabaseType, language: DumpLanguage? = null, version: String? = null): DatabaseFile {
+            if (type.languageSpecific && language == null)
+                throw IllegalArgumentException("Language is required for type $type")
             if (type.versioned && version == null)
                 throw IllegalArgumentException("Version is required for type $type")
 
             val builder = StringBuilder()
             builder.append(type.name.lowercase())
+
+            if (language != null) {
+                builder.append(PART_SEPARATOR)
+                builder.append(language.name.lowercase())
+            }
 
             if (version != null) {
                 builder.append(PART_SEPARATOR)
@@ -19,7 +33,7 @@ class DatabaseFile private constructor(val fileName: String, val type: DatabaseT
             }
 
             builder.append(EXTENSION)
-            return DatabaseFile(builder.toString(), type, version)
+            return DatabaseFile(builder.toString(), type, language, version)
         }
 
         fun parse(fileName: String): DatabaseFile? {
@@ -35,11 +49,19 @@ class DatabaseFile private constructor(val fileName: String, val type: DatabaseT
                 null
             } ?: return null
 
-            if (type.versioned && parts.size < 2)
+            var nextIndex = 1
+            if (type.languageSpecific && parts.size <= nextIndex)
                 return null
-            val version = if (type.versioned) parts[1] else null
 
-            return DatabaseFile(fileName, type, version)
+            val language =
+                (if (type.languageSpecific) DumpLanguage.fromString(parts[nextIndex++]) else null) ?: return null
+
+            if (type.versioned && parts.size <= nextIndex)
+                return null
+
+            val version = if (type.versioned) parts[nextIndex] else null
+
+            return DatabaseFile(fileName, type, language, version)
         }
     }
 }
