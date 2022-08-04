@@ -1,3 +1,5 @@
 package dev.drzepka.wikilinks.app
 
-class MaintenanceModeException : RuntimeException()
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+
+class LanguageNotAvailableException(val language: DumpLanguage) : RuntimeException()

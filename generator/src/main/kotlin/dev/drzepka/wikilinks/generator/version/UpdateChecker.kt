@@ -5,7 +5,6 @@ import dev.drzepka.wikilinks.common.dump.DumpResolver
 import dev.drzepka.wikilinks.common.dump.HttpClientProvider
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
-import dev.drzepka.wikilinks.generator.Configuration
 import io.ktor.client.engine.apache.*
 import kotlinx.coroutines.runBlocking
 
@@ -26,12 +25,7 @@ class UpdateChecker {
     }
 
     private suspend fun getLanguageVersionData(language: DumpLanguage): Pair<String?, String?> {
-        val currentVersion = DatabaseResolver.resolveDatabaseFile(
-            Configuration.databasesDirectory!!,
-            DatabaseType.LINKS,
-            language
-        )?.version
-
+        val currentVersion = DatabaseResolver.resolveNewestDatabaseFile(DatabaseType.LINKS, language)?.version
         val latestVersion = getLatestDumpVersion(language)
         return currentVersion to latestVersion
     }

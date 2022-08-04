@@ -6,7 +6,7 @@ import kotlinx.datetime.Clock
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
-class HealthService(private val dumpUpdaterService: DumpUpdaterService) {
+class HealthService {
     private val startTime = Clock.System.now()
 
     fun getHealth(): Health {
@@ -17,16 +17,13 @@ class HealthService(private val dumpUpdaterService: DumpUpdaterService) {
             msg == null,
             msg,
             BuildConfig.VERSION,
-            dumpUpdaterService.dumpVersion,
+            "todo", // todo
             uptimeDuration.inWholeSeconds.toInt()
         )
     }
 
     private fun getErrorMessage(): String? {
         val errors = mutableListOf<String>()
-        if (dumpUpdaterService.isUpdateInProgress())
-            errors.add("Wikipedia database update in progress")
-
         return if (errors.isNotEmpty())
             errors.joinToString(separator = "; ")
         else null

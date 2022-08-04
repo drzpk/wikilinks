@@ -8,7 +8,7 @@ class DatabaseFileTest {
 
     @Test
     @JsName("test1")
-    fun `should parse not language-specific and not versioned database file name`() {
+    fun `should parse history file name`() {
         assertFalse(DatabaseType.HISTORY.languageSpecific)
         assertFalse(DatabaseType.HISTORY.versioned)
 
@@ -22,21 +22,21 @@ class DatabaseFileTest {
 
     @Test
     @JsName("test2")
-    fun `should parse language-specific database file name`() {
+    fun `should parse cache file name`() {
         assertTrue(DatabaseType.CACHE.languageSpecific)
-        assertFalse(DatabaseType.CACHE.versioned)
+        assertTrue(DatabaseType.CACHE.versioned)
 
-        val parsed = DatabaseFile.parse("cache-en.db")
+        val parsed = DatabaseFile.parse("cache-en-123.db")
         assertNotNull(parsed)
-        assertEquals("cache-en.db", parsed.fileName)
+        assertEquals("cache-en-123.db", parsed.fileName)
         assertEquals(DatabaseType.CACHE, parsed.type)
         assertEquals(DumpLanguage.EN, parsed.language)
-        assertNull(parsed.version)
+        assertEquals("123", parsed.version)
     }
 
     @Test
     @JsName("test3")
-    fun `should parse versioned and language-specific database file name`() {
+    fun `should parse links file name`() {
         assertTrue(DatabaseType.LINKS.versioned)
         assertTrue(DatabaseType.LINKS.languageSpecific)
 
@@ -81,13 +81,13 @@ class DatabaseFileTest {
 
     @Test
     @JsName("test7")
-    fun `should create language-specific database file`() {
+    fun `should create cache database file`() {
         assertTrue(DatabaseType.CACHE.languageSpecific)
-        assertFalse(DatabaseType.CACHE.versioned)
+        assertTrue(DatabaseType.CACHE.versioned)
 
-        val file = DatabaseFile.create(DatabaseType.CACHE, language = DumpLanguage.EN)
+        val file = DatabaseFile.create(DatabaseType.CACHE, language = DumpLanguage.EN, version = "012")
         assertEquals(DatabaseType.CACHE, file.type)
         assertEquals(DumpLanguage.EN, file.language)
-        assertEquals("cache-en.db", file.fileName)
+        assertEquals("cache-en-012.db", file.fileName)
     }
 }

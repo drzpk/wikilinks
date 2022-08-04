@@ -1,31 +1,36 @@
 package dev.drzepka.wikilinks.app.db
 
+import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseRegistry
 import dev.drzepka.wikilinks.app.model.Link
-import dev.drzepka.wikilinks.db.links.LinksDatabase
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import kotlin.math.ceil
 
-class DbLinksRepository(private val database: LinksDatabase) : LinksRepository {
+class DbLinksRepository(private val registry: DatabaseRegistry) : LinksRepository {
 
-    override fun getInLinksCount(vararg pageIds: Int): Int {
+    override suspend fun getInLinksCount(language: DumpLanguage, vararg pageIds: Int): Int {
+        val database = registry.getLinksDatabase(language)
         return splitQuery(pageIds) {
             database.linksQueries.countInLinks(it).executeAsOneOrNull()?.SUM?.toInt() ?: 0
         }.sum()
     }
 
-    override fun getOutLinksCount(vararg pageIds: Int): Int {
+    override suspend fun getOutLinksCount(language: DumpLanguage, vararg pageIds: Int): Int {
+        val database = registry.getLinksDatabase(language)
         return splitQuery(pageIds) {
             database.linksQueries.countOutLinks(it).executeAsOneOrNull()?.SUM?.toInt() ?: 0
         }.sum()
     }
 
-    override fun getInLinks(vararg pageIds: Int): List<Link> {
+    override suspend fun getInLinks(language: DumpLanguage, vararg pageIds: Int): List<Link> {
+        val database = registry.getLinksDatabase(language)
         return splitQuery(pageIds) { database.linksQueries.getInLinks(it).executeAsList() }
             .flatMap { it }
             .flatMap { splitInLinks(it.in_links, it.page_id.toInt()) }
             .toList()
     }
 
-    override fun getOutLinks(vararg pageIds: Int): List<Link> {
+    override suspend fun getOutLinks(language: DumpLanguage, vararg pageIds: Int): List<Link> {
+        val database = registry.getLinksDatabase(language)
         return splitQuery(pageIds) { database.linksQueries.getOutLinks(it).executeAsList() }
             .flatMap { it }
             .flatMap { splitOutLinks(it.page_id.toInt(), it.out_links) }

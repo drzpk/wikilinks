@@ -1,14 +1,13 @@
 package dev.drzepka.wikilinks.app.service
 
 import dev.drzepka.wikilinks.app.config.Configuration
-import dev.drzepka.wikilinks.app.db.DatabaseProvider
-import dev.drzepka.wikilinks.app.db.DatabaseResolver
+import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseRegistry
+import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseResolver
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.utils.MultiplatformDirectory
 import dev.drzepka.wikilinks.common.utils.MultiplatformFile
-import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -19,19 +18,10 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
-class DumpUpdaterService(
-    scope: CoroutineScope,
-    private val databaseProvider: DatabaseProvider
-) {
+class DumpUpdaterService(scope: CoroutineScope, private val databaseRegistry: DatabaseRegistry) {
     private val log = KotlinLogging.logger {}
-    private val updateInProgress = atomic(false)
-    private val databasesDir = MultiplatformDirectory(Configuration.databasesDirectory!!)
-
-    var dumpVersion: String? = null
-        private set
 
     init {
-        refreshDumpVersion()
         scope.launch {
             while (isActive) {
                 checkForDatabaseUpdate()
@@ -39,16 +29,9 @@ class DumpUpdaterService(
         }
     }
 
-    fun isUpdateInProgress(): Boolean = updateInProgress.value
-
     private suspend fun checkForDatabaseUpdate() {
-        // This solution is not ideal, because there may be cases when more time is required
-        // to finish all queries that the hardcoded values. But it should be sufficient
-        // most of the time. An edge case-free solution would probably require tracking
-        // and waiting for all ongoing requests before releasing database connections.
-
-        delay(10.seconds)
-        val files = databasesDir.listFiles()
+        delay(30.seconds)
+        val files = DatabaseResolver.resolveDatabaseFiles()
         if (files.isEmpty())
             return
 
@@ -61,45 +44,54 @@ class DumpUpdaterService(
         }
     }
 
-    private suspend fun updateDatabase(files: List<MultiplatformFile>) {
-        val databaseFiles = files.mapNotNull { DatabaseFile.parse(it.getName()) }
-        if (databaseFiles.isEmpty())
-            return
+    private suspend fun updateDatabase(files: List<DatabaseFile>) {
+        val filesByLanguage = files.groupBy { it.language!! }
+        val currentlyUsedLanguages = databaseRegistry.getAvailableLanguages()
 
-        val linksDatabaseFiles = databaseFiles.filter { it.type == DatabaseType.LINKS }
-        if (linksDatabaseFiles.size < 2)
-            return
+        for (group in filesByLanguage) {
+            updateDatabase(group.key, group.value, currentlyUsedLanguages[group.key])
+        }
+    }
 
-        val mostRecentDatabase = linksDatabaseFiles.getMostRecentVersion()
-        log.info { "Detected new Links database version: ${mostRecentDatabase.version}, current version: $dumpVersion" }
+    private suspend fun updateDatabase(language: DumpLanguage, files: List<DatabaseFile>, currentVersion: String?) {
+        val newLinksDatabase = files
+            .filter { it.type == DatabaseType.LINKS }
+            .getMostRecentVersion()
+
+        if (newLinksDatabase == null && currentVersion != null) {
+            log.warn { "Links database for lang=$language went offline, unregistering" }
+            databaseRegistry.unregisterLanguage(language)
+            return
+        } else if (newLinksDatabase != null && newLinksDatabase.version == currentVersion) {
+            log.trace { "Links database for lang=$language is up to date ($currentVersion)" }
+            return
+        } else if (newLinksDatabase == null && currentVersion == null) {
+            // Database doesn't exist at all
+            return
+        }
+
+        newLinksDatabase as DatabaseFile
+        log.info { "Detected new Links database version: ${newLinksDatabase.version}, current version: $currentVersion" }
 
         log.info { "Starting the update" }
-        updateInProgress.value = true
-        delay(Configuration.databaseDisconnectTimeout) // Wait for all ongoing requests to finish
-
-        log.info { "Closing database connections" }
-        databaseProvider.closeAllConnections()
+        databaseRegistry.updateDatabases(language)
 
         log.info { "Deleting old databases" }
-        deleteDatabases(setOf(DatabaseType.LINKS, DatabaseType.CACHE), setOf(mostRecentDatabase.fileName))
+        deleteDatabases(files - newLinksDatabase)
 
         log.info { "Update complete" }
-        updateInProgress.value = false
-        refreshDumpVersion()
         delay(10.seconds)
     }
 
-    private fun Iterable<DatabaseFile>.getMostRecentVersion(): DatabaseFile = sortedByDescending { it.version }.first()
+    private fun Iterable<DatabaseFile>.getMostRecentVersion(): DatabaseFile? =
+        sortedByDescending { it.version }.firstOrNull()
 
-    private suspend fun deleteDatabases(types: Set<DatabaseType>, whitelist: Set<String>) {
-        val typesSet = types.toSet()
+    private suspend fun deleteDatabases(files: Collection<DatabaseFile>) {
         val databasesDir = MultiplatformDirectory(Configuration.databasesDirectory!!)
+        val filesToDelete = files.map { it.fileName }
 
         databasesDir.listFiles()
-            .filter {
-                val dbFile = DatabaseFile.parse(it.getName())
-                dbFile != null && dbFile.type in typesSet && it.getName() !in whitelist
-            }
+            .filter {it.getName() in filesToDelete }
             .forEach {
                 log.info { "Deleting database: ${it.getName()}" }
                 it.tryToDelete()
@@ -109,8 +101,10 @@ class DumpUpdaterService(
     private suspend fun MultiplatformFile.tryToDelete() {
         var originalException: Exception? = null
 
-        for (i in 0 until 6) {
+        val attempts = 6
+        for (i in 0 until attempts) {
             try {
+                log.trace { "Deleting file ${getName()}, attempt ${i + 1}/$attempts" }
                 delete()
                 return
             } catch (e: Exception) {
@@ -124,14 +118,5 @@ class DumpUpdaterService(
         }
 
         throw IllegalStateException("Deletion of file ${getName()} failed", originalException)
-    }
-
-    private fun refreshDumpVersion() {
-        val linksFile = DatabaseResolver.resolveDatabaseFile(
-            Configuration.databasesDirectory!!,
-            DatabaseType.LINKS,
-            DumpLanguage.EN // todo
-        )
-        dumpVersion = linksFile?.version
     }
 }

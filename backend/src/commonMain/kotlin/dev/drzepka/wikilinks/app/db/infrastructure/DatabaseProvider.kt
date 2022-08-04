@@ -5,11 +5,9 @@ import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.db.use
 import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.app.utils.Environment
-import dev.drzepka.wikilinks.app.utils.MultiplatformWeakReference
 import dev.drzepka.wikilinks.app.utils.environment
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
-import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.db.cache.CacheDatabase
 import dev.drzepka.wikilinks.db.history.HistoryDatabase
 import dev.drzepka.wikilinks.db.links.LinksDatabase
@@ -18,96 +16,51 @@ import mu.KotlinLogging
 @Suppress("MemberVisibilityCanBePrivate")
 class DatabaseProvider {
     private val log = KotlinLogging.logger {}
-    private val drivers = mutableSetOf<MultiplatformWeakReference<SqlDriver>>()
 
-    fun closeAllConnections() {
-        val iterator = drivers.iterator()
-        var closedCount = 0
+    fun getOrCreateUnprotectedLinksDatabase(file: DatabaseFile, directory: String): LinksDatabase {
+        file.verifyType(DatabaseType.LINKS)
 
-        while (iterator.hasNext()) {
-            val driver = iterator.next().getValue()
-            if (driver != null) {
-                driver.close()
-                closedCount++
-            } else {
-                iterator.remove()
-            }
-        }
-
-        log.info { "Closed $closedCount database connections" }
-    }
-
-    fun getLinksDatabase(
-        language: DumpLanguage,
-        fixedVersion: String? = null,
-        disableProtection: Boolean = false,
-        overrideDirectory: String? = null
-    ): LinksDatabase {
-        val nameResolver = { resolveDatabaseName(DatabaseType.LINKS, language, fixedVersion, overrideDirectory) }
-        val initializer = { driver: SqlDriver ->
-            LinksDatabase.Schema.createOrMigrateIfNecessary(driver, "links", LINKS_DATABASE_VERSION)
-        }
-
-        val driver = getDbDriver(nameResolver, initializer, disableProtection, overrideDirectory)
+        val driver = getDbDriver(file.fileName, true, directory)
+        LinksDatabase.Schema.createOrMigrateIfNecessary(driver, "links", LINKS_DATABASE_VERSION)
         return LinksDatabase.invoke(driver)
     }
 
-    fun getCacheDatabase(language: DumpLanguage): CacheDatabase {
-        val nameResolver = { resolveDatabaseName(DatabaseType.CACHE, language) }
-        val initializer = { driver: SqlDriver ->
-            CacheDatabase.Schema.createOrMigrateIfNecessary(driver, "cache", CACHE_DATABASE_VERSION)
-        }
+    fun getLinksDatabase(file: DatabaseFile): ManagedDatabase<LinksDatabase> {
+        file.verifyType(DatabaseType.LINKS)
 
-        val driver = getDbDriver(nameResolver, initializer, false)
-        return CacheDatabase.invoke(driver)
+        val driver = getDbDriver(file.fileName, false, null)
+        val database = LinksDatabase.invoke(driver)
+        return ManagedDatabase(database, driver, file)
     }
 
-    fun getHistoryDatabase(): HistoryDatabase {
-        val nameResolver = { resolveDatabaseName(DatabaseType.HISTORY) }
-        val initializer = { driver: SqlDriver ->
-            HistoryDatabase.Schema.createOrMigrateIfNecessary(driver, "history", HISTORY_DATABASE_VERSION)
-        }
+    fun getOrCreateCacheDatabase(file: DatabaseFile): ManagedDatabase<CacheDatabase> {
+        file.verifyType(DatabaseType.CACHE)
 
-        val driver = getDbDriver(nameResolver, initializer, false)
-        return HistoryDatabase.invoke(driver)
+        val driver = getDbDriver(file.fileName, false)
+        CacheDatabase.Schema.createOrMigrateIfNecessary(driver, "cache", CACHE_DATABASE_VERSION)
+
+        val database = CacheDatabase.invoke(driver)
+        return ManagedDatabase(database, driver, file)
     }
 
-    private fun resolveDatabaseName(
-        type: DatabaseType,
-        language: DumpLanguage? = null,
-        fixedVersion: String? = null,
-        overrideDirectory: String? = null
-    ): String {
-        val dir = overrideDirectory ?: Configuration.databasesDirectory!!
+    fun getOrCreateHistoryDatabase(file: DatabaseFile): ManagedDatabase<HistoryDatabase> {
+        file.verifyType(DatabaseType.HISTORY)
 
-        return if (type.versioned) {
-            if (fixedVersion != null) {
-                DatabaseFile.create(type, language = language, version = fixedVersion).fileName
-            } else {
-                DatabaseResolver.resolveDatabaseName(dir, type, language)
-                    ?: throw IllegalStateException("Database of type $type doesn't exist")
-            }
-        } else {
-            DatabaseFile.create(type, language).fileName
-        }
+        val driver = getDbDriver(file.fileName, false)
+        HistoryDatabase.Schema.createOrMigrateIfNecessary(driver, "history", HISTORY_DATABASE_VERSION)
+
+        val database = HistoryDatabase.invoke(driver)
+        return ManagedDatabase(database, driver, file)
     }
 
-    private fun getDbDriver(
-        dbNameResolver: () -> String,
-        postInitializationHandler: (driver: SqlDriver) -> Unit,
-        disableProtection: Boolean,
-        overrideDirectory: String? = null
-    ): SqlDriver {
-        val factory = {
-            val dbName = dbNameResolver()
-            val driver = doGetDbDriver(dbName, disableProtection, overrideDirectory)
-            postInitializationHandler(driver)
-            driver
-        }
+    private fun DatabaseFile.verifyType(expected: DatabaseType) {
+        if (type != expected)
+            throw IllegalStateException("Expected DatabaseFile with type $expected, but got $type instead")
+    }
 
-        val driver = ReusableDriver(factory)
-        drivers.add(MultiplatformWeakReference(driver))
-        return driver
+    private fun getDbDriver(dbName: String, disableProtection: Boolean, overrideDirectory: String? = null): SqlDriver {
+        val driver = doGetDbDriver(dbName, disableProtection, overrideDirectory)
+        return CloseableDriver(driver)
     }
 
     private fun doGetDbDriver(

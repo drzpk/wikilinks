@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.app.db.infrastructure
 
+import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
@@ -8,19 +9,10 @@ import mu.KotlinLogging
 
 object DatabaseResolver {
     private val log = KotlinLogging.logger {}
+    private val directory = Configuration.databasesDirectory!!
 
-    fun resolveDatabaseName(directory: String, type: DatabaseType, language: DumpLanguage? = null): String? =
-        resolveDatabaseFile(directory, type, language)?.fileName
-
-    fun resolveDatabaseFile(directory: String, type: DatabaseType, language: DumpLanguage? = null): DatabaseFile? {
-        if (type.languageSpecific && language == null)
-            throw IllegalArgumentException("Language is required for type $type")
-
-        val filtered = MultiplatformDirectory(directory)
-            .listFiles()
-            .mapNotNull { DatabaseFile.parse(it.getName()) }
-            .filter { it.type == type && it.language == language }
-
+    fun resolveNewestDatabaseFile(type: DatabaseType, language: DumpLanguage? = null): DatabaseFile? {
+        val filtered = resolveDatabaseFiles(type, language)
         if (filtered.isEmpty())
             return null
 
@@ -34,4 +26,12 @@ object DatabaseResolver {
             filtered.first()
         }
     }
+
+    fun resolveDatabaseFiles(
+        typeFilter: DatabaseType? = null,
+        languageFilter: DumpLanguage? = null
+    ): List<DatabaseFile> = MultiplatformDirectory(directory)
+        .listFiles()
+        .mapNotNull { DatabaseFile.parse(it.getName()) }
+        .filter { (typeFilter == null || it.type == typeFilter) && (languageFilter == null || it.language == languageFilter) }
 }

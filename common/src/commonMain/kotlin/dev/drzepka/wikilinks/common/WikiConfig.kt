@@ -1,9 +1,6 @@
 package dev.drzepka.wikilinks.common
 
 object WikiConfig {
-    const val REST_API_URL = "https://en.wikipedia.org/w/rest.php"
-    const val ACTION_API_URL = "https://en.wikipedia.org/w/api.php"
-
     /**
      * User agent set in compliance with the MediaWiki [API Etiquette](https://www.mediawiki.org/wiki/API:Etiquette).
      */

@@ -66,11 +66,9 @@ private object InitializeDatabaseStep : FlowStep<Store> {
             store[key] = "done"
         }
 
-        store.db = databaseProvider.getLinksDatabase(
-            store.linksDatabaseFile.language!!,
-            fixedVersion = store.linksDatabaseFile.version!!,
-            disableProtection = true,
-            overrideDirectory = workingDirectory.canonicalPath
+        store.db = databaseProvider.getOrCreateUnprotectedLinksDatabase(
+            store.linksDatabaseFile,
+            workingDirectory.canonicalPath
         )
     }
 }
@@ -220,7 +218,7 @@ private object MoveDatabaseStep : FlowStep<Store> {
             return
         }
 
-        databaseProvider.closeAllConnections()
+        //databaseProvider.closeAllConnections() todo: is this needed anymore?
         val databaseFile = File(workingDirectory, store.linksDatabaseFile.fileName)
         Files.move(
             databaseFile.toPath(),
