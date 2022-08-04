@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app.db
+package dev.drzepka.wikilinks.app.db.infrastructure
 
 import com.squareup.sqldelight.Transacter
 import com.squareup.sqldelight.db.SqlCursor

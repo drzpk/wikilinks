@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app.db
+package dev.drzepka.wikilinks.app.db.infrastructure
 
 import co.touchlab.sqliter.DatabaseConfiguration
 import com.squareup.sqldelight.db.SqlDriver

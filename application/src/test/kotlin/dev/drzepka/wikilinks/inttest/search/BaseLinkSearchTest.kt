@@ -1,7 +1,7 @@
 package dev.drzepka.wikilinks.inttest.search
 
-import dev.drzepka.wikilinks.app.db.DatabaseProvider
 import dev.drzepka.wikilinks.app.db.FileConfigRepository.Companion.DUMP_VERSION_FILE_NAME
+import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseProvider
 import dev.drzepka.wikilinks.app.utils.http
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
 import dev.drzepka.wikilinks.common.model.Path

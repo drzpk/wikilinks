@@ -3,6 +3,7 @@ package dev.drzepka.wikilinks.app
 import dev.drzepka.wikilinks.app.cache.PageCacheService
 import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.app.db.*
+import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseProvider
 import dev.drzepka.wikilinks.app.service.DumpUpdaterService
 import dev.drzepka.wikilinks.app.service.FrontendResourceService
 import dev.drzepka.wikilinks.app.service.HealthService

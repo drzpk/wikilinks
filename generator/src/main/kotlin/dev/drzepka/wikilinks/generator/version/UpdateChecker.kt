@@ -1,6 +1,6 @@
 package dev.drzepka.wikilinks.generator.version
 
-import dev.drzepka.wikilinks.app.db.DatabaseResolver
+import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseResolver
 import dev.drzepka.wikilinks.common.dump.DumpResolver
 import dev.drzepka.wikilinks.common.dump.HttpClientProvider
 import dev.drzepka.wikilinks.common.model.database.DatabaseType

@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app.db
+package dev.drzepka.wikilinks.app.db.infrastructure
 
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
