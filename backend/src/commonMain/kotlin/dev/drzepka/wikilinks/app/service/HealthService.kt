@@ -17,7 +17,6 @@ class HealthService {
             msg == null,
             msg,
             BuildConfig.VERSION,
-            "todo", // todo
             uptimeDuration.inWholeSeconds.toInt()
         )
     }

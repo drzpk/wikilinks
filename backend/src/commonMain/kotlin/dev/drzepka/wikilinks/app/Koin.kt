@@ -20,7 +20,7 @@ fun coreModule() = module {
     single<LinksRepository> { DbLinksRepository(get()) }
 
     single { PathFinderService(get()) }
-    single { LinkSearchService(get(), getOrNull()) }
+    single { LinkSearchService(get(), get(), getOrNull()) }
 }
 
 fun fullModule(scope: CoroutineScope) = module {

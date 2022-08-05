@@ -1,7 +1,9 @@
 package dev.drzepka.wikilinks.app.service.search
 
+import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseRegistry
 import dev.drzepka.wikilinks.common.model.Path
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+import dev.drzepka.wikilinks.common.model.searchresult.DumpInfo
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.common.model.searchresult.SearchDuration
 import kotlin.time.ExperimentalTime
@@ -11,6 +13,7 @@ import kotlin.time.measureTimedValue
 @OptIn(ExperimentalTime::class)
 class LinkSearchService(
     private val pathFinderService: PathFinderService,
+    private val databaseRegistry: DatabaseRegistry,
     private val pageInfoService: PageInfoService?
 ) {
 
@@ -39,7 +42,8 @@ class LinkSearchService(
             paths,
             pageInfoResult.pages,
             searchDuration,
-            pageInfoResult.cacheHitRatio
+            pageInfoResult.cacheHitRatio,
+            language.toDumpInfo()
         )
     }
 
@@ -50,4 +54,9 @@ class LinkSearchService(
 
        return pathTimedValue.value to pathTimedValue.duration.inWholeMilliseconds
     }
+
+    private suspend fun DumpLanguage.toDumpInfo(): DumpInfo = DumpInfo(
+        this,
+        databaseRegistry.getAvailableLanguages()[this]!!
+    )
 }

@@ -9,7 +9,7 @@ class DbHistoryRepository(databaseRegistry: DatabaseRegistry) : HistoryRepositor
     override suspend fun save(entry: HistoryEntry) {
         historyDatabase.searchHistoryQueries.add(
             entry.date,
-            "en", // todo
+            entry.language.value,
             entry.version,
             entry.source?.toLong(),
             entry.target?.toLong(),

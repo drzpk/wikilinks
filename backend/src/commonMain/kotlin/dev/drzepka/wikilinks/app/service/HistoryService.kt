@@ -11,7 +11,8 @@ class HistoryService(private val historyRepository: HistoryRepository) {
         val pages = result.paths.firstOrNull()?.pages
         val entry = HistoryEntry(
             searchDate.toEpochMilliseconds(),
-            "todo", // todo
+            result.wikipedia.language,
+            result.wikipedia.version,
             pages?.firstOrNull(),
             pages?.lastOrNull(),
             result.paths.size,

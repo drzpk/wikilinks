@@ -8,5 +8,6 @@ data class LinkSearchResult(
     val paths: List<Path>,
     val pages: Map<Int, PageInfo>,
     val duration: SearchDuration,
-    val cacheHitRatio: Float
+    val cacheHitRatio: Float,
+    val wikipedia: DumpInfo
 )
