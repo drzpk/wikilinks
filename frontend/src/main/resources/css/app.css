@@ -14,13 +14,22 @@ header h1 {
 
 #language-selector .dropdown-menu {
     padding: 0;
-    border: 1px solid rgba(0,0,0,.15);
+    border: 1px solid rgba(0, 0, 0, .15);
+}
+
+#language-selector button i {
+    outline: 1px solid gray;
 }
 
 #language-selector .dropdown-menu div {
     padding: 0.3em;
     transition: background-color 0.2s linear;
     cursor: pointer;
+}
+
+#language-selector .dropdown-menu .item span:first-child {
+    outline: 1px solid gray;
+    margin-right: 0.3em;
 }
 
 #language-selector .dropdown-menu div:hover {

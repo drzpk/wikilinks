@@ -21,7 +21,7 @@ class LanguageSelector(state: State) : DropDown("", style = ButtonStyle.OUTLINED
             text = lang?.let { "Wikipedia: ${it.displayName()}" } ?: "no language available"
 
             bindEach(state.availableLanguages) { availableLang ->
-                div {
+                div(className = "item") {
                     span(className = availableLang.flagCss())
                     span(availableLang.displayName())
                     onClick {
