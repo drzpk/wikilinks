@@ -24,7 +24,7 @@ class DatabaseFile private constructor(
 
             if (language != null) {
                 builder.append(PART_SEPARATOR)
-                builder.append(language.name.lowercase())
+                builder.append(language.value)
             }
 
             if (version != null) {

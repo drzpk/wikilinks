@@ -55,7 +55,7 @@ private fun getLanguages(args: Array<String>): List<DumpLanguage> {
     for (raw in languagesArg.split(',')) {
         val parsed = DumpLanguage.fromString(raw)
         if (parsed == null) {
-            val supportedLanguages = DumpLanguage.values().joinToString(separator = ",") { it.name.lowercase() }
+            val supportedLanguages = DumpLanguage.values().joinToString(separator = ",") { it.value }
             println("\"raw\" is not a valid language. Supported languages: $supportedLanguages")
             return emptyList()
         }

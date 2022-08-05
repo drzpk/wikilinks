@@ -37,7 +37,7 @@ class DumpResolver(
     }
 
     private fun getFileUrls(language: DumpLanguage, version: String): List<String> =
-        requiredFileVariants.map { "${language.getSourceUrl()}/$version/${language.name.lowercase()}wiki-$version-$it.sql.gz" }
+        requiredFileVariants.map { "${language.getSourceUrl()}/$version/${language.value}wiki-$version-$it.sql.gz" }
 
     private suspend fun convertToDumps(urls: List<String>): List<ArchiveDump>? {
         val resolvedDumps = mutableListOf<ArchiveDump>()

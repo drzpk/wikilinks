@@ -15,9 +15,9 @@ object CommonConfiguration : BaseConfiguration() {
 
     fun wikipediaActionApiUrl(language: DumpLanguage): String =
         getString("WIKIPEDIA_ACTION_API_URL_${language.name}")
-            ?: "https://${language.name.lowercase()}.wikipedia.org/w/api.php"
+            ?: "https://${language.value}.wikipedia.org/w/api.php"
 
     fun wikipediaRestApiUrl(language: DumpLanguage): String =
         getString("WIKIPEDIA_REST_API_URL_${language.name}")
-            ?: "https://${language.name.lowercase()}.wikipedia.org/w/rest.php"
+            ?: "https://${language.value}.wikipedia.org/w/rest.php"
 }
