@@ -18,22 +18,23 @@ class LinksGraph(result: LinkSearchResult) : Div() {
     private val nodes = result.toNodes()
     private val edges = result.toEdges(nodes)
     private val nodeRows = nodes.countRows()
-    private val scale: Double
+    private var scale = 0.0
 
     init {
-        id = CONTAINER_ID
-        tag(TAG.SVG)
+        if (result.paths.isNotEmpty()) {
+            id = CONTAINER_ID
+            tag(TAG.SVG)
 
-        // Scale down so that the nodes can fit into the largest row
-        val factor = 1.3
-        val largestRowSize = nodeRows.maxOrNull()!!
-        val maxMatchingNodeRadius = (GRAPH_HEIGHT - VERTICAL_PADDING) / largestRowSize.toDouble() / 2
-        scale = if (maxMatchingNodeRadius < NODE_RADIUS)
-            maxMatchingNodeRadius / NODE_RADIUS * factor
-        else 1.0
+            // Scale down so that the nodes can fit into the largest row
+            val factor = 1.3
+            val largestRowSize = nodeRows.maxOrNull()!!
+            val maxMatchingNodeRadius = (GRAPH_HEIGHT - VERTICAL_PADDING) / largestRowSize.toDouble() / 2
+            scale = if (maxMatchingNodeRadius < NODE_RADIUS)
+                maxMatchingNodeRadius / NODE_RADIUS * factor
+            else 1.0
 
-        if (result.paths.isNotEmpty())
             window.setTimeout({ initializeD3() })
+        }
     }
 
     private fun initializeD3() {

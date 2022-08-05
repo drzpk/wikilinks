@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.front
 
 import dev.drzepka.wikilinks.front.component.SearchComponent
+import dev.drzepka.wikilinks.front.component.header.HeaderComponent
 import dev.drzepka.wikilinks.front.component.searchresult.SearchResultComponent
 import dev.drzepka.wikilinks.front.model.HistoryState
 import dev.drzepka.wikilinks.front.model.SearchQuery
@@ -10,8 +11,6 @@ import dev.drzepka.wikilinks.front.service.MockPageSearchService
 import dev.drzepka.wikilinks.front.service.impl.LinkSearchServiceImpl
 import dev.drzepka.wikilinks.front.service.impl.PageSearchServiceImpl
 import io.kvision.Application
-import io.kvision.html.h1
-import io.kvision.html.header
 import io.kvision.panel.ContainerType
 import io.kvision.panel.responsiveGridPanel
 import io.kvision.panel.root
@@ -22,6 +21,7 @@ class Frontend : Application(), HistoryState {
     init {
         io.kvision.require("./css/app.css")
         io.kvision.require("./css/loader.css")
+        io.kvision.require("flag-icons/css/flag-icons.min.css")
     }
 
     private lateinit var state: State
@@ -31,9 +31,7 @@ class Frontend : Application(), HistoryState {
         this.state = (state["state"] as State?) ?: createState()
 
         root("wikilinks", ContainerType.FLUID) {
-            header {
-                h1("WikiLinks")
-            }
+            add(HeaderComponent(this@Frontend.state))
 
             responsiveGridPanel {
                 options(1, 1, 6, 3) {

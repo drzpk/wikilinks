@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.front.model
 
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.front.service.LinkSearchService
 import dev.drzepka.wikilinks.front.service.PageSearchService
@@ -21,11 +22,26 @@ class State(
     val searchInProgress = ObservableValue(false)
     val searchResult = ObservableValue<LinkSearchResult?>(null)
 
+    val availableLanguages = ObservableListWrapper(mutableListOf<DumpLanguage>())
+    val selectedLanguage = ObservableValue<DumpLanguage?>(null)
+
     init {
+        setupLanguages()
+
         sourceInput.selectedPage.subscribe { onSelectedPageChanged() }
         targetInput.selectedPage.subscribe { onSelectedPageChanged() }
 
         historyState.getSearchQuery()?.let { initialSearch(it) }
+    }
+
+    private fun setupLanguages() {
+        // TODO: 05.08.2022 use local storage to store language settings
+        // TODO: 05.08.2022 get available languages from backend
+        val languages = DumpLanguage.values()
+
+        availableLanguages.addAll(languages)
+        val selected = if (DumpLanguage.EN in languages) DumpLanguage.EN else languages.firstOrNull()
+        selectedLanguage.setState(selected)
     }
 
     private fun initialSearch(query: SearchQuery) {
@@ -51,6 +67,10 @@ class State(
                 search()
             }
         }
+    }
+
+    fun selectLanguage(language: DumpLanguage) {
+        selectedLanguage.setState(language)
     }
 
     fun search() {
