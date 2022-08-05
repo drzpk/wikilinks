@@ -1,9 +1,9 @@
 package dev.drzepka.wikilinks.app.service.search
 
 import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseRegistry
+import dev.drzepka.wikilinks.common.model.LanguageInfo
 import dev.drzepka.wikilinks.common.model.Path
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
-import dev.drzepka.wikilinks.common.model.searchresult.DumpInfo
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.common.model.searchresult.SearchDuration
 import kotlin.time.ExperimentalTime
@@ -55,7 +55,7 @@ class LinkSearchService(
        return pathTimedValue.value to pathTimedValue.duration.inWholeMilliseconds
     }
 
-    private suspend fun DumpLanguage.toDumpInfo(): DumpInfo = DumpInfo(
+    private suspend fun DumpLanguage.toDumpInfo(): LanguageInfo = LanguageInfo(
         this,
         databaseRegistry.getAvailableLanguages()[this]!!
     )

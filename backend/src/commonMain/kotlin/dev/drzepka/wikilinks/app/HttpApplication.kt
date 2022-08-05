@@ -1,9 +1,11 @@
 package dev.drzepka.wikilinks.app
 
+import dev.drzepka.wikilinks.app.KoinApp.databaseRegistry
 import dev.drzepka.wikilinks.app.KoinApp.frontendResourceService
 import dev.drzepka.wikilinks.app.KoinApp.healthService
 import dev.drzepka.wikilinks.app.KoinApp.historyService
 import dev.drzepka.wikilinks.app.KoinApp.searchService
+import dev.drzepka.wikilinks.common.model.LanguageInfo
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -76,6 +78,13 @@ private fun Application.configureRouting() {
                     historyService.addResult(searchDate, result)
                     call.respond(result)
                 }
+            }
+
+            get("languages") {
+                val response = databaseRegistry
+                    .getAvailableLanguages()
+                    .map { LanguageInfo(it.key, it.value) }
+                call.respond(response)
             }
 
             get("health") {

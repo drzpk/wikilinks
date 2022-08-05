@@ -1,3 +1,5 @@
 package dev.drzepka.wikilinks.front.model
 
-data class SearchQuery(val sourcePage: String, val targetPage: String)
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+
+data class SearchQuery(val sourcePage: String, val targetPage: String, val language: DumpLanguage?)

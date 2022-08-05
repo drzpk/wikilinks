@@ -1,8 +1,8 @@
 package dev.drzepka.wikilinks.front.service
 
+import dev.drzepka.wikilinks.common.model.LanguageInfo
 import dev.drzepka.wikilinks.common.model.Path
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
-import dev.drzepka.wikilinks.common.model.searchresult.DumpInfo
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.common.model.searchresult.PageInfo
 import dev.drzepka.wikilinks.common.model.searchresult.SearchDuration
@@ -22,7 +22,7 @@ object MockLinkSearchService : LinkSearchService {
             getRandomPageInfo(paths.flatMap { it.pages }.toSet()),
             getRandomDuration(),
             0.5f,
-            DumpInfo(DumpLanguage.EN, "latest")
+            LanguageInfo(DumpLanguage.EN, "latest")
         )
 
         return Promise { resolve, _ ->

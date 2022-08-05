@@ -40,4 +40,5 @@ object KoinApp : KoinComponent {
     val frontendResourceService: FrontendResourceService by inject()
     val historyService: HistoryService by inject()
     val healthService: HealthService by inject()
+    val databaseRegistry: DatabaseRegistry by inject()
 }

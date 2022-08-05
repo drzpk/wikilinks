@@ -18,12 +18,12 @@ import kotlin.js.Promise
 class PageSearchServiceImpl : PageSearchService, CoroutineScope {
     override val coroutineContext = Dispatchers.Default + SupervisorJob()
 
-    override fun search(title: String, exact: Boolean): Promise<List<PageHint>> {
-        return promise { doSearch(title, exact) }
+    override fun search(language: DumpLanguage, title: String, exact: Boolean): Promise<List<PageHint>> {
+        return promise { doSearch(language, title, exact) }
     }
 
-    private suspend fun doSearch(title: String, exact: Boolean): List<PageHint> {
-        val apiUrl = CommonConfiguration.wikipediaRestApiUrl(DumpLanguage.EN) // todo
+    private suspend fun doSearch(language: DumpLanguage, title: String, exact: Boolean): List<PageHint> {
+        val apiUrl = CommonConfiguration.wikipediaRestApiUrl(language)
         val response = http.get("$apiUrl/v1/search/page") {
             parameter("limit", if (exact) 1 else 5)
             parameter("q", title)
@@ -31,7 +31,7 @@ class PageSearchServiceImpl : PageSearchService, CoroutineScope {
 
         var hints = mapResponse(response)
         if (exact && hints.firstOrNull()?.title != title)
-           hints = emptyList()
+            hints = emptyList()
 
         return hints
     }
