@@ -10,7 +10,6 @@ import dev.drzepka.wikilinks.app.service.HistoryService
 import dev.drzepka.wikilinks.app.service.search.LinkSearchService
 import dev.drzepka.wikilinks.app.service.search.PageInfoService
 import dev.drzepka.wikilinks.app.service.search.PathFinderService
-import dev.drzepka.wikilinks.common.config.CommonConfiguration
 import kotlinx.coroutines.CoroutineScope
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -25,7 +24,6 @@ fun coreModule() = module {
 }
 
 fun fullModule(scope: CoroutineScope) = module {
-    single<ConfigRepository> { FileConfigRepository(CommonConfiguration.databasesDirectory!!) }
     single<PagesRepository> { DbPagesRepository(get()) }
     single<HistoryRepository> { DbHistoryRepository(get()) }
 

@@ -1,7 +1,5 @@
 package dev.drzepka.wikilinks.generator
 
-import dev.drzepka.wikilinks.app.db.ConfigRepository
-import dev.drzepka.wikilinks.app.db.FileConfigRepository
 import dev.drzepka.wikilinks.common.BuildConfig
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.generator.version.UpdateChecker
@@ -21,13 +19,12 @@ fun main(args: Array<String>) {
     println("Max heap: ${availableHeap()}")
     println()
 
-    val configRepository = FileConfigRepository(workingDirectory.absolutePath)
-    if (configRepository.isGeneratorActive()) {
+    if (isGeneratorActive()) {
         println("Previous generator instance is still working")
         exitProcess(1)
     }
 
-    registerShutdownHook(configRepository)
+    registerShutdownHook()
 
     val languages = getLanguages(args)
     if (languages.isEmpty())
@@ -39,7 +36,7 @@ fun main(args: Array<String>) {
         return
     }
 
-    configRepository.setGeneratorActive(true)
+    setGeneratorActive(true)
     for (versionUpdate in versionUpdates) {
         val status = startGenerator(versionUpdate.key, versionUpdate.value)
         if (!status)
@@ -92,10 +89,10 @@ private fun startGenerator(language: DumpLanguage, version: String): Boolean {
     }
 }
 
-private fun registerShutdownHook(configRepository: ConfigRepository) {
+private fun registerShutdownHook() {
     val thread = thread(start = false) {
         println("\nShutting down the generator")
-        configRepository.setGeneratorActive(false)
+        setGeneratorActive(false)
     }
     Runtime.getRuntime().addShutdownHook(thread)
 }
