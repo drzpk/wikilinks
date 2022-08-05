@@ -38,13 +38,13 @@ class State(
     }
 
     private fun setupLanguages() {
-        // TODO: 05.08.2022 use local storage to store language settings
         languageService.getAvailableLanguages().then {
             val languages = it.map { info -> info.language }
             availableLanguages.addAll(languages)
 
             if (selectedLanguage.value == null) {
-                val selected = if (DumpLanguage.EN in languages) DumpLanguage.EN else languages.firstOrNull()
+                val recent = languageService.getRecentLanguage() ?: DumpLanguage.EN
+                val selected = if (recent in languages) recent else languages.firstOrNull()
                 selectedLanguage.setState(selected)
             }
         }
@@ -84,6 +84,8 @@ class State(
             return
 
         selectedLanguage.setState(language)
+        languageService.saveRecentLanguage(language)
+
         sourceInput.clear()
         targetInput.clear()
         searchResult.setState(null)
