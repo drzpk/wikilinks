@@ -12,7 +12,7 @@ import kotlin.random.Random
 
 object MockLinkSearchService : LinkSearchService {
 
-    override fun search(sourcePage: Int, targetPage: Int): Promise<LinkSearchResult> {
+    override fun search(language: DumpLanguage, sourcePage: Int, targetPage: Int): Promise<LinkSearchResult> {
         val degrees = Random.nextInt(1, 6)
         val paths = getRandomPaths(degrees)
 

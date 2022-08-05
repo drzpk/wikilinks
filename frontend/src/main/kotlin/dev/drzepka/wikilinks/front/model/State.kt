@@ -101,7 +101,7 @@ class State(
         historyState.putSearchQuery(SearchQuery(source.second, target.second, selectedLanguage.value!!))
 
         searchInProgress.setState(true)
-        linkSearchService.search(source.first, target.first)
+        linkSearchService.search(selectedLanguage.value!!, source.first, target.first)
             .then {
                 searchResult.setState(it)
             }
