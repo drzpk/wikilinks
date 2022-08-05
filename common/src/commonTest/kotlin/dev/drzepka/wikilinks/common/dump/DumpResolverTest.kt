@@ -17,7 +17,7 @@ internal class DumpResolverTest {
     @Test
     @JsName("test1")
     fun `should find last dump`() {
-        val ds = "https://dump.source.org/test"
+        val ds = DumpLanguage.EN.getSourceUrl()
 
         val mockEngine = MockEngine {
             val url = it.url.toString()
@@ -35,14 +35,14 @@ internal class DumpResolverTest {
 
         assertEquals("20220620", dumps.version)
         assertEquals(2, archives.size)
-        assertTrue(archives.contains(ArchiveDump("$ds/enwiki/20220620/enwiki-20220620-page.sql.gz", 123, false)))
-        assertTrue(archives.contains(ArchiveDump("$ds/enwiki/20220620/enwiki-20220620-pagelinks.sql.gz", 456, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-page.sql.gz", 123, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-pagelinks.sql.gz", 456, false)))
     }
 
     @Test
     @JsName("test2")
     fun `should fall back to previous dump if the last one is missing required files`() {
-        val ds = "https://dump.source.org/test"
+        val ds = DumpLanguage.EN.getSourceUrl()
 
         val mockEngine = MockEngine {
             val url = it.url.toString()
@@ -61,8 +61,8 @@ internal class DumpResolverTest {
 
         assertEquals("20220601", dumps.version)
         assertEquals(2, archives.size)
-        assertTrue(archives.contains(ArchiveDump("$ds/enwiki/20220601/enwiki-20220601-page.sql.gz", 2, false)))
-        assertTrue(archives.contains(ArchiveDump("$ds/enwiki/20220601/enwiki-20220601-pagelinks.sql.gz", 3, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-page.sql.gz", 2, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-pagelinks.sql.gz", 3, false)))
     }
 
     private fun MockRequestHandleScope.respondWithLength(length: Long): HttpResponseData {

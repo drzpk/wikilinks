@@ -3,9 +3,9 @@ package dev.drzepka.wikilinks.app.db.infrastructure
 import com.squareup.sqldelight.db.SqlCursor
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.db.use
-import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.app.utils.Environment
 import dev.drzepka.wikilinks.app.utils.environment
+import dev.drzepka.wikilinks.common.config.CommonConfiguration
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
 import dev.drzepka.wikilinks.db.cache.CacheDatabase
@@ -68,7 +68,7 @@ class DatabaseProvider {
         disableProtection: Boolean,
         overrideDirectory: String? = null
     ): SqlDriver {
-        val dir = overrideDirectory ?: Configuration.databasesDirectory
+        val dir = overrideDirectory ?: CommonConfiguration.databasesDirectory
         val driver = getDriver(dir, dbName)
 
         // Optimize insert speed

@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app.config
+package dev.drzepka.wikilinks.common.config
 
 import kotlinx.cinterop.toKString
 import platform.posix.getenv

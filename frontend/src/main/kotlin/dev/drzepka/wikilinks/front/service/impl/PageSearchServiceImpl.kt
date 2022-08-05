@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.front.service.impl
 
-import dev.drzepka.wikilinks.common.WikiConfig
+import dev.drzepka.wikilinks.common.config.CommonConfiguration
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.front.model.PageHint
 import dev.drzepka.wikilinks.front.service.PageSearchService
 import dev.drzepka.wikilinks.front.util.http
@@ -22,7 +23,8 @@ class PageSearchServiceImpl : PageSearchService, CoroutineScope {
     }
 
     private suspend fun doSearch(title: String, exact: Boolean): List<PageHint> {
-        val response = http.get("${WikiConfig.REST_API_URL}/v1/search/page") {
+        val apiUrl = CommonConfiguration.wikipediaRestApiUrl(DumpLanguage.EN) // todo
+        val response = http.get("$apiUrl/v1/search/page") {
             parameter("limit", if (exact) 1 else 5)
             parameter("q", title)
         }

@@ -1,7 +1,7 @@
 package dev.drzepka.wikilinks.app.db.infrastructure
 
 import dev.drzepka.wikilinks.app.LanguageNotAvailableException
-import dev.drzepka.wikilinks.app.config.Configuration
+import dev.drzepka.wikilinks.common.config.CommonConfiguration
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
@@ -143,8 +143,8 @@ class DatabaseRegistry {
             // to finish all queries that the hardcoded values. But it should be sufficient
             // most of the time. An edge case-free solution would probably require tracking
             // and waiting for all ongoing requests before releasing database connections.
-            log.info { "Waiting ${Configuration.databaseDisconnectTimeout} before closing old databases" }
-            delay(Configuration.databaseDisconnectTimeout)
+            log.info { "Waiting ${CommonConfiguration.databaseDisconnectTimeout} before closing old databases" }
+            delay(CommonConfiguration.databaseDisconnectTimeout)
 
             log.debug { "Closing old database connections" }
 

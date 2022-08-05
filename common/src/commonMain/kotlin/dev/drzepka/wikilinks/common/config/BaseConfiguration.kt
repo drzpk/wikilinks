@@ -1,4 +1,4 @@
-package dev.drzepka.wikilinks.app.config
+package dev.drzepka.wikilinks.common.config
 
 abstract class BaseConfiguration {
     protected fun getBoolean(name: String, default: Boolean): Boolean = getString(name) != null || default

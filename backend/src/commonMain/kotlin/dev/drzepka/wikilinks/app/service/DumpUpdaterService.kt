@@ -1,8 +1,8 @@
 package dev.drzepka.wikilinks.app.service
 
-import dev.drzepka.wikilinks.app.config.Configuration
 import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseRegistry
 import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseResolver
+import dev.drzepka.wikilinks.common.config.CommonConfiguration
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
@@ -87,7 +87,7 @@ class DumpUpdaterService(scope: CoroutineScope, private val databaseRegistry: Da
         sortedByDescending { it.version }.firstOrNull()
 
     private suspend fun deleteDatabases(files: Collection<DatabaseFile>) {
-        val databasesDir = MultiplatformDirectory(Configuration.databasesDirectory!!)
+        val databasesDir = MultiplatformDirectory(CommonConfiguration.databasesDirectory!!)
         val filesToDelete = files.map { it.fileName }
 
         databasesDir.listFiles()

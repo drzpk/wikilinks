@@ -52,13 +52,10 @@ class DatabaseFile private constructor(
             var nextIndex = 1
             if (type.languageSpecific && parts.size <= nextIndex)
                 return null
-
-            val language =
-                (if (type.languageSpecific) DumpLanguage.fromString(parts[nextIndex++]) else null) ?: return null
+            val language = if (type.languageSpecific) DumpLanguage.fromString(parts[nextIndex++]) else null
 
             if (type.versioned && parts.size <= nextIndex)
                 return null
-
             val version = if (type.versioned) parts[nextIndex] else null
 
             return DatabaseFile(fileName, type, language, version)

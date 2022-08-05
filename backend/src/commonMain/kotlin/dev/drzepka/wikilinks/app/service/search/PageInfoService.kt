@@ -5,6 +5,7 @@ import dev.drzepka.wikilinks.app.db.PagesRepository
 import dev.drzepka.wikilinks.app.model.PageCacheHit
 import dev.drzepka.wikilinks.app.model.PageInfoResult
 import dev.drzepka.wikilinks.app.utils.http
+import dev.drzepka.wikilinks.common.config.CommonConfiguration
 import dev.drzepka.wikilinks.common.model.Path
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.model.searchresult.PageInfo
@@ -98,7 +99,7 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
     private fun downloadPagesChunkFromWikipedia(language: DumpLanguage, pageIds: Collection<Int>): Collection<PageInfo> {
         // https://www.mediawiki.org/w/api.php?action=help&modules=query
         val obj = runBlocking {
-            val response = http.get(language.getActionApiUrl()) {
+            val response = http.get(CommonConfiguration.wikipediaActionApiUrl(language)) {
                 parameter("action", "query")
                 parameter("format", "json")
                 parameter("prop", "info|pageterms|pageimages")

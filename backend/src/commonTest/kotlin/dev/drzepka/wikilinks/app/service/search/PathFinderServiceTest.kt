@@ -2,6 +2,8 @@ package dev.drzepka.wikilinks.app.service.search
 
 import dev.drzepka.wikilinks.app.db.InMemoryLinksRepository
 import dev.drzepka.wikilinks.common.model.Path
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -9,7 +11,7 @@ import kotlin.test.assertEquals
 internal class PathFinderServiceTest {
 
     @Test
-    fun `should find single shortest path`() {
+    fun `should find single shortest path`() = runBlocking {
         val links = mapOf(
             1 to listOf(2, 3),
             2 to listOf(10, 15),
@@ -20,14 +22,14 @@ internal class PathFinderServiceTest {
         )
 
         val service = createService(links)
-        val paths = service.findPaths(1, 150)
+        val paths = service.findPaths(DumpLanguage.EN, 1, 150)
 
         assertEquals(1, paths.size)
         assertContains(paths, Path(1, 2, 15, 150))
     }
 
     @Test
-    fun `should find multiple shortest paths`() {
+    fun `should find multiple shortest paths`() = runBlocking {
         val links = mapOf(
             0 to listOf(10, 11, 1000),
             10 to listOf(20, 21),
@@ -41,7 +43,7 @@ internal class PathFinderServiceTest {
         )
 
         val service = createService(links)
-        val paths = service.findPaths(0, 30)
+        val paths = service.findPaths(DumpLanguage.EN, 0, 30)
 
         assertEquals(3, paths.size)
         assertContains(paths, Path(0, 10, 20, 30))
@@ -50,7 +52,7 @@ internal class PathFinderServiceTest {
     }
 
     @Test
-    fun `should not find path if there isn't one`() {
+    fun `should not find path if there isn't one`() = runBlocking {
         val links = mapOf(
             0 to listOf(10, 11),
             10 to listOf(20, 21),
@@ -65,13 +67,13 @@ internal class PathFinderServiceTest {
 
         val service = createService(links)
 
-        assertEquals(0, service.findPaths(0, 500).size)
-        assertEquals(0, service.findPaths(0, 520).size)
-        assertEquals(0, service.findPaths(502, 10).size)
+        assertEquals(0, service.findPaths(DumpLanguage.EN, 0, 500).size)
+        assertEquals(0, service.findPaths(DumpLanguage.EN, 0, 520).size)
+        assertEquals(0, service.findPaths(DumpLanguage.EN, 502, 10).size)
     }
 
     @Test
-    fun `should not find path if max search depth has been exceeded`() {
+    fun `should not find path if max search depth has been exceeded`() = runBlocking {
         val links = mapOf(
             1 to listOf(2),
             2 to listOf(3),
@@ -82,8 +84,8 @@ internal class PathFinderServiceTest {
 
         val service = createService(links, 4)
 
-        assertEquals(1, service.findPaths(1, 5).size)
-        assertEquals(0, service.findPaths(1, 6).size)
+        assertEquals(1, service.findPaths(DumpLanguage.EN, 1, 5).size)
+        assertEquals(0, service.findPaths(DumpLanguage.EN, 1, 6).size)
     }
 
     private fun createService(outLinks: Map<Int, List<Int>>, maxSearchDepth: Int? = null): PathFinderService {
