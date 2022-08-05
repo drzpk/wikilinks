@@ -14,6 +14,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
@@ -30,7 +31,7 @@ class DumpUpdaterService(scope: CoroutineScope, private val databaseRegistry: Da
     }
 
     private suspend fun checkForDatabaseUpdate() {
-        delay(30.seconds)
+        delay(1.minutes)
         val files = DatabaseResolver.resolveDatabaseFiles()
         if (files.isEmpty())
             return
@@ -45,7 +46,9 @@ class DumpUpdaterService(scope: CoroutineScope, private val databaseRegistry: Da
     }
 
     private suspend fun updateDatabase(files: List<DatabaseFile>) {
-        val filesByLanguage = files.groupBy { it.language!! }
+        val filesByLanguage = files
+            .filter { it.language != null }
+            .groupBy { it.language!! }
         val currentlyUsedLanguages = databaseRegistry.getAvailableLanguages()
 
         for (group in filesByLanguage) {
