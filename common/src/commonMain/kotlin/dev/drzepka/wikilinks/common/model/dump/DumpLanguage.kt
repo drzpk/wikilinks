@@ -2,8 +2,11 @@ package dev.drzepka.wikilinks.common.model.dump
 
 import dev.drzepka.wikilinks.common.WikiConfig
 
+/**
+ * Supported languages, in ISO 639-1 standard.
+ */
 enum class DumpLanguage {
-    EN, PL;
+    EN, PL, DE, FR, ES, SV, NL, IT, JA, PT;
 
     val value: String
         get() = name.lowercase()
