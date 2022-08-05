@@ -10,9 +10,10 @@ object MockPageSearchService : PageSearchService {
     override fun search(title: String, exact: Boolean): Promise<List<PageHint>> {
         val hintCount = if (!exact) Random.nextInt(2, 5) else 1
         val hints = (0 until hintCount).map {
+            val suffix = if (it == 0) "" else " $it"
             PageHint(
                 Random.nextInt(),
-                "$title ${Random.nextInt(1000)}",
+                "$title$suffix",
                 "This is a description for $title ${Random.nextInt(10000, 10000000)}",
                 null
             )
@@ -21,7 +22,7 @@ object MockPageSearchService : PageSearchService {
         return Promise { resolve, _ ->
             window.setTimeout({
                 resolve.invoke(hints)
-            }, Random.nextInt(800, 1500))
+            }, Random.nextInt(400, 1000))
         }
     }
 }
