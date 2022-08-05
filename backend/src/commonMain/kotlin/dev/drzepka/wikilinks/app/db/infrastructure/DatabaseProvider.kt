@@ -87,7 +87,7 @@ class DatabaseProvider {
         if (schemaVersion == 0) {
             log.info { "Creating schema $name" }
             create(driver)
-            driver.setVersion(0, 1)
+            driver.setVersion(0, currentVersion)
         } else if (schemaVersion < currentVersion) {
             log.info { "Migrating schema $name from $schemaVersion to $currentVersion" }
             migrate(driver, schemaVersion, currentVersion)
