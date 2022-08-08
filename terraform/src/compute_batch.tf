@@ -33,7 +33,7 @@ resource "aws_batch_job_definition" "generator" {
   platform_capabilities = ["FARGATE"]
 
   container_properties = jsonencode({
-    command     = []
+    command     = ["language=${var.languages}"]
     image       = "ghcr.io/drzpk/wikilinks/generator:${var.versions.generator}"
     environment = [
       {
@@ -94,6 +94,7 @@ resource "aws_batch_job_definition" "generator" {
   })
 
   timeout {
-    attempt_duration_seconds = 3 * 60 * 60
+    // 2.5h for each language
+    attempt_duration_seconds = 150 * 60 * length(split(",", var.languages))
   }
 }
