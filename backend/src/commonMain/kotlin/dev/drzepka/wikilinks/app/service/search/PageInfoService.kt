@@ -1,7 +1,6 @@
 package dev.drzepka.wikilinks.app.service.search
 
 import dev.drzepka.wikilinks.app.cache.PageCacheService
-import dev.drzepka.wikilinks.app.db.PagesRepository
 import dev.drzepka.wikilinks.app.model.PageCacheHit
 import dev.drzepka.wikilinks.app.model.PageInfoResult
 import dev.drzepka.wikilinks.app.utils.http
@@ -22,7 +21,7 @@ import kotlin.time.TimedValue
 import kotlin.time.measureTimedValue
 
 @OptIn(ExperimentalTime::class)
-class PageInfoService(private val pagesRepository: PagesRepository, private val cacheService: PageCacheService) {
+class PageInfoService(private val cacheService: PageCacheService) {
     private val log = KotlinLogging.logger {}
 
     suspend fun collectInfo(language: DumpLanguage, paths: Collection<Path>): PageInfoResult {
@@ -51,13 +50,13 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
 
         cacheHits
             .asSequence()
-            .map { it.value.toPageInfo() }
+            .map { it.value.toPageInfo(language) }
             .forEach { downloadedPages[it.id] = it }
 
         return PageInfoResult(downloadedPages, cacheHitRatio, downloadTime.inWholeMilliseconds.toInt())
     }
 
-    private suspend fun fetchPages(language: DumpLanguage, pageIds: List<Int>): TimedValue<MutableMap<Int, PageInfo>> {
+    private fun fetchPages(language: DumpLanguage, pageIds: List<Int>): TimedValue<MutableMap<Int, PageInfo>> {
         if (pageIds.isEmpty()) {
             log.trace { "No pages to download" }
             return TimedValue(mutableMapOf(), Duration.ZERO)
@@ -75,7 +74,6 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
             log.warn { "Some pages weren't found on Wikipedia: $notFoundPages" }
         }
 
-        setPageUrlTitles(language, downloaded)
         return TimedValue(downloaded, value.duration)
     }
 
@@ -114,25 +112,18 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
             val queryObj = obj["query"]?.jsonObject!!
             if ("pages" in queryObj) {
                 val pagesObj = queryObj["pages"]?.jsonObject!!
-                chunk = pagesObj.values.map { it.jsonObject.toPageInfo() }
+                chunk = pagesObj.values.map { it.jsonObject.toPageInfo(language) }
             }
         }
 
         return chunk
     }
 
-    private suspend fun setPageUrlTitles(language: DumpLanguage, info: MutableMap<Int, PageInfo>) {
-        val titles = pagesRepository.getPageTitles(language, info.keys)
-        titles.forEach {
-            info[it.key] = info[it.key]!!.copy(urlTitle = it.value)
-        }
-    }
+    private fun PageCacheHit.toPageInfo(language: DumpLanguage): PageInfo = PageInfo.create(pageId, title, description, imageUrl, language)
 
-    private fun PageCacheHit.toPageInfo(): PageInfo = PageInfo(pageId, displayTitle, urlTitle, description, imageUrl)
+    private fun PageInfo.toCacheHit(): PageCacheHit = PageCacheHit(id, title, description, imageUrl)
 
-    private fun PageInfo.toCacheHit(): PageCacheHit = PageCacheHit(id, urlTitle, title, description, imageUrl)
-
-    private fun JsonObject.toPageInfo(): PageInfo {
+    private fun JsonObject.toPageInfo(language: DumpLanguage): PageInfo {
         val id = this["pageid"]?.jsonPrimitive?.intOrNull!!
         val title = this["title"]?.jsonPrimitive?.contentOrNull!!
 
@@ -150,6 +141,6 @@ class PageInfoService(private val pagesRepository: PagesRepository, private val 
                 imageUrl = thumbnail["source"]?.jsonPrimitive?.contentOrNull
         }
 
-        return PageInfo(id, title, "", description, imageUrl)
+        return PageInfo.create(id, title, description, imageUrl, language)
     }
 }

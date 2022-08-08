@@ -28,7 +28,7 @@ fun fullModule(scope: CoroutineScope) = module {
     single<HistoryRepository> { DbHistoryRepository(get()) }
 
     single { PageCacheService(get()) }
-    single { PageInfoService(get(), get()) }
+    single { PageInfoService(get()) }
     single { HistoryService(get()) }
     single { FrontendResourceService() }
     single(createdAtStart = true) { DumpUpdaterService(scope, get()) }

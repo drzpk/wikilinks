@@ -49,7 +49,14 @@ object MockLinkSearchService : LinkSearchService {
     private fun getRandomPath(degrees: Int): Path = Path((0..degrees).map { Random.nextInt(100, 1_000_000) })
 
     private fun getRandomPageInfo(pages: Collection<Int>): Map<Int, PageInfo> = pages
-        .associateWith { PageInfo(1, "Page Title $it", "https://en.wikipedia.org/wiki/IDontExist") }
+        .associateWith {
+            PageInfo(
+                1,
+                "Page Title $it",
+                "Example description",
+                "https://en.wikipedia.org/wiki/IDontExist"
+            )
+        }
 
     private fun getRandomDuration(): SearchDuration =
         Random.nextInt(600, 30_000).let { totalTime ->

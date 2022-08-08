@@ -36,8 +36,7 @@ class PageCacheService(private val databaseRegistry: DatabaseRegistry) { // todo
                     now,
                     now,
                     0,
-                    hit.urlTitle,
-                    hit.displayTitle,
+                    hit.title,
                     hit.description,
                     hit.imageUrl
                 )
@@ -50,8 +49,7 @@ class PageCacheService(private val databaseRegistry: DatabaseRegistry) { // todo
     private fun createHit(result: FindByIds): PageCacheHit =
         PageCacheHit(
             result.page_id.toInt(),
-            result.url_title,
-            result.display_title,
+            result.title,
             result.description,
             result.image_url
         )

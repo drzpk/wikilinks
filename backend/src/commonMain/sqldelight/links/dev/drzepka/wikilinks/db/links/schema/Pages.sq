@@ -16,8 +16,5 @@ UPDATE Pages SET redirects_to = :target WHERE id = :id;
 all:
 SELECT * FROM Pages;
 
-getByIds:
-SELECT id, title FROM Pages WHERE id IN ?;
-
 getIdByTitle:
 SELECT id FROM Pages WHERE title = :title;

@@ -9,11 +9,4 @@ class DbPagesRepository(private val databaseRegistry: DatabaseRegistry) : PagesR
         val database = databaseRegistry.getLinksDatabase(language)
         return database.pagesQueries.getIdByTitle(title).executeAsOneOrNull()?.toInt()
     }
-
-    override suspend fun getPageTitles(language: DumpLanguage, pageIds: Collection<Int>): Map<Int, String> {
-        val ids = pageIds.map { it.toLong() }
-        val database = databaseRegistry.getLinksDatabase(language)
-        val result = database.pagesQueries.getByIds(ids).executeAsList()
-        return result.associate { Pair(it.id.toInt(), it.title) }
-    }
 }
