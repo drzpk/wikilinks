@@ -2,7 +2,8 @@
 
 [WikiLinks](https://wikilinks.drzepka.dev) is a website that implements the concept
 of [six degrees of separation](https://en.wikipedia.org/wiki/Six_degrees_of_separation).
-It allows a user to find the shortest possible hyperlink connections between two arbitrary Wikipedia articles.
+It allows a user to find the shortest possible hyperlink connections between two arbitrary Wikipedia articles in
+different languages.
 
 ## How it works
 
@@ -24,8 +25,10 @@ This project can be launched using standalone Docker images or within AWS. The s
 proxy and HTTP configuration, users of this project must set it up on their own.
 
 The application module runs continuously, whereas the generator module processes a Wikipedia dump and exists.
-Generator should be run periodically (e.g. using CRON) every week or so. It compares the most recent Wikipedia dump
-available with the current version and exits if update is not needed.
+Generator compares the most recent Wikipedia dump available for given language with the current version and exits if
+update is not needed. Generator should be run periodically. Wikipedia releases new dumps on 1st and 20th
+day of each month, but some files may take a longer time to become available,
+so it's better to run generator the next day (`0 0 2,21 * *`).
 
 Environment variables:
 
@@ -43,7 +46,9 @@ Environment variables:
 The `DATABASES_DIRECTORY` variable must point to the same host directory.
 
 Generator requires minimum 6GB of heap memory. This is because at some point it needs to store
-all pageId-pageTitle mappings in memory.
+all pageId-pageTitle mappings in memory. This requirement is for the english version of Wikipedia, which
+is [the largest](https://en.wikipedia.org/wiki/List_of_Wikipedias#Details_table). Other languages require proportionally
+less memory.
 
 ### Docker images
 
@@ -60,8 +65,13 @@ docker run \
   -v "$(pwd)/dumps:/dumps" \
   -e DATABASES_DIRECTORY=/databases \
   -e WORKING_DIRECTORY=/dumps \
-  ghcr.io/drzpk/wikilinks/generator:latest
+  ghcr.io/drzpk/wikilinks/generator:latest \
+  language=pl,en
 ```
+
+Program arguments:
+* `language` (**required**) - a comma-separated list of [ISO 639-1](https://en.wikipedia.org/wiki/ISO_639-1) language codes for which to generate search indexes. Supported languages are listed [here](common/src/commonMain/kotlin/dev/drzepka/wikilinks/common/model/dump/DumpLanguage.kt).
+* `version` (*optional*) - forces generator to use specific version of Wikipedia dump.
 
 **Note**: don't forget to define the `SKIP_DELETING_DUMPS` environment variable if you wish to retain Wikipedia dumps
 downloaded by Generator. Otherwise, they will be deleted upon successful completion.
@@ -155,10 +165,8 @@ gradlew :generator:jibDockerBuild
 gradlew :application:jibDockerBuild -DjibConfiguration=JVM
 ```
 
-The `jibConfiguration` system property supports `JVM` or `NATIVE` values.
-
-Only when using compiled distribution
-FRONTEND_RESOURCES_DIRECTORY=C:\Projects\Kotlin\WikiLinks\frontend\build\distributions
+The `jibConfiguration` system property is mandatory and tells Gradle which image variant to build. Supported
+values: `JVM` or `NATIVE`.
 
 #### Compilation
 
