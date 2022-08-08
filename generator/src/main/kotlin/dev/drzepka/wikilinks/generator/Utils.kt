@@ -3,7 +3,7 @@ package dev.drzepka.wikilinks.generator
 import java.io.File
 import java.lang.management.ManagementFactory
 
-private val generatorActiveFile = File(Configuration.databasesDirectory + "/generator_active")
+private val generatorActiveFile = File(Configuration.workingDirectory + "/generator_active")
 
 fun availableProcessors(): Int = Runtime.getRuntime().availableProcessors()
 
