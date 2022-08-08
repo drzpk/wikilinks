@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "dev.drzepka"
-version = "1.0-SNAPSHOT"
+version = "1.1-multilang-SNAPSHOT"
 
 allprojects {
     tasks.register("printConfigurations") {
