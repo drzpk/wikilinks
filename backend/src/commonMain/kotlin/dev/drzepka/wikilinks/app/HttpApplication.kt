@@ -74,7 +74,7 @@ private fun Application.configureRouting() {
                 post("search") {
                     val request = call.receive<LinkSearchRequest>()
                     val searchDate = Clock.System.now()
-                    val result = searchService.search(request.language, request.source, request.target)
+                    val result = searchService.search(request)
                     historyService.addResult(searchDate, result)
                     call.respond(result)
                 }

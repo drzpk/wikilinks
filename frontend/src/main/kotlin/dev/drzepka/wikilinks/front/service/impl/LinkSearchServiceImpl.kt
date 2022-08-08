@@ -17,12 +17,28 @@ import kotlin.js.Promise
 class LinkSearchServiceImpl : LinkSearchService, CoroutineScope {
     override val coroutineContext = Dispatchers.Default + SupervisorJob()
 
-    override fun search(language: DumpLanguage, sourcePage: Int, targetPage: Int): Promise<LinkSearchResult> {
-        return promise { doSearch(language, sourcePage, targetPage) }
+    override fun searchByIds(language: DumpLanguage, sourcePage: Int, targetPage: Int): Promise<LinkSearchResult> {
+        val source = LinkSearchRequest.SearchPoint(id = sourcePage)
+        val target = LinkSearchRequest.SearchPoint(id = targetPage)
+        return promise { doSearch(language, source, target) }
     }
 
-    private suspend fun doSearch(language: DumpLanguage, sourcePage: Int, targetPage: Int): LinkSearchResult {
-        val request = LinkSearchRequest(sourcePage, targetPage, language)
+    override fun searchByTitles(
+        language: DumpLanguage,
+        sourcePage: String,
+        targetPage: String
+    ): Promise<LinkSearchResult> {
+        val source = LinkSearchRequest.SearchPoint(title = sourcePage)
+        val target = LinkSearchRequest.SearchPoint(title = targetPage)
+        return promise { doSearch(language, source, target) }
+    }
+
+    private suspend fun doSearch(
+        language: DumpLanguage,
+        source: LinkSearchRequest.SearchPoint,
+        target: LinkSearchRequest.SearchPoint
+    ): LinkSearchResult {
+        val request = LinkSearchRequest(source, target, language)
         val response = http.post("/api/links/search") {
             contentType(ContentType.Application.Json)
             setBody(request)

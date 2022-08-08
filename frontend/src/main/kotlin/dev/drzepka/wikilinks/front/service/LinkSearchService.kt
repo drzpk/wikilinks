@@ -5,5 +5,6 @@ import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import kotlin.js.Promise
 
 interface LinkSearchService {
-    fun search(language: DumpLanguage, sourcePage: Int, targetPage: Int): Promise<LinkSearchResult>
+    fun searchByIds(language: DumpLanguage, sourcePage: Int, targetPage: Int): Promise<LinkSearchResult>
+    fun searchByTitles(language: DumpLanguage, sourcePage: String, targetPage: String): Promise<LinkSearchResult>
 }

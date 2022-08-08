@@ -86,7 +86,9 @@ abstract class BaseLinkSearchTest(imageVariant: String) {
         val response = runBlocking {
             val httpResponse = http.post(url) {
                 contentType(ContentType.Application.Json)
-                setBody(LinkSearchRequest(1, 2, DumpLanguage.EN))
+                val source = LinkSearchRequest.SearchPoint(id = 1)
+                val target = LinkSearchRequest.SearchPoint(id = 2)
+                setBody(LinkSearchRequest(source, target, DumpLanguage.EN))
             }
 
             if (httpResponse.status != HttpStatusCode.OK)

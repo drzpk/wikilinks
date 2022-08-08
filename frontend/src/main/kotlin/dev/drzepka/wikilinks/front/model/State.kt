@@ -8,11 +8,10 @@ import dev.drzepka.wikilinks.front.service.PageSearchService
 import dev.drzepka.wikilinks.front.util.DebounceBuffer
 import io.kvision.state.ObservableListWrapper
 import io.kvision.state.ObservableValue
-import kotlin.js.Promise
 import kotlin.time.Duration.Companion.seconds
 
 class State(
-    private val pageSearchService: PageSearchService,
+    pageSearchService: PageSearchService,
     private val linkSearchService: LinkSearchService,
     private val languageService: LanguageService,
     private val historyState: HistoryState
@@ -51,32 +50,12 @@ class State(
     }
 
     private fun initialSearch(query: SearchQuery) {
-        searchInProgress.setState(true)
-
         val language = query.language ?: DumpLanguage.EN
         selectedLanguage.setState(language)
 
-        var source: PageHint? = null
-        var target: PageHint? = null
-
-        pageSearchService.search(language, query.sourcePage, true).then {
-            source = it.firstOrNull()
-
-            if (source != null)
-                pageSearchService.search(language, query.targetPage, true)
-            else Promise.resolve(emptyList())
-        }.then {
-            target = it.firstOrNull()
-        }.catch {
-            it.printStackTrace()
-        }.then {
-            searchInProgress.setState(false)
-            if (source != null && target != null) {
-                sourceInput.selectHint(source!!)
-                targetInput.selectHint(target!!)
-                search()
-            }
-        }
+        sourceInput.selectPage(null to query.sourcePage)
+        targetInput.selectPage(null to query.targetPage)
+        search(putHistory = false)
     }
 
     fun selectLanguage(language: DumpLanguage) {
@@ -92,16 +71,23 @@ class State(
         historyState.clearSearchQuery()
     }
 
-    fun search() {
+    fun search(putHistory: Boolean = true) {
         if (!canSearch.value || searchInProgress.value)
             return
 
         val source = sourceInput.selectedPage.value!!
         val target = targetInput.selectedPage.value!!
-        historyState.putSearchQuery(SearchQuery(source.second, target.second, selectedLanguage.value!!))
+
+        if (putHistory)
+            historyState.putSearchQuery(SearchQuery(source.second, target.second, selectedLanguage.value!!))
 
         searchInProgress.setState(true)
-        linkSearchService.search(selectedLanguage.value!!, source.first, target.first)
+        val promise = if (source.first != null && target.first != null)
+            linkSearchService.searchByIds(selectedLanguage.value!!, source.first!!, target.first!!)
+        else
+            linkSearchService.searchByTitles(selectedLanguage.value!!, source.second, target.second)
+
+        promise
             .then {
                 searchResult.setState(it)
             }
@@ -132,7 +118,7 @@ class SearchInputState(
     val query = ObservableValue("")
     val hints = ObservableListWrapper<PageHint>()
     val showHints = ObservableValue(false)
-    val selectedPage = ObservableValue<Pair<Int, String>?>(null)
+    val selectedPage = ObservableValue<Pair<Int?, String>?>(null)
 
     private val buffer = DebounceBuffer(500, ::searchForPage)
     private var ignoreQueryChange = false
@@ -156,12 +142,15 @@ class SearchInputState(
     }
 
     fun selectHint(hint: PageHint) {
-        // Prevent hints from reappearing after manually setting the query
-        buffer.disableFor(1.seconds)
+        setQuery(hint.title)
 
-        query.setState(hint.title)
         selectedPage.setState(hint.id to hint.title)
         showHints.setState(false)
+    }
+
+    fun selectPage(page: Pair<Int?, String>) {
+        setQuery(page.second)
+        selectedPage.setState(page)
     }
 
     fun clear() {
@@ -169,6 +158,12 @@ class SearchInputState(
         hints.clear()
         showHints.setState(false)
         selectedPage.setState(null)
+    }
+
+    private fun setQuery(value: String) {
+        // Prevent hints from reappearing after manually setting the query
+        buffer.disableFor(1.seconds)
+        query.setState(value)
     }
 
     private fun searchForPage(query: String) {
