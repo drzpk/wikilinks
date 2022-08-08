@@ -5,6 +5,5 @@ data class Health(
     val healthy: Boolean,
     val message: String?,
     val appVersion: String,
-    val wikiDatabaseVersion: String?,
     val uptimeSeconds: Int
 )

@@ -1,13 +1,15 @@
 package dev.drzepka.wikilinks.app.db
 
+import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseRegistry
 import dev.drzepka.wikilinks.app.model.HistoryEntry
-import dev.drzepka.wikilinks.db.history.HistoryDatabase
 
-class DbHistoryRepository(private val historyDatabase: HistoryDatabase) : HistoryRepository {
+class DbHistoryRepository(databaseRegistry: DatabaseRegistry) : HistoryRepository {
+    private val historyDatabase = databaseRegistry.getHistoryDatabase()
 
-    override fun save(entry: HistoryEntry) {
+    override suspend fun save(entry: HistoryEntry) {
         historyDatabase.searchHistoryQueries.add(
             entry.date,
+            entry.language.value,
             entry.version,
             entry.source?.toLong(),
             entry.target?.toLong(),

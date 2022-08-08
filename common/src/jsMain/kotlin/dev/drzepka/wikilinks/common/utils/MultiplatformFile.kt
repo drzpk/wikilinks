@@ -3,6 +3,14 @@ package dev.drzepka.wikilinks.common.utils
 import kotlinx.datetime.Instant
 
 actual class MultiplatformFile actual constructor(path: String) {
+    actual fun getName(): String {
+        throwException()
+    }
+
+    actual fun getFullPath(): String {
+        throwException()
+    }
+
     actual fun isFile(): Boolean {
         throwException()
     }

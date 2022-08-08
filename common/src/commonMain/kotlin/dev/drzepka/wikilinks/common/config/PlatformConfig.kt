@@ -1,3 +1,3 @@
-package dev.drzepka.wikilinks.app.config
+package dev.drzepka.wikilinks.common.config
 
 expect fun getEnvironmentVariable(name: String): String?

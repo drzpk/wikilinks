@@ -6,6 +6,10 @@ import platform.posix.*
 
 actual class MultiplatformFile actual constructor(private val path: String) {
 
+    actual fun getName(): String = path.substringAfterLast("/")
+
+    actual fun getFullPath(): String = path
+
     actual fun isFile(): Boolean = access(path, F_OK) == 0
 
     actual fun getModificationTime(): Instant? {

@@ -3,6 +3,7 @@ package dev.drzepka.wikilinks.app.service.search
 import dev.drzepka.wikilinks.app.db.LinksRepository
 import dev.drzepka.wikilinks.app.model.PageVertex
 import dev.drzepka.wikilinks.common.model.Path
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import mu.KotlinLogging
 
 class PathFinderService(
@@ -12,7 +13,7 @@ class PathFinderService(
     private val log = KotlinLogging.logger {}
     private val maxSearchDepth = maxSearchDepth ?: DEFAULT_MAX_SEARCH_DEPTH
 
-    fun findPaths(sourcePage: Int, targetPage: Int): List<Path> {
+    suspend fun findPaths(language: DumpLanguage, sourcePage: Int, targetPage: Int): List<Path> {
         // "Head" as in search head. When searching from source or target side,
         // the head moves towards the other end until it meets with the other one.
         var sourceHead: MutableMap<Int, PageVertex> = HashMap()
@@ -25,18 +26,18 @@ class PathFinderService(
         var targetDepth = 0
 
         while (sourceDepth + targetDepth < maxSearchDepth) {
-            val outLinksCount = linksRepository.getOutLinksCount(*sourceHead.keys.toIntArray())
-            val inLinksCount = linksRepository.getInLinksCount(*targetHead.keys.toIntArray())
+            val outLinksCount = linksRepository.getOutLinksCount(language, *sourceHead.keys.toIntArray())
+            val inLinksCount = linksRepository.getInLinksCount(language, *targetHead.keys.toIntArray())
 
             log.trace { "out link count from ${sourceHead.keys}: $outLinksCount" }
             log.trace { "in link count from ${targetHead.keys}: $inLinksCount" }
 
             if (outLinksCount <= inLinksCount) {
                 sourceDepth++
-                sourceHead = moveSearchHead(sourceHead, false)
+                sourceHead = moveSearchHead(sourceHead, language, false)
             } else {
                 targetDepth++
-                targetHead = moveSearchHead(targetHead, true)
+                targetHead = moveSearchHead(targetHead, language, true)
             }
 
             val paths = constructPaths(sourceHead, targetHead)
@@ -50,14 +51,15 @@ class PathFinderService(
         return emptyList()
     }
 
-    private fun moveSearchHead(
+    private suspend fun moveSearchHead(
         oldHead: MutableMap<Int, PageVertex>,
+        language: DumpLanguage,
         reverseDirection: Boolean
     ): MutableMap<Int, PageVertex> {
         val links = if (!reverseDirection)
-            linksRepository.getOutLinks(*oldHead.keys.toIntArray())
+            linksRepository.getOutLinks(language, *oldHead.keys.toIntArray())
         else
-            linksRepository.getInLinks(*oldHead.keys.toIntArray())
+            linksRepository.getInLinks(language, *oldHead.keys.toIntArray())
 
         log.trace { "Found ${links.size} links. Direction: ${if (!reverseDirection) "forward" else "reverse"}" }
 

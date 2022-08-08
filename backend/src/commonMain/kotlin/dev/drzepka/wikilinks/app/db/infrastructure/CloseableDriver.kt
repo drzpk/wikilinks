@@ -1,42 +1,40 @@
-package dev.drzepka.wikilinks.app.db
+package dev.drzepka.wikilinks.app.db.infrastructure
 
 import com.squareup.sqldelight.Transacter
 import com.squareup.sqldelight.db.SqlCursor
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.db.SqlPreparedStatement
 
-/**
- * Allows the driver to be reused after closing the connection. Closing behavior differs between platforms:
- * * under JVM (JdbcSqliteDriver), closing the connection has no effect, as connection is established on per-connection basis,
- * * under Native, closing the connection works as expected.
- */
-class ReusableDriver(private val factory: () -> SqlDriver) : SqlDriver {
-    private var delegate: SqlDriver? = null
+class CloseableDriver(private val delegate: SqlDriver) : SqlDriver {
+    private var closed = false
 
     override fun close() {
-        val closed = delegate != null && nativeClose(delegate!!)
-        if (!closed)
-            delegate?.close()
+        if (closed)
+            return
 
-        delegate = null
+        val wasClosed = nativeClose(delegate)
+        if (!wasClosed)
+            delegate.close()
+
+        closed = true
     }
 
     override fun currentTransaction(): Transacter.Transaction? {
-        return getOrCreateDelegate().currentTransaction()
+        return getDelegate().currentTransaction()
     }
 
     override fun execute(identifier: Int?, sql: String, parameters: Int, binders: (SqlPreparedStatement.() -> Unit)?) =
-        getOrCreateDelegate().execute(identifier, sql, parameters, binders)
+        getDelegate().execute(identifier, sql, parameters, binders)
 
     override fun executeQuery(
         identifier: Int?,
         sql: String,
         parameters: Int,
         binders: (SqlPreparedStatement.() -> Unit)?
-    ): SqlCursor = getOrCreateDelegate().executeQuery(identifier, sql, parameters, binders)
+    ): SqlCursor = getDelegate().executeQuery(identifier, sql, parameters, binders)
 
     override fun newTransaction(): Transacter.Transaction {
-        val thisDelegate = getOrCreateDelegate()
+        val thisDelegate = getDelegate()
         val transaction = thisDelegate.newTransaction()
 
         // For some reason, Jdbc driver doesn't close the connection after completing a transaction,
@@ -47,10 +45,10 @@ class ReusableDriver(private val factory: () -> SqlDriver) : SqlDriver {
         return transaction
     }
 
-    private fun getOrCreateDelegate(): SqlDriver {
-        if (delegate == null)
-            delegate = factory()
-        return delegate!!
+    private fun getDelegate(): SqlDriver {
+        if (closed)
+            throw IllegalStateException("Driver has already been closed")
+        return delegate
     }
 }
 expect fun nativeClose(driver: SqlDriver): Boolean

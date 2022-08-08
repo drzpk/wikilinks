@@ -1,6 +1,8 @@
 package dev.drzepka.wikilinks.front.service
 
+import dev.drzepka.wikilinks.common.model.LanguageInfo
 import dev.drzepka.wikilinks.common.model.Path
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.common.model.searchresult.PageInfo
 import dev.drzepka.wikilinks.common.model.searchresult.SearchDuration
@@ -10,7 +12,7 @@ import kotlin.random.Random
 
 object MockLinkSearchService : LinkSearchService {
 
-    override fun search(sourcePage: Int, targetPage: Int): Promise<LinkSearchResult> {
+    override fun search(language: DumpLanguage, sourcePage: Int, targetPage: Int): Promise<LinkSearchResult> {
         val degrees = Random.nextInt(1, 6)
         val paths = getRandomPaths(degrees)
 
@@ -19,7 +21,8 @@ object MockLinkSearchService : LinkSearchService {
             paths,
             getRandomPageInfo(paths.flatMap { it.pages }.toSet()),
             getRandomDuration(),
-            0.5f
+            0.5f,
+            LanguageInfo(DumpLanguage.EN, "latest")
         )
 
         return Promise { resolve, _ ->

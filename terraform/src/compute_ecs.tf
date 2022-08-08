@@ -129,10 +129,6 @@ resource "aws_ecs_task_definition" "application" {
         {
           name  = "DATABASES_DIRECTORY"
           value = "/data/databases"
-        },
-        {
-          name  = "GENERATOR_TIMEOUT"
-          value = tostring(aws_batch_job_definition.generator.timeout[0].attempt_duration_seconds)
         }
       ]
       portMappings = [

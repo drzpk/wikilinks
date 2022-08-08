@@ -1,10 +1,11 @@
 package dev.drzepka.wikilinks.app
 
-import dev.drzepka.wikilinks.app.KoinApp.availabilityService
+import dev.drzepka.wikilinks.app.KoinApp.databaseRegistry
 import dev.drzepka.wikilinks.app.KoinApp.frontendResourceService
 import dev.drzepka.wikilinks.app.KoinApp.healthService
 import dev.drzepka.wikilinks.app.KoinApp.historyService
 import dev.drzepka.wikilinks.app.KoinApp.searchService
+import dev.drzepka.wikilinks.common.model.LanguageInfo
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -30,9 +31,9 @@ fun httpApplication() {
         }
         install(StatusPages) {
             val log = KotlinLogging.logger("exception-handler")
-            exception { call: ApplicationCall, _: MaintenanceModeException ->
-                log.warn { "Unable to complete request ${call.request.uri} because of maintenance mode" }
-                call.respond(HttpStatusCode.ServiceUnavailable, "Application is being updated, please try again later.")
+            exception { call: ApplicationCall, e: LanguageNotAvailableException ->
+                log.warn { "Unavailable language ${e.language} was requested at ${call.request.uri}" }
+                call.respond(HttpStatusCode.BadRequest, "Language ${e.language} is not available")
             }
             exception { call: ApplicationCall, cause: Throwable ->
                 log.error(cause) { "Uncaught error while processing request: ${call.request.uri}" }
@@ -53,13 +54,6 @@ private fun configureKoin(scope: CoroutineScope) {
 
 private fun Application.configureRouting() {
     routing {
-        intercept(ApplicationCallPipeline.Plugins) {
-            if (!call.request.path().endsWith("api/health") && availabilityService.isUpdateInProgress()) {
-                call.respond(HttpStatusCode.ServiceUnavailable, "Update in progress")
-                finish()
-            }
-        }
-
         get("/") {
             call.respondRedirect("app/index.html", permanent = false)
         }
@@ -80,10 +74,17 @@ private fun Application.configureRouting() {
                 post("search") {
                     val request = call.receive<LinkSearchRequest>()
                     val searchDate = Clock.System.now()
-                    val result = searchService.search(request.source, request.target)
+                    val result = searchService.search(request.language, request.source, request.target)
                     historyService.addResult(searchDate, result)
                     call.respond(result)
                 }
+            }
+
+            get("languages") {
+                val response = databaseRegistry
+                    .getAvailableLanguages()
+                    .map { LanguageInfo(it.key, it.value) }
+                call.respond(response)
             }
 
             get("health") {

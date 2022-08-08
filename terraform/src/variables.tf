@@ -41,6 +41,12 @@ variable "versions" {
   }
 }
 
+variable "languages" {
+  type        = string
+  description = "Wikipedia languages to generate indexes from, comma-separated."
+  default     = "pl,en"
+}
+
 locals {
   prefix = "${var.resource_name_prefix}wikilinks-"
 }

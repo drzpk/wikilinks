@@ -1,13 +1,16 @@
 package dev.drzepka.wikilinks.inttest.search
 
-import dev.drzepka.wikilinks.app.db.DatabaseProvider
-import dev.drzepka.wikilinks.app.db.FileConfigRepository.Companion.DUMP_VERSION_FILE_NAME
+import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseProvider
 import dev.drzepka.wikilinks.app.utils.http
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
 import dev.drzepka.wikilinks.common.model.Path
+import dev.drzepka.wikilinks.common.model.database.DatabaseFile
+import dev.drzepka.wikilinks.common.model.database.DatabaseType
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -48,21 +51,21 @@ abstract class BaseLinkSearchTest(imageVariant: String) {
         .withExposedPorts(8080)
         .withNetwork(network)
         .withEnv("DATABASES_DIRECTORY", "/databases")
-        .withEnv("WIKIPEDIA_ACTION_API_URL", "http://mockServer:${MockServerContainer.PORT}/api.xyz")
+        .withEnv("WIKIPEDIA_ACTION_API_URL_EN", "http://mockServer:${MockServerContainer.PORT}/api.xyz")
         .withFileSystemBind(databasesDirectory.absolutePath, "/databases")
         .waitingFor(Wait.forHttp("/").forStatusCode(200))
+
+    init {
+        if (!databasesDirectory.isDirectory)
+            databasesDirectory.mkdir()
+        databasesDirectory.listFiles()!!.forEach { it.delete() }
+
+        initializeDatabase()
+    }
 
     @BeforeEach
     fun setupEach() {
         application.followOutput(Slf4jLogConsumer(LoggerFactory.getLogger("wikilinks-container")))
-
-        if (!databasesDirectory.isDirectory)
-            databasesDirectory.mkdir()
-
-        databasesDirectory.listFiles()!!.forEach { it.delete() }
-        File(databasesDirectory, DUMP_VERSION_FILE_NAME).apply {
-            writeBytes("20220620".toByteArray())
-        }
 
         MockServerClient(mockServer.host, mockServer.serverPort)
             .`when`(
@@ -75,8 +78,6 @@ abstract class BaseLinkSearchTest(imageVariant: String) {
                     .withHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                     .withBody(PageInfoMockResponse.create(1, 2, 3))
             )
-
-        initializeDatabase()
     }
 
     @Test
@@ -85,8 +86,11 @@ abstract class BaseLinkSearchTest(imageVariant: String) {
         val response = runBlocking {
             val httpResponse = http.post(url) {
                 contentType(ContentType.Application.Json)
-                setBody(LinkSearchRequest(1, 2))
+                setBody(LinkSearchRequest(1, 2, DumpLanguage.EN))
             }
+
+            if (httpResponse.status != HttpStatusCode.OK)
+                throw IllegalStateException("Received error response: ${httpResponse.bodyAsText()}")
 
             httpResponse.body<LinkSearchResult>()
         }
@@ -101,8 +105,9 @@ abstract class BaseLinkSearchTest(imageVariant: String) {
     }
 
     private fun initializeDatabase() {
-        val linksDb =
-            DatabaseProvider().getLinksDatabase(createSchema = true, overrideDirectory = databasesDirectory.absolutePath)
+        val linksFile = DatabaseFile.create(DatabaseType.LINKS, DumpLanguage.EN, "20220601")
+        val linksDb = DatabaseProvider().getOrCreateUnprotectedLinksDatabase(linksFile, databasesDirectory.absolutePath)
+
         linksDb.pagesQueries.insert(1, "title_1")
         linksDb.pagesQueries.insert(2, "title_2")
         linksDb.pagesQueries.insert(3, "title_3")

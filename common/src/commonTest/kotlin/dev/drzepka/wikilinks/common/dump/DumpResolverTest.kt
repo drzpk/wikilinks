@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.common.dump
 
 import dev.drzepka.wikilinks.common.model.dump.ArchiveDump
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.testRunBlocking
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
@@ -16,7 +17,7 @@ internal class DumpResolverTest {
     @Test
     @JsName("test1")
     fun `should find last dump`() {
-        val ds = "https://dump.source.org/test"
+        val ds = DumpLanguage.EN.getSourceUrl()
 
         val mockEngine = MockEngine {
             val url = it.url.toString()
@@ -28,8 +29,8 @@ internal class DumpResolverTest {
             }
         }
 
-        val resolver = DumpResolver(HttpClientProvider(mockEngine), ds, variants)
-        val dumps = testRunBlocking { resolver.resolveLatestDumps() }
+        val resolver = DumpResolver(HttpClientProvider(mockEngine), variants)
+        val dumps = testRunBlocking { resolver.resolveLatestDumps(DumpLanguage.EN) }
         val archives = dumps.dumps
 
         assertEquals("20220620", dumps.version)
@@ -41,7 +42,7 @@ internal class DumpResolverTest {
     @Test
     @JsName("test2")
     fun `should fall back to previous dump if the last one is missing required files`() {
-        val ds = "https://dump.source.org/test"
+        val ds = DumpLanguage.EN.getSourceUrl()
 
         val mockEngine = MockEngine {
             val url = it.url.toString()
@@ -54,8 +55,8 @@ internal class DumpResolverTest {
             }
         }
 
-        val resolver = DumpResolver(HttpClientProvider(mockEngine), ds, variants)
-        val dumps = testRunBlocking { resolver.resolveLatestDumps() }
+        val resolver = DumpResolver(HttpClientProvider(mockEngine), variants)
+        val dumps = testRunBlocking { resolver.resolveLatestDumps(DumpLanguage.EN) }
         val archives = dumps.dumps
 
         assertEquals("20220601", dumps.version)

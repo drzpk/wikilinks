@@ -11,15 +11,21 @@ into a number of different steps, that process dump files sequentially and store
 
 ### Steps
 
-These steps don't reflect source code in the exact way, some items are omitted and others are simplified. Refer to the
+All the below steps are processed separately for each language. They don't reflect source code in the exact way, some
+items are omitted and others are simplified. Refer to the
 code if you're looking for the exact representation of the steps.
 
-Unless otherwise specified, all file operations take place in the `$WORKING_DIRECTORY`, referred to as the  *working
-directory* from now on.
+Unless otherwise specified, all file operations take place in the `$WORKING_DIRECTORY`, henceforth referred to as
+the *working directory*.
+
+The `<language>` expression is a placeholder for [ISO 639-1](https://en.wikipedia.org/wiki/ISO_639-1)
+language code. List of all supported languages is
+available [here](../common/src/commonMain/kotlin/dev/drzepka/wikilinks/common/model/dump/DumpLanguage.kt).
 
 #### 1. Dump version resolution
 
-The first step is to find the most recent version of dump available on https://dumps.wikimedia.org/enwiki.
+The first step is to find the most recent version of dump available on
+`https://dumps.wikimedia.org/<language_code>wiki`.
 The algorithm checks whether all required files are available for download. These files are located based on suffixes in
 their names: *page*, *pagelinks*, and *redirect* (each suffix denotes a table name in the
 Wikipedia [database schema](https://www.mediawiki.org/w/index.php?title=Manual:Database_layout/diagram&action=render).
@@ -35,11 +41,11 @@ completely downloaded are skipped.
 
 #### 3. Database initialization
 
-Database file along with all tables is created.
+Database file and all tables are created.
 
 #### 4. Page table population
 
-File *enwiki-<version>-page.sql.gz* is read and data is extracted. From
+File *<language>wiki-<version>-page.sql.gz* is read and data is extracted. From
 the [page table](https://www.mediawiki.org/wiki/Manual:Page_table), the `page_id` and `page_title` columns are
 extracted, but only if `page_namespace == 0`. All articles are assigned
 to [namespace](https://en.wikipedia.org/wiki/Wikipedia:Namespace) 0.
@@ -49,7 +55,7 @@ lookup `page_id -> page_title` is kept in memory for use in the next steps. All 
 
 #### 5. Page redirect resolution
 
-File *enwiki-<version>-redirect.sql.gz* is read and data is extracted. From
+File *<language>wiki-<version>-redirect.sql.gz* is read and data is extracted. From
 the [redirect table](https://www.mediawiki.org/wiki/Manual:Redirect_table), the `rd_from` and `rd_title` columns are
 extracted, but only if `rd_namepace == 0`.
 
@@ -60,7 +66,7 @@ memory: `source_page_id -> target_page_id`.
 
 #### 6. Links extraction
 
-File *enwiki-<version>-pagelinks.sql.gz* is read and data is extracted.
+File *<language>wiki-<version>-pagelinks.sql.gz* is read and data is extracted.
 The [pagelinks table](https://www.mediawiki.org/wiki/Manual:Pagelinks_table) contains all internal Wikipedia links, but
 the storage format is not optimal for fast searching, because each link is a separate table row. The format used by this
 project will be revealed in one of the next steps.
@@ -81,7 +87,7 @@ format: `<from>,<to>`.
 
 After this step is complete, both of the lookups are not needed anymore and are removed from memory.
 
-#### 7. Sorting links by source and target page ID - todo: mention custom implementation of external sort algorithm
+#### 7. Sorting links by source and target page ID
 
 This step's task is to read the `id_links.txt.gz` file created by the previous step and sort it by source and target
 page id. The outcome of this step are two files: `id_links_sorted_source.txt.gz` and `id_links_sorted_target.txt.gz`.
@@ -133,15 +139,13 @@ sorted by target link. By synchronizing two readers - one for links sorted by so
 the algorithm can obtain data required for one table row and insert it in a single query. The described algorithm can be
 found in the [LinksPipelineManager](src/main/kotlin/dev/drzepka/wikilinks/generator/LinksPipelineManager.kt) class.
 
-This was the last step involved in building the resulting database.
+This was the last step involved in building the resulting database. The database file is named using the following
+format: `links-<language>-<version>.db`.
 
-#### 9. Database swap
+#### 9. Database replacement
 
-The next step is to swap the database currently being used by the application with a new one. Generator creates
-an empty file named `maintenance_mode` in the `$DATABASES_DIRECTORY`. The application periodically check for existence
-of this file and if it's detected, releases all database connections. In the meantime, the generator waits 30 seconds
-for the application to take action. After this time has passed, new database file from the working directory to
-the `$DATABASES_DIRECTORY` and the cache database from the `$DATABASES_DIRECTORY` is removed.
+The next step is to move the generated database into the `$DATABASES_DIRECTORY`. The application module periodically
+scans this directory and if new or updated database is detected, it is replaced.
 
 #### 10. Temporary files deletion
 

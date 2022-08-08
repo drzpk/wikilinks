@@ -3,6 +3,8 @@ package dev.drzepka.wikilinks.app
 import dev.drzepka.wikilinks.app.KoinApp.searchService
 import dev.drzepka.wikilinks.app.utils.exit
 import dev.drzepka.wikilinks.common.model.Path
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+import kotlinx.coroutines.runBlocking
 import org.koin.core.context.startKoin
 
 fun commonMain(args: Array<String>) {
@@ -44,5 +46,7 @@ fun search(startPage: Int, targetPage: Int): Pair<List<Path>, Long> {
         modules(coreModule())
     }
 
-    return searchService.simpleSearch(startPage, targetPage)
+    return runBlocking {
+        searchService.simpleSearch(DumpLanguage.EN, startPage, targetPage)
+    }
 }

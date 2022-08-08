@@ -1,6 +1,8 @@
 package dev.drzepka.wikilinks.front.model
 
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
+import dev.drzepka.wikilinks.front.service.LanguageService
 import dev.drzepka.wikilinks.front.service.LinkSearchService
 import dev.drzepka.wikilinks.front.service.PageSearchService
 import dev.drzepka.wikilinks.front.util.DebounceBuffer
@@ -12,32 +14,56 @@ import kotlin.time.Duration.Companion.seconds
 class State(
     private val pageSearchService: PageSearchService,
     private val linkSearchService: LinkSearchService,
+    private val languageService: LanguageService,
     private val historyState: HistoryState
 ) {
-    val sourceInput = SearchInputState(pageSearchService)
-    val targetInput = SearchInputState(pageSearchService)
+    val availableLanguages = ObservableListWrapper(mutableListOf<DumpLanguage>())
+    val selectedLanguage = ObservableValue<DumpLanguage?>(null)
+
+    val sourceInput = SearchInputState(selectedLanguage, pageSearchService)
+    val targetInput = SearchInputState(selectedLanguage, pageSearchService)
 
     val canSearch = ObservableValue(false)
     val searchInProgress = ObservableValue(false)
     val searchResult = ObservableValue<LinkSearchResult?>(null)
 
     init {
+        setupLanguages()
+
         sourceInput.selectedPage.subscribe { onSelectedPageChanged() }
         targetInput.selectedPage.subscribe { onSelectedPageChanged() }
+        selectedLanguage.subscribe { onSelectedLanguageChanged() }
 
         historyState.getSearchQuery()?.let { initialSearch(it) }
     }
 
+    private fun setupLanguages() {
+        languageService.getAvailableLanguages().then {
+            val languages = it.map { info -> info.language }
+            availableLanguages.addAll(languages)
+
+            if (selectedLanguage.value == null) {
+                val recent = languageService.getRecentLanguage() ?: DumpLanguage.EN
+                val selected = if (recent in languages) recent else languages.firstOrNull()
+                selectedLanguage.setState(selected)
+            }
+        }
+    }
+
     private fun initialSearch(query: SearchQuery) {
         searchInProgress.setState(true)
+
+        val language = query.language ?: DumpLanguage.EN
+        selectedLanguage.setState(language)
+
         var source: PageHint? = null
         var target: PageHint? = null
 
-        pageSearchService.search(query.sourcePage, true).then {
+        pageSearchService.search(language, query.sourcePage, true).then {
             source = it.firstOrNull()
 
             if (source != null)
-                pageSearchService.search(query.targetPage, true)
+                pageSearchService.search(language, query.targetPage, true)
             else Promise.resolve(emptyList())
         }.then {
             target = it.firstOrNull()
@@ -53,16 +79,29 @@ class State(
         }
     }
 
+    fun selectLanguage(language: DumpLanguage) {
+        if (searchInProgress.value)
+            return
+
+        selectedLanguage.setState(language)
+        languageService.saveRecentLanguage(language)
+
+        sourceInput.clear()
+        targetInput.clear()
+        searchResult.setState(null)
+        historyState.clearSearchQuery()
+    }
+
     fun search() {
         if (!canSearch.value || searchInProgress.value)
             return
 
         val source = sourceInput.selectedPage.value!!
         val target = targetInput.selectedPage.value!!
-        historyState.putSearchQuery(SearchQuery(source.second, target.second))
+        historyState.putSearchQuery(SearchQuery(source.second, target.second, selectedLanguage.value!!))
 
         searchInProgress.setState(true)
-        linkSearchService.search(source.first, target.first)
+        linkSearchService.search(selectedLanguage.value!!, source.first, target.first)
             .then {
                 searchResult.setState(it)
             }
@@ -74,12 +113,22 @@ class State(
             }
     }
 
-    private fun onSelectedPageChanged() {
-        canSearch.setState(sourceInput.selectedPage.value != null && targetInput.selectedPage.value != null)
+    private fun onSelectedPageChanged() = updateCanSearch()
+    private fun onSelectedLanguageChanged() = updateCanSearch()
+
+    private fun updateCanSearch() {
+        canSearch.setState(
+            selectedLanguage.value != null
+                    && sourceInput.selectedPage.value != null
+                    && targetInput.selectedPage.value != null
+        )
     }
 }
 
-class SearchInputState(private val pageSearchService: PageSearchService) {
+class SearchInputState(
+    private val selectedLanguage: ObservableValue<DumpLanguage?>,
+    private val pageSearchService: PageSearchService
+) {
     val query = ObservableValue("")
     val hints = ObservableListWrapper<PageHint>()
     val showHints = ObservableValue(false)
@@ -115,13 +164,22 @@ class SearchInputState(private val pageSearchService: PageSearchService) {
         showHints.setState(false)
     }
 
+    fun clear() {
+        query.setState("")
+        hints.clear()
+        showHints.setState(false)
+        selectedPage.setState(null)
+    }
+
     private fun searchForPage(query: String) {
         if (query.isBlank()) {
             showHints.setState(false)
             return
+        } else if (selectedLanguage.value == null) {
+            return
         }
 
-        pageSearchService.search(query)
+        pageSearchService.search(selectedLanguage.value!!, query)
             .then {
                 showHints.setState(true)
                 hints.clear()
@@ -136,4 +194,5 @@ class SearchInputState(private val pageSearchService: PageSearchService) {
 interface HistoryState {
     fun getSearchQuery(): SearchQuery?
     fun putSearchQuery(query: SearchQuery)
+    fun clearSearchQuery()
 }

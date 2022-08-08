@@ -1,6 +1,9 @@
 package dev.drzepka.wikilinks.app.service.search
 
+import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseRegistry
+import dev.drzepka.wikilinks.common.model.LanguageInfo
 import dev.drzepka.wikilinks.common.model.Path
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.common.model.searchresult.SearchDuration
 import kotlin.time.ExperimentalTime
@@ -10,21 +13,22 @@ import kotlin.time.measureTimedValue
 @OptIn(ExperimentalTime::class)
 class LinkSearchService(
     private val pathFinderService: PathFinderService,
+    private val databaseRegistry: DatabaseRegistry,
     private val pageInfoService: PageInfoService?
 ) {
 
-    fun search(sourcePage: Int, targetPage: Int): LinkSearchResult {
+    suspend fun search(language: DumpLanguage, sourcePage: Int, targetPage: Int): LinkSearchResult {
         if (pageInfoService == null)
             throw IllegalStateException("PageInfoService wasn't found")
 
         val totalDurationMark = TimeSource.Monotonic.markNow()
 
         val pathTimedValue = measureTimedValue {
-            pathFinderService.findPaths(sourcePage, targetPage)
+            pathFinderService.findPaths(language, sourcePage, targetPage)
         }
 
         val paths = pathTimedValue.value
-        val pageInfoResult = pageInfoService.collectInfo(paths)
+        val pageInfoResult = pageInfoService.collectInfo(language, paths)
 
         val totalDuration = totalDurationMark.elapsedNow()
         val searchDuration = SearchDuration(
@@ -38,15 +42,21 @@ class LinkSearchService(
             paths,
             pageInfoResult.pages,
             searchDuration,
-            pageInfoResult.cacheHitRatio
+            pageInfoResult.cacheHitRatio,
+            language.toDumpInfo()
         )
     }
 
-    fun simpleSearch(sourcePage: Int, targetPage: Int): Pair<List<Path>, Long> {
+    suspend fun simpleSearch(language: DumpLanguage, sourcePage: Int, targetPage: Int): Pair<List<Path>, Long> {
         val pathTimedValue = measureTimedValue {
-            pathFinderService.findPaths(sourcePage, targetPage)
+            pathFinderService.findPaths(language, sourcePage, targetPage)
         }
 
        return pathTimedValue.value to pathTimedValue.duration.inWholeMilliseconds
     }
+
+    private suspend fun DumpLanguage.toDumpInfo(): LanguageInfo = LanguageInfo(
+        this,
+        databaseRegistry.getAvailableLanguages()[this]!!
+    )
 }

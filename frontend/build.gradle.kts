@@ -64,6 +64,8 @@ kotlin {
         implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
         implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 
+        implementation(devNpm("flag-icons", "^6.6.3"))
+
     }
     sourceSets["test"].dependencies {
         implementation(kotlin("test-js"))

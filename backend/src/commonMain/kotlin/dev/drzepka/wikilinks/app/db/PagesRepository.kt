@@ -1,5 +1,7 @@
 package dev.drzepka.wikilinks.app.db
 
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+
 interface PagesRepository {
-    fun getPageTitles(pageIds: Collection<Int>): Map<Int, String>
+    suspend fun getPageTitles(language: DumpLanguage, pageIds: Collection<Int>): Map<Int, String>
 }
