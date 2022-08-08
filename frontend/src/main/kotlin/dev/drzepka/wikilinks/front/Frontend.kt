@@ -22,8 +22,7 @@ import org.w3c.dom.url.URLSearchParams
 
 class Frontend : Application(), HistoryState {
     init {
-        io.kvision.require("./css/app.scss")
-        io.kvision.require("./css/loader.css")
+        io.kvision.require("./css/root.scss")
         io.kvision.require("flag-icons/css/flag-icons.min.css")
     }
 
