@@ -10,7 +10,7 @@ plugins {
     id("com.google.cloud.tools.jib") version "3.2.1" apply false
 }
 
-group = "dev.drzepka"
+group = "dev.drzepka.wikilinks"
 version = "1.1.0-SNAPSHOT"
 
 allprojects {
