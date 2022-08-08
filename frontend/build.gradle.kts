@@ -65,7 +65,8 @@ kotlin {
         implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 
         implementation(devNpm("flag-icons", "^6.6.3"))
-
+        implementation(devNpm("sass-loader", "^13.0.2"))
+        implementation(devNpm("sass", "^1.54.3"))
     }
     sourceSets["test"].dependencies {
         implementation(kotlin("test-js"))
