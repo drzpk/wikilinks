@@ -42,10 +42,10 @@ jib {
     }
     to {
         image = "$imagePrefix/generator"
-        tags = setOf(
+        tags = listOf(
             project.version.toString(),
-            "latest"
-        )
+            if (project.version.toString().contains("SNAPSHOT", ignoreCase = true)) "" else "latest"
+        ).filter { it.isNotBlank() }.toSet()
     }
     container {
         creationTime = "USE_CURRENT_TIMESTAMP"
