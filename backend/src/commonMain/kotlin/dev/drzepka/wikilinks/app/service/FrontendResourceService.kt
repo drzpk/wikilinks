@@ -28,6 +28,7 @@ class FrontendResourceService {
         "js" -> ContentType.Text.JavaScript
         "jpg", "jpeg" -> ContentType.Image.JPEG
         "png" -> ContentType.Image.PNG
+        "svg" -> ContentType.Image.SVG
         else -> ContentType.Text.Plain
     }
 }
