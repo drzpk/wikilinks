@@ -9,7 +9,7 @@ import mu.KotlinLogging
 
 object DatabaseResolver {
     private val log = KotlinLogging.logger {}
-    private val directory = CommonConfiguration.databasesDirectory!!
+    private val directory = CommonConfiguration.databasesDirectory
 
     fun resolveNewestDatabaseFile(type: DatabaseType, language: DumpLanguage? = null): DatabaseFile? {
         val filtered = resolveDatabaseFiles(type, language)

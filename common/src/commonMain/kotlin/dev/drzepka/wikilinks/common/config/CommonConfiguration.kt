@@ -4,7 +4,7 @@ import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import kotlin.time.Duration.Companion.seconds
 
 object CommonConfiguration : BaseConfiguration() {
-    val databasesDirectory by lazy { getString("DATABASES_DIRECTORY") }
+    val databasesDirectory by lazy { getString("DATABASES_DIRECTORY", required = true)!! }
     val frontendResourcesDirectory by lazy { getString("FRONTEND_RESOURCES_DIRECTORY", required = true)!! }
 
     /**
