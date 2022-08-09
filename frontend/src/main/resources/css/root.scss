@@ -1,7 +1,8 @@
-@import "./colors";
+@import "./variables";
 
 //noinspection CssUnknownTarget
 @import "bootstrap/scss/bootstrap";
 
 @import "./loader.css";
 @import "./app";
+@import "./search-result";

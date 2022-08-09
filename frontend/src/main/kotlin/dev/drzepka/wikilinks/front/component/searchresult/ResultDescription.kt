@@ -22,17 +22,17 @@ class ResultDescription(result: LinkSearchResult) : Div() {
         val target = result.targetPage() ?: return false
 
         p.apply {
-            strong { link(source.title, source.url) }
+            link(source.title, source.url, target = "_blank")
             span(" and ")
-            strong { link(target.title, target.url) }
+            link(target.title, target.url, target = "_blank")
 
             span(" are connected by ")
-            strong(result.paths.size.toString())
+            b(result.paths.size.toString())
             span(" unique path")
             if (result.paths.size > 1) span("s")
 
             span(" with ")
-            strong(result.degreesOfSeparation.toString())
+            b(result.degreesOfSeparation.toString())
             span(" degree")
             if (result.degreesOfSeparation > 1) span("s")
             span(" of separation.")
@@ -54,7 +54,10 @@ class ResultDescription(result: LinkSearchResult) : Div() {
 
     private fun createEmptyResultDescription(p: P) {
         p.apply {
-            span("No paths were found between given pages.")
+            div(className = "no-paths-found") {
+                div("No paths were found between given pages.", className = "header")
+                div("Try different search query.", className = "text")
+            }
         }
     }
 

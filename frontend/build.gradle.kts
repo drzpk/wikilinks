@@ -64,6 +64,7 @@ kotlin {
         implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
         implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 
+        implementation(devNpm("bootstrap-icons", "^1.9.1"))
         implementation(devNpm("flag-icons", "^6.6.3"))
         implementation(devNpm("sass-loader", "^13.0.2"))
         implementation(devNpm("sass", "^1.54.3"))

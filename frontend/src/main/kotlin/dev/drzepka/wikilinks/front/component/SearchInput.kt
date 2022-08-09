@@ -16,7 +16,7 @@ class SearchInput(private val state: SearchInputState, private val searchInProgr
     private var previousFocusValue = false
 
     init {
-        textInput {
+        val input = textInput {
             bindTo(state.query)
             bind(searchInProgress) { disabled = it }
 
@@ -51,6 +51,11 @@ class SearchInput(private val state: SearchInputState, private val searchInProgr
 
             that.state.showHints.subscribe {
                 visible = it
+                val clazz = "hints-visible"
+                if (it)
+                    input.addCssClass(clazz)
+                else
+                    input.removeCssClass(clazz)
             }
         }
     }

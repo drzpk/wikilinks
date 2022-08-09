@@ -120,7 +120,7 @@ class SearchInputState(
     val showHints = ObservableValue(false)
     val selectedPage = ObservableValue<Pair<Int?, String>?>(null)
 
-    private val buffer = DebounceBuffer(500, ::searchForPage)
+    private val buffer = DebounceBuffer(400, ::searchForPage)
     private var ignoreQueryChange = false
 
     init {

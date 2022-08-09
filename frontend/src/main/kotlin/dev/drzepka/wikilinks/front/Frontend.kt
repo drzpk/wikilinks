@@ -23,6 +23,7 @@ import org.w3c.dom.url.URLSearchParams
 class Frontend : Application(), HistoryState {
     init {
         io.kvision.require("./css/root.scss")
+        io.kvision.require("bootstrap-icons/font/bootstrap-icons.css")
         io.kvision.require("flag-icons/css/flag-icons.min.css")
     }
 
@@ -36,7 +37,7 @@ class Frontend : Application(), HistoryState {
             add(HeaderComponent(this@Frontend.state))
 
             responsiveGridPanel {
-                options(1, 1, 6, 3) {
+                options(1, 1, 8, 2) {
                     add(SearchComponent(this@Frontend.state))
                 }
 

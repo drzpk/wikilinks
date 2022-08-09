@@ -22,7 +22,10 @@ class SearchResultComponent(result: ObservableState<LinkSearchResult?>) : Div(cl
 
                 add(ResultDescription(it))
                 add(LinksGraph(it))
-                div("Found paths:", className = "found-paths-text")
+
+                if (it.paths.isNotEmpty())
+                    div("Discovered paths", className = "found-paths-text")
+
                 div(className = "paths").bindEach(displayedPaths) { path ->
                     add(ResultPath(path, it.pages))
                 }

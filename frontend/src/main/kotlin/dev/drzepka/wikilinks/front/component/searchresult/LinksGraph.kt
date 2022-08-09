@@ -6,8 +6,11 @@ import dev.drzepka.wikilinks.front.model.Node
 import dev.drzepka.wikilinks.front.model.countRows
 import dev.drzepka.wikilinks.front.model.toEdges
 import dev.drzepka.wikilinks.front.model.toNodes
+import dev.drzepka.wikilinks.front.util.getBorderColorForLevel
+import dev.drzepka.wikilinks.front.util.getFillColorForLevel
 import io.kvision.html.Div
 import io.kvision.html.TAG
+import io.kvision.html.div
 import io.kvision.html.tag
 import kotlinx.browser.window
 
@@ -18,11 +21,16 @@ class LinksGraph(result: LinkSearchResult) : Div() {
     private val nodes = result.toNodes()
     private val edges = result.toEdges(nodes)
     private val nodeRows = nodes.countRows()
+    private val nodeColumns = result.degreesOfSeparation + 1
     private var scale = 0.0
 
     init {
         if (result.paths.isNotEmpty()) {
             id = CONTAINER_ID
+            div(className = "header") {
+                div("Connection graph")
+                div("Click on a description to open the corresponding Wikipedia page. Use mouse to navigate and rearrange the nodes.")
+            }
             tag(TAG.SVG)
 
             // Scale down so that the nodes can fit into the largest row
@@ -81,13 +89,15 @@ class LinksGraph(result: LinkSearchResult) : Div() {
 
         d3Nodes.append("circle")
             .attr("r", NODE_RADIUS)
-            .style("fill", "red")
+            .style("stroke-width", NODE_STROKE_WIDTH)
+            .style("fill") { d -> getFillColorForLevel(d.column as Int, nodeColumns) }
+            .style("stroke") { d -> getBorderColorForLevel(d.column as Int, nodeColumns) }
 
         val d3NodeTextContainer = d3Nodes.append("g")
         val d3Rects = d3NodeTextContainer.append("rect")
         d3NodeTextContainer.append("text")
             .text { d -> d.text }
-            .attr("transform", "translate(" + NODE_RADIUS * 1.2 + ", " + NODE_RADIUS / 2 + ")")
+            .attr("transform", "translate(" + NODE_OFFSET * 1.2 + ", " + NODE_OFFSET / 2 + ")")
             .attr("font-family", "system-ui")
             .style("cursor", "pointer")
             .each(js("function (d) { d.bbox = this.getBBox(); }"))
@@ -98,7 +108,7 @@ class LinksGraph(result: LinkSearchResult) : Div() {
             .attr("y") { d -> d.bbox.y }
             .attr("width") { d -> d.bbox.width }
             .attr("height") { d -> d.bbox.height }
-            .attr("transform", "translate(" + NODE_RADIUS * 1.2 + ", " + NODE_RADIUS / 2 + ")")
+            .attr("transform", "translate(" + NODE_OFFSET * 1.2 + ", " + NODE_OFFSET / 2 + ")")
             .style("fill", "#ffffff73")
 
         val zoom = d3.zoom()
@@ -239,6 +249,8 @@ class LinksGraph(result: LinkSearchResult) : Div() {
         private const val PADDING_LEFT = 20
         private const val PADDING_RIGHT = 100
         private const val NODE_RADIUS = 8
+        private const val NODE_STROKE_WIDTH = 3
+        private const val NODE_OFFSET = NODE_RADIUS + NODE_STROKE_WIDTH
 
         private const val VERTICAL_PADDING = PADDING_TOP + PADDING_BOTTOM
         private const val HORIZONTAL_PADDING = PADDING_LEFT + PADDING_RIGHT

@@ -12,6 +12,12 @@ import kotlin.random.Random
 
 object MockLinkSearchService : LinkSearchService {
 
+    private val LONG_DESCRIPTION = """
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
+        et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi 
+        ut aliquip ex ea commodo consequat.
+    """.trimIndent()
+
     override fun searchByIds(language: DumpLanguage, sourcePage: Int, targetPage: Int): Promise<LinkSearchResult> =
         search()
 
@@ -42,7 +48,7 @@ object MockLinkSearchService : LinkSearchService {
     }
 
     private fun getRandomPaths(degrees: Int): List<Path> {
-        val number = Random.nextInt(1, 10)
+        val number = Random.nextInt(6, 15)
         return (0 until number).map { getRandomPath(degrees) }
     }
 
@@ -53,8 +59,8 @@ object MockLinkSearchService : LinkSearchService {
             PageInfo(
                 1,
                 "Page Title $it",
-                "Example description",
-                "https://en.wikipedia.org/wiki/IDontExist"
+                "https://en.wikipedia.org/wiki/IDontExist",
+                if (Random.nextInt(10) >= 8) LONG_DESCRIPTION else "Example description"
             )
         }
 
@@ -66,5 +72,4 @@ object MockLinkSearchService : LinkSearchService {
                 Random.nextInt((totalTime * 0.2).toInt(), (totalTime * 0.5).toInt())
             )
         }
-
 }
