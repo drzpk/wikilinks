@@ -55,7 +55,8 @@ private fun configureKoin(scope: CoroutineScope) {
 private fun Application.configureRouting() {
     routing {
         get("/") {
-            call.respondRedirect("app/index.html", permanent = false)
+            val resource = frontendResourceService.getResource("index.html")!!
+            call.respondBytes(resource.content, resource.contentType)
         }
 
         route("app") {
