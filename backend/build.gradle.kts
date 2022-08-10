@@ -35,6 +35,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-core:$ktorVersion")
                 implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
                 implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+                implementation("io.ktor:ktor-server-compression:$ktorVersion")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
                 implementation("io.insert-koin:koin-core:$koinVersion")
                 implementation("org.jetbrains.kotlinx:atomicfu:$atomicfuVersion")
