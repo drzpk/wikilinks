@@ -6,12 +6,13 @@ import io.kvision.core.Placement
 import io.kvision.core.TooltipOptions
 import io.kvision.core.enableTooltip
 import io.kvision.html.*
+import io.kvision.panel.GridSize
 import io.kvision.panel.responsiveGridPanel
 
 class HeaderComponent(state: State) : Header() {
 
     init {
-        responsiveGridPanel {
+        responsiveGridPanel(gridSize = GridSize.LG) {
             options(1, 1, 6, 3) {
                 h1("WikiLinks")
             }

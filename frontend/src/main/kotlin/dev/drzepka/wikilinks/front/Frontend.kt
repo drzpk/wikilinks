@@ -37,11 +37,11 @@ class Frontend : Application(), HistoryState {
             add(HeaderComponent(this@Frontend.state))
 
             responsiveGridPanel {
-                options(1, 1, 8, 2) {
+                options(1, 1, 12, 0) {
                     add(SearchComponent(this@Frontend.state))
                 }
 
-                options(2, 1, 12, 0) {
+                options(1, 2, 12, 0) {
                     add(SearchResultComponent(this@Frontend.state.searchResult))
                 }
             }

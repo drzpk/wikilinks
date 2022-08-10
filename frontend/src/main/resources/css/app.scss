@@ -2,6 +2,10 @@
 
 body {
   color: $text-color-darker;
+
+  @media (max-width: 576px) {
+    font-size: 0.8em;
+  }
 }
 
 header {
@@ -20,6 +24,10 @@ header {
     align-items: center;
     justify-content: flex-end;
     height: 100%;
+
+    @media (max-width: 992px) {
+      justify-content: center;
+    }
 
     .icon {
       font-size: xx-large;
@@ -75,12 +83,27 @@ header {
 
 .search-component {
   .inputs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-top: 1em;
     margin-bottom: 4em;
 
+    @media (max-width: 992px) {
+      flex-direction: column;
+    }
+
+    @media (max-width: 576px) {
+      padding: 0 2em;
+    }
+
     > div {
       margin: 0 2em;
-      width: 100%;
+      width: 480px;
+
+      @media (max-width: 576px) {
+        width: 100%;
+      }
     }
 
     div input[type="text"] {
@@ -88,11 +111,25 @@ header {
       font-size: x-large;
       text-align: center;
       transition: none;
-      border-width: 2px;
+      border-width: 1px;
+      box-shadow: $input-box-shadow;
+
+      @media (max-width: 576px) {
+        font-size: 1.6em;
+      }
 
       &.hints-visible {
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
+      }
+    }
+
+    i {
+      font-size: xxx-large;
+      transition: all 0.2s ease-in-out;
+
+      @media (max-width: 992px) {
+        transform: rotateZ(90deg);
       }
     }
   }
@@ -143,6 +180,13 @@ header {
       .description {
         margin: 0;
         font-size: smaller;
+        font-style: italic;
+
+        // Show max 1 line
+        -webkit-line-clamp: 1;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
       }
 
       .image-wrapper {
@@ -153,11 +197,10 @@ header {
       }
 
       img {
-        max-width: 3em;
-        max-height: 3em;
-        width: auto;
-        height: auto;
-        border: 1px solid gray;
+        width: 3em;
+        height: 3em;
+        object-fit: contain;
+        border: 1px solid $inner-border-color;
         border-radius: 0.5em;
       }
     }

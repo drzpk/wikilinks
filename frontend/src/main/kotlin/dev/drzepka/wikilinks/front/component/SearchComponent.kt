@@ -6,6 +6,7 @@ import io.kvision.core.JustifyContent
 import io.kvision.html.Button
 import io.kvision.html.Div
 import io.kvision.html.div
+import io.kvision.html.i
 import io.kvision.panel.hPanel
 import io.kvision.state.bind
 
@@ -23,9 +24,10 @@ class SearchComponent(state: State) : Div(className = "search-component") {
             display = if (it) Display.NONE else Display.INITIAL
         }
 
-        hPanel(className = "inputs") {
-            add(sourceInput)
-            add(targetInput)
+        div(className = "inputs") {
+            add(this@SearchComponent.sourceInput)
+            i(className = "bi bi-arrow-right")
+            add(this@SearchComponent.targetInput)
         }
 
         hPanel(justify = JustifyContent.CENTER) {

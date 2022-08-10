@@ -9,6 +9,14 @@
     font-size: larger;
     margin: auto auto 3em;
 
+    @media (max-width: 1200px) {
+      width: 75%;
+    }
+
+    @media (max-width: 768px) {
+      width: 90%;
+    }
+
     a {
       position: relative;
       font-weight: 500;
@@ -111,13 +119,28 @@
   justify-content: center;
 
   .path {
+    $max-width: 350px;
+    $margin: 16px;
+
     display: inline-block;
-    margin: 1em;
+    margin: $margin;
     overflow: hidden;
-    max-width: 24em;
+    max-width: $max-width;
     flex-basis: 25%;
     border: 2px solid $outer-border-color;
     border-radius: $border-radius;
+
+    @media (max-width: $max-width * 4 + $margin * 8) {
+      flex-basis: 33%;
+    }
+
+    @media (max-width: $max-width * 4 + $margin * 6) {
+      flex-basis: 50%;
+    }
+
+    @media (max-width: $max-width * 2 + $margin * 4) {
+      flex-basis: 100%;
+    }
 
     .page {
       $page-height: 5.6em;
@@ -194,6 +217,19 @@
   margin: auto auto 4em;
   border-radius: $border-radius;
   box-shadow: 0 1px 2px 0 rgb(60 64 67 / 30%), 0 2px 6px 2px rgb(60 64 67 / 15%);
+  overflow: hidden;
+
+  @media (max-width: 1200px) {
+    width: 80%;
+  }
+
+  @media (max-width: 992px) {
+    width: 100%;
+
+    svg {
+      height: 30em;
+    }
+  }
 
   .header {
     padding: 0.8em;
