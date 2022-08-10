@@ -15,7 +15,10 @@ class SearchHint(hint: PageHint, searchInputState: SearchInputState) :
     HPanel(className = "search-hint", alignItems = AlignItems.CENTER) {
     init {
         div(className = "image-wrapper") {
-            image(hint.imageUrl ?: Images.EMPTY)
+            image(
+                hint.imageUrl ?: Images.EMPTY,
+                alt = if (hint.imageUrl != null) "Page thumbnail" else "Empty page thumbnail"
+            )
         }
         vPanel {
             p(hint.title, className = "title")

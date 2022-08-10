@@ -3,10 +3,7 @@ package dev.drzepka.wikilinks.front.component
 import dev.drzepka.wikilinks.front.model.State
 import io.kvision.core.Display
 import io.kvision.core.JustifyContent
-import io.kvision.html.Button
-import io.kvision.html.Div
-import io.kvision.html.div
-import io.kvision.html.i
+import io.kvision.html.*
 import io.kvision.panel.hPanel
 import io.kvision.state.bind
 
@@ -22,6 +19,10 @@ class SearchComponent(state: State) : Div(className = "search-component") {
         }
         searchButton.bind(state.searchInProgress) {
             display = if (it) Display.NONE else Display.INITIAL
+        }
+
+        h2("Find the shortest paths between Wikipedia articles.") {
+            id = "headline"
         }
 
         div(className = "inputs") {

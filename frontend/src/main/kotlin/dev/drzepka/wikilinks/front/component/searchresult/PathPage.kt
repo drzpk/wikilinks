@@ -21,7 +21,10 @@ class PathPage(info: PageInfo, level: Int, levelCount: Int) : Link("", className
             p(info.description, className = "description")
         }
 
-        image(info.imageUrl ?: Images.EMPTY)
+        image(
+            info.imageUrl ?: Images.EMPTY,
+            alt = if (info.imageUrl != null) "Page thumbnail" else "Empty page thumbnail"
+        )
     }
 
     private fun createAccentGradient(level: Int, levelCount: Int): Color {
