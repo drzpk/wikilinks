@@ -8,6 +8,7 @@ import dev.drzepka.wikilinks.common.model.Path
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.common.model.searchresult.SearchDuration
+import dev.drzepka.wikilinks.common.utils.sanitizePageTitle
 import mu.KotlinLogging
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
@@ -64,7 +65,7 @@ class LinkSearchService(
             return null
         }
 
-        return pagesRepository.getPageId(language, point.title!!)
+        return pagesRepository.getPageId(language, sanitizePageTitle(point.title!!))
     }
 
     private suspend fun search(language: DumpLanguage, sourcePage: Int, targetPage: Int): LinkSearchResult {

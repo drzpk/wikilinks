@@ -33,7 +33,9 @@ class State(
         targetInput.selectedPage.subscribe { onSelectedPageChanged() }
         selectedLanguage.subscribe { onSelectedLanguageChanged() }
 
-        historyState.getSearchQuery()?.let { initialSearch(it) }
+        historyState.getSearchQuery()?.let {
+            initialSearch(it)
+        }
     }
 
     private fun setupLanguages() {
@@ -82,6 +84,10 @@ class State(
             historyState.putSearchQuery(SearchQuery(source.second, target.second, selectedLanguage.value!!))
 
         searchInProgress.setState(true)
+        sourceInput.onSearch()
+        targetInput.onSearch()
+        updateCanSearch()
+
         val promise = if (source.first != null && target.first != null)
             linkSearchService.searchByIds(selectedLanguage.value!!, source.first!!, target.first!!)
         else
@@ -105,8 +111,8 @@ class State(
     private fun updateCanSearch() {
         canSearch.setState(
             selectedLanguage.value != null
-                    && sourceInput.selectedPage.value != null
-                    && targetInput.selectedPage.value != null
+                    && sourceInput.hasPage() && targetInput.hasPage()
+                    && (sourceInput.selectedPageChanged() || targetInput.selectedPageChanged())
         )
     }
 }
@@ -121,17 +127,13 @@ class SearchInputState(
     val selectedPage = ObservableValue<Pair<Int?, String>?>(null)
 
     private val buffer = DebounceBuffer(400, ::searchForPage)
-    private var ignoreQueryChange = false
+    private var previouslySearchedPage: Pair<Int?, String>? = null
 
     init {
         query.subscribe {
-            if (ignoreQueryChange) {
-                ignoreQueryChange = false
-                return@subscribe
-            }
-
-            if (selectedPage.value != null)
+            if (selectedPage.value?.second != it) {
                 selectedPage.setState(null)
+            }
 
             buffer.execute(it)
         }
@@ -151,6 +153,15 @@ class SearchInputState(
     fun selectPage(page: Pair<Int?, String>) {
         setQuery(page.second)
         selectedPage.setState(page)
+    }
+
+    fun hasPage(): Boolean = selectedPage.value != null
+
+    fun selectedPageChanged(): Boolean =
+        selectedPage.value != null && selectedPage.value?.second != previouslySearchedPage?.second
+
+    fun onSearch() {
+        previouslySearchedPage = selectedPage.value
     }
 
     fun clear() {

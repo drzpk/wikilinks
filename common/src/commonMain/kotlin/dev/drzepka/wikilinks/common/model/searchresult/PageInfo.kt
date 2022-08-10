@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.common.model.searchresult
 
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+import dev.drzepka.wikilinks.common.utils.sanitizePageTitle
 import io.ktor.http.*
 
 @kotlinx.serialization.Serializable
@@ -24,7 +25,7 @@ data class PageInfo(
                 host = "${language.value}.wikipedia.org",
                 pathSegments = listOf(
                     "wiki",
-                    title.replace(" ", "_")
+                    sanitizePageTitle(title)
                 )
             ).buildString()
 
