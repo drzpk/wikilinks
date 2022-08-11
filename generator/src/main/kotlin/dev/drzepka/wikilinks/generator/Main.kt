@@ -2,7 +2,6 @@ package dev.drzepka.wikilinks.generator
 
 import dev.drzepka.wikilinks.common.BuildConfig
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
-import dev.drzepka.wikilinks.generator.version.UpdateChecker
 import java.io.File
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
@@ -72,7 +71,8 @@ private fun getVersions(args: Array<String>, languages: List<DumpLanguage>): Map
         println("Exact version was specified in program arguments: $versionArg")
         languages.associateWith { versionArg }
     } else {
-        UpdateChecker().getNewVersions(languages)
+        TODO("Update mechanism must be updated after the introduction of OutputRelocator")
+        // UpdateChecker().getNewVersions(languages)
     }
 }
 

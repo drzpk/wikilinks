@@ -16,6 +16,9 @@ dependencies {
     implementation("io.ktor:ktor-client-apache:$ktorVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.3")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3")
+    implementation("software.amazon.awssdk:s3:2.17.250")
+    implementation("software.amazon.awssdk:s3-transfer-manager:2.17.250-PREVIEW")
+    implementation("software.amazon.awssdk:sso:2.17.250")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")

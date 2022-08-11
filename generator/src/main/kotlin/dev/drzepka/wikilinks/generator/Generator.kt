@@ -15,6 +15,7 @@ import dev.drzepka.wikilinks.generator.pipeline.lookup.InMemoryRedirectLookup
 import dev.drzepka.wikilinks.generator.pipeline.lookup.PageLookupFactory
 import dev.drzepka.wikilinks.generator.pipeline.processor.LinksProcessor
 import dev.drzepka.wikilinks.generator.pipeline.reader.SqlDumpReader
+import dev.drzepka.wikilinks.generator.pipeline.relocator.OutputRelocator
 import dev.drzepka.wikilinks.generator.pipeline.sort.LinksFileSorter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksDbWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.LinksFileWriter
@@ -22,9 +23,7 @@ import dev.drzepka.wikilinks.generator.pipeline.writer.PageRedirectsWriter
 import dev.drzepka.wikilinks.generator.pipeline.writer.PageWriter
 import io.ktor.client.engine.apache.*
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardCopyOption
+import java.net.URI
 
 private val workingDirectory = File(Configuration.workingDirectory)
 private val databaseProvider = DatabaseProvider()
@@ -47,7 +46,7 @@ fun generate(language: DumpLanguage, version: String) {
     flow.step(ClearLookups)
     flow.segment(LinksFileSorter(File(workingDirectory, LinksFileWriter.LINKS_FILE_NAME)))
     flow.step(PopulateLinksTableStep)
-    flow.step(MoveDatabaseStep)
+    flow.segment(OutputRelocator(workingDirectory, URI.create(Configuration.outputLocation)))
     flow.step(DeleteTemporaryDataStep)
 
     flow.start()
@@ -205,29 +204,6 @@ private object ClearLookups : FlowStep<Store> {
             store.redirectLookup.clear()
         } catch (ignored: UninitializedPropertyAccessException) {
         }
-    }
-}
-
-private object MoveDatabaseStep : FlowStep<Store> {
-    override val name = "Moving database to target location"
-
-    override fun run(store: Store, logger: ProgressLogger) {
-        val key = "MoveDatabaseStep"
-        if (store[key] != null) {
-            println("Database has already been moved, skipping")
-            return
-        }
-
-        //databaseProvider.closeAllConnections() todo: is this needed anymore?
-        val databaseFile = File(workingDirectory, store.linksDatabaseFile.fileName)
-        Files.move(
-            databaseFile.toPath(),
-            Paths.get(Configuration.databasesDirectory, databaseFile.name),
-            StandardCopyOption.ATOMIC_MOVE,
-            StandardCopyOption.REPLACE_EXISTING
-        )
-
-        store[key] = "done"
     }
 }
 
