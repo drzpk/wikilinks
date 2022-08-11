@@ -9,6 +9,10 @@ resource "aws_ecs_service" "application" {
   task_definition = aws_ecs_task_definition.application.arn
   desired_count   = 1
 
+  // Kill old task before starting a new one, otherwise deployments will fail
+  // if there's no enough CPU and memory for two instances of the application.
+  deployment_minimum_healthy_percent = 0
+
   service_registries {
     registry_arn   = aws_service_discovery_service.application.arn
     container_name = local.ecs_application_container_name
@@ -122,8 +126,8 @@ resource "aws_ecs_task_definition" "application" {
     {
       name        = local.ecs_application_container_name
       image       = "ghcr.io/drzpk/wikilinks/application-native:${var.versions.application}",
-      memory      = 512
-      cpu         = 1024
+      memory      = 768
+      cpu         = 2048
       essential   = true
       environment = [
         {
