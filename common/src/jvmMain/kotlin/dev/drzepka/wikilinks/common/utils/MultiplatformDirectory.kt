@@ -10,4 +10,8 @@ actual class MultiplatformDirectory actual constructor(path: String) {
             .filter { it.isFile }
             .map { MultiplatformFile(it.absolutePath) }
     }
+
+    actual fun mkdirs() {
+        dir.mkdirs()
+    }
 }

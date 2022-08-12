@@ -8,6 +8,7 @@ import dev.drzepka.wikilinks.app.utils.environment
 import dev.drzepka.wikilinks.common.config.CommonConfiguration
 import dev.drzepka.wikilinks.common.model.database.DatabaseFile
 import dev.drzepka.wikilinks.common.model.database.DatabaseType
+import dev.drzepka.wikilinks.common.utils.MultiplatformDirectory
 import dev.drzepka.wikilinks.db.cache.CacheDatabase
 import dev.drzepka.wikilinks.db.history.HistoryDatabase
 import dev.drzepka.wikilinks.db.links.LinksDatabase
@@ -69,6 +70,8 @@ class DatabaseProvider {
         overrideDirectory: String? = null
     ): SqlDriver {
         val dir = overrideDirectory ?: CommonConfiguration.databasesDirectory
+        MultiplatformDirectory(dir).mkdirs()
+
         val driver = getDriver(dir, dbName)
 
         // Optimize insert speed

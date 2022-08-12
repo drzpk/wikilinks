@@ -2,10 +2,7 @@ package dev.drzepka.wikilinks.common.utils
 
 import kotlinx.cinterop.pointed
 import kotlinx.cinterop.toKString
-import platform.posix.DT_REG
-import platform.posix.closedir
-import platform.posix.opendir
-import platform.posix.readdir
+import platform.posix.*
 
 actual class MultiplatformDirectory actual constructor(private val path: String) {
     actual fun listFiles(): List<MultiplatformFile> {
@@ -24,5 +21,18 @@ actual class MultiplatformDirectory actual constructor(private val path: String)
         }
 
         return files
+    }
+
+    actual fun mkdirs() {
+        val parts = path
+            .replace('\\', '/')
+            .replace(Regex("""/+"""), "/")
+            .split('/')
+
+        var current = if (path.startsWith("/")) "/" else ""
+        for (part in parts) {
+            current += "$part/"
+            mkdir(current, S_IRWXU)
+        }
     }
 }
