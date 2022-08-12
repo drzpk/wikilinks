@@ -1,7 +1,7 @@
 package dev.drzepka.wikilinks.generator.pipeline.writer
 
-import dev.drzepka.wikilinks.generator.availableProcessors
 import dev.drzepka.wikilinks.generator.model.Value
+import dev.drzepka.wikilinks.generator.utils.availableProcessors
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
 import java.io.BufferedOutputStream
 import java.io.File

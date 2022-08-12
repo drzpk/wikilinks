@@ -8,6 +8,7 @@ import dev.drzepka.wikilinks.generator.pipeline.reader.Reader
 import dev.drzepka.wikilinks.generator.pipeline.worker.SqlWorker
 import dev.drzepka.wikilinks.generator.pipeline.worker.WriterWorker
 import dev.drzepka.wikilinks.generator.pipeline.writer.Writer
+import dev.drzepka.wikilinks.generator.utils.availableProcessors
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream

@@ -2,6 +2,7 @@ package dev.drzepka.wikilinks.generator
 
 import dev.drzepka.wikilinks.common.BuildConfig
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+import dev.drzepka.wikilinks.generator.utils.*
 import dev.drzepka.wikilinks.generator.version.UpdateChecker
 import java.io.File
 import kotlin.concurrent.thread
@@ -13,7 +14,7 @@ private val updateChecker = UpdateChecker(workingDirectory)
 
 fun main(args: Array<String>) {
     if (!workingDirectory.isDirectory)
-        workingDirectory.mkdir()
+        workingDirectory.mkdirs()
 
     println("WikiLinks Generator ${BuildConfig.VERSION}")
     println("Available CPUs: ${availableProcessors()}")

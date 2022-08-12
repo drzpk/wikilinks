@@ -1,5 +1,6 @@
-package dev.drzepka.wikilinks.generator
+package dev.drzepka.wikilinks.generator.utils
 
+import dev.drzepka.wikilinks.generator.Configuration
 import java.io.File
 import java.lang.management.ManagementFactory
 

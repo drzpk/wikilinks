@@ -1,12 +1,12 @@
 package dev.drzepka.wikilinks.generator.pipeline.sort
 
 import com.google.common.io.CountingInputStream
-import dev.drzepka.wikilinks.generator.availableHeap
-import dev.drzepka.wikilinks.generator.availableProcessors
 import dev.drzepka.wikilinks.generator.flow.FlowRuntime
 import dev.drzepka.wikilinks.generator.flow.FlowSegment
 import dev.drzepka.wikilinks.generator.flow.FlowStorage
 import dev.drzepka.wikilinks.generator.model.Store
+import dev.drzepka.wikilinks.generator.utils.availableHeap
+import dev.drzepka.wikilinks.generator.utils.availableProcessors
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
 import java.io.*
 import java.util.*
