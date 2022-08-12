@@ -274,3 +274,8 @@ resource "aws_security_group_rule" "api_link_egress_rule" {
   to_port                  = 0
   source_security_group_id = aws_security_group.ecs_node.id
 }
+
+resource "aws_s3_bucket_acl" "links_bucket_acl" {
+  bucket = aws_s3_bucket.links.id
+  acl    = "private"
+}

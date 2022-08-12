@@ -28,7 +28,7 @@ resource "aws_efs_access_point" "fs_root" {
   }
 
   tags = {
-    Name = "${local.prefix}-root"
+    Name = "${local.prefix}root"
   }
 }
 
@@ -36,4 +36,8 @@ resource "aws_efs_mount_target" "public" {
   file_system_id  = aws_efs_file_system.fs.id
   subnet_id       = aws_subnet.public.id
   security_groups = [aws_security_group.efs.id]
+}
+
+resource "aws_s3_bucket" "links" {
+  bucket_prefix = "${local.prefix}links-storage-"
 }
