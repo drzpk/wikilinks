@@ -1,10 +1,11 @@
 locals {
   ecs_application_container_name = "application"
   ecs_application_container_port = 8080
+  key_name                       = "${var.prefix}ecs-node-key"
 }
 
 resource "aws_ecs_service" "application" {
-  name            = "${local.prefix}application"
+  name            = "${var.prefix}application"
   cluster         = aws_ecs_cluster.cluster.id
   task_definition = aws_ecs_task_definition.application.arn
   desired_count   = 1
@@ -27,7 +28,7 @@ resource "aws_ecs_service" "application" {
 }
 
 resource "aws_ecs_cluster" "cluster" {
-  name = "${local.prefix}Application"
+  name = "${var.prefix}Application"
 
   setting {
     name  = "containerInsights"
@@ -41,7 +42,7 @@ resource "aws_ecs_cluster_capacity_providers" "providers" {
 }
 
 resource "aws_ecs_capacity_provider" "provider" {
-  name = "${local.prefix}app-provider"
+  name = "${var.prefix}app-provider"
 
   auto_scaling_group_provider {
     auto_scaling_group_arn         = aws_autoscaling_group.application.arn
@@ -55,7 +56,7 @@ resource "aws_ecs_capacity_provider" "provider" {
 }
 
 resource "aws_autoscaling_group" "application" {
-  name             = "${local.prefix}application"
+  name             = "${var.prefix}application"
   min_size         = 0
   max_size         = 1
   desired_capacity = 0
@@ -73,7 +74,7 @@ resource "aws_autoscaling_group" "application" {
 
   tag {
     key                 = "Project"
-    value               = local.project_name
+    value               = var.project_name
     propagate_at_launch = true
   }
 
@@ -85,7 +86,7 @@ resource "aws_autoscaling_group" "application" {
 }
 
 resource "aws_launch_template" "ecs_node" {
-  name                                 = "${local.prefix}ecs-node"
+  name                                 = "${var.prefix}ecs-node"
   instance_type                        = "t3.micro"
   image_id                             = data.aws_ssm_parameter.ecs_optimized_ami.value
   key_name                             = local.key_name
@@ -102,7 +103,7 @@ resource "aws_launch_template" "ecs_node" {
   }
 
   network_interfaces {
-    subnet_id                   = aws_subnet.public.id
+    subnet_id                   = var.network.subnet_id
     associate_public_ip_address = true
     security_groups             = [aws_security_group.ecs_node.id]
   }
@@ -111,13 +112,13 @@ resource "aws_launch_template" "ecs_node" {
     resource_type = "instance"
     tags          = {
       Owner = var.owner
-      Name  = "${local.prefix}ecs-node"
+      Name  = "${var.prefix}ecs-node"
     }
   }
 }
 
 resource "aws_ecs_task_definition" "application" {
-  family             = "${local.prefix}Application"
+  family             = "${var.prefix}Application"
   network_mode       = "bridge"
   execution_role_arn = aws_iam_role.ecs_execution.arn
   task_role_arn      = aws_iam_role.application.arn
@@ -125,7 +126,7 @@ resource "aws_ecs_task_definition" "application" {
   container_definitions = jsonencode([
     {
       name        = local.ecs_application_container_name
-      image       = "ghcr.io/drzpk/wikilinks/application-native:${var.versions.application}",
+      image       = "ghcr.io/drzpk/wikilinks/application-jvm:${var.versions.application}",
       memory      = 768
       cpu         = 2048
       essential   = true
@@ -152,7 +153,7 @@ resource "aws_ecs_task_definition" "application" {
         logDriver = "awslogs"
         options   = {
           awslogs-group  = aws_cloudwatch_log_group.application.name
-          awslogs-region = var.aws_region
+          awslogs-region = data.aws_region.region.name
         }
       }
     }
@@ -173,7 +174,7 @@ resource "aws_ecs_task_definition" "application" {
 }
 
 resource "aws_service_discovery_service" "application" {
-  name = "${local.prefix}application"
+  name = "${var.prefix}application"
 
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.namespace.id
@@ -188,16 +189,32 @@ resource "aws_service_discovery_service" "application" {
 }
 
 resource "aws_service_discovery_private_dns_namespace" "namespace" {
-  name = "${local.prefix}application.local"
-  vpc  = aws_vpc.vpc.id
+  name = "${var.prefix}application.local"
+  vpc  = var.network.vpc_id
 }
 
 resource "aws_iam_instance_profile" "ecs_node" {
-  name = "${local.prefix}ECSNode"
+  name = "${var.prefix}ECSNode"
   role = aws_iam_role.ecs_ec2_node.name
 }
 
+resource "tls_private_key" "private_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "key_pair" {
+  key_name   = local.key_name
+  public_key = tls_private_key.private_key.public_key_openssh
+}
+
+resource "local_file" "key_file" {
+  filename = "${path.root}/${local.key_name}.pem"
+  content  = tls_private_key.private_key.private_key_pem
+}
 
 data "aws_ssm_parameter" "ecs_optimized_ami" {
   name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
 }
+
+data "aws_region" "region" {}

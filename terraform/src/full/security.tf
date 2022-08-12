@@ -1,66 +1,5 @@
-resource "aws_iam_role" "generator" {
-  name_prefix = "${local.prefix}Generator-"
-
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-  ]
-
-  inline_policy {
-    name   = "EFSAccess"
-    policy = jsonencode({
-      Version   = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "elasticfilesystem:ClientMount",
-            "elasticfilesystem:ClientRootAccess",
-            "elasticfilesystem:ClientWrite",
-            "elasticfilesystem:DescribeMountTargets"
-          ]
-          Resource = aws_efs_file_system.fs.arn
-        }
-      ]
-    })
-  }
-
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      {
-        Effect    = "Allow"
-        Action    = "sts:AssumeRole"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role" "batch_environment" {
-  name_prefix = "${local.prefix}GeneratorBatch-"
-
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
-  ]
-
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      {
-        Effect    = "Allow"
-        Action    = "sts:AssumeRole"
-        Principal = {
-          Service = "batch.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
 resource "aws_iam_role" "ecs_execution" {
-  name_prefix = "${local.prefix}GeneratorBatchExec-"
+  name_prefix = "${var.prefix}ApplicationExec-"
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
@@ -81,7 +20,7 @@ resource "aws_iam_role" "ecs_execution" {
 }
 
 resource "aws_iam_role" "ecs_ec2_node" {
-  name_prefix = "${local.prefix}ECSNode-"
+  name_prefix = "${var.prefix}ECSNode-"
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
@@ -102,7 +41,7 @@ resource "aws_iam_role" "ecs_ec2_node" {
 }
 
 resource "aws_iam_role" "application" {
-  name_prefix = "${local.prefix}Application-"
+  name_prefix = "${var.prefix}Application-"
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
@@ -135,7 +74,6 @@ resource "aws_iam_role" "application" {
         Action    = "sts:AssumeRole"
         Principal = {
           Service = [
-            "ec2.amazonaws.com",
             "ecs-tasks.amazonaws.com"
           ]
         }
@@ -144,90 +82,15 @@ resource "aws_iam_role" "application" {
   })
 }
 
-resource "aws_iam_role" "event_bridge_generator_invoker" {
-  name_prefix = "${local.prefix}EvtBridgeGenInvoker-"
-
-  inline_policy {
-    name   = "AllowInvokingGeneratorBatchJob"
-    policy = jsonencode({
-      Version   = "2012-10-17"
-      Statement = [
-        {
-          Effect   = "Allow"
-          Action   = "batch:SubmitJob"
-          Resource = [
-            aws_batch_job_definition.generator.arn,
-            aws_batch_job_queue.queue.arn
-          ]
-        }
-      ]
-    })
-  }
-
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      {
-        Effect    = "Allow"
-        Action    = "sts:AssumeRole"
-        Principal = {
-          Service = [
-            "events.amazonaws.com"
-          ]
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_security_group" "generator" {
-  name   = "${local.prefix}generator"
-  vpc_id = aws_vpc.vpc.id
-
-  egress {
-    from_port   = 0
-    protocol    = "-1"
-    to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "aws_security_group" "bastion" {
-  name   = "${local.prefix}Bastion"
-  vpc_id = aws_vpc.vpc.id
-
-  ingress {
-    from_port   = 22
-    protocol    = "tcp"
-    to_port     = 22
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    protocol    = "-1"
-    to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
 resource "aws_security_group" "ecs_node" {
-  name   = "${local.prefix}ECS-node"
-  vpc_id = aws_vpc.vpc.id
+  name   = "${var.prefix}ECS-node"
+  vpc_id = var.network.vpc_id
 
   ingress {
     from_port       = 22
     protocol        = "tcp"
     to_port         = 22
-    security_groups = [aws_security_group.bastion.id]
+    security_groups = [var.bastion_security_group_id]
   }
 
   ingress {
@@ -246,24 +109,24 @@ resource "aws_security_group" "ecs_node" {
 }
 
 resource "aws_security_group" "efs" {
-  name   = "${local.prefix}efs"
-  vpc_id = aws_vpc.vpc.id
+  name   = "${var.prefix}efs"
+  vpc_id = var.network.vpc_id
 
   ingress {
     from_port       = 2049
     protocol        = "tcp"
     to_port         = 2049
     security_groups = [
-      aws_security_group.generator.id,
+      module.batch.generator_security_group_id,
       aws_security_group.ecs_node.id,
-      aws_security_group.bastion.id
+      var.bastion_security_group_id
     ]
   }
 }
 
 resource "aws_security_group" "api_link" {
-  name   = "${local.prefix}api-link"
-  vpc_id = aws_vpc.vpc.id
+  name   = "${var.prefix}api-link"
+  vpc_id = var.network.vpc_id
 }
 
 resource "aws_security_group_rule" "api_link_egress_rule" {

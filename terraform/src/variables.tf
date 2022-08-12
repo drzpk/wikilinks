@@ -8,6 +8,16 @@ variable "aws_profile" {
   default = "default"
 }
 
+variable "variant" {
+  type        = string
+  description = "Infrastructure variant: full or generator-only"
+  default     = "full"
+  validation {
+    condition     = var.variant == "full" || var.variant == "generator-only"
+    error_message = "Invalid variant name."
+  }
+}
+
 variable "resource_name_prefix" {
   type        = string
   description = "Prefix prepend to resource names"

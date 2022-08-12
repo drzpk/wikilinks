@@ -7,7 +7,7 @@ resource "aws_efs_file_system" "fs" {
   }
 
   tags = {
-    Name = "${local.prefix}WikiLinks"
+    Name = "${var.prefix}WikiLinks"
   }
 }
 
@@ -28,16 +28,16 @@ resource "aws_efs_access_point" "fs_root" {
   }
 
   tags = {
-    Name = "${local.prefix}root"
+    Name = "${var.prefix}root"
   }
 }
 
 resource "aws_efs_mount_target" "public" {
   file_system_id  = aws_efs_file_system.fs.id
-  subnet_id       = aws_subnet.public.id
+  subnet_id       = var.network.subnet_id
   security_groups = [aws_security_group.efs.id]
 }
 
 resource "aws_s3_bucket" "links" {
-  bucket_prefix = "${local.prefix}links-storage-"
+  bucket_prefix = "${var.prefix}links-storage-"
 }

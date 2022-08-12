@@ -3,13 +3,13 @@ locals {
 }
 
 resource "aws_batch_compute_environment" "generator" {
-  compute_environment_name = "${local.prefix}GeneratorEnv"
+  compute_environment_name = "${var.prefix}GeneratorEnv"
 
   compute_resources {
     type = "FARGATE_SPOT"
 
     security_group_ids = [aws_security_group.generator.id]
-    subnets            = [aws_subnet.public.id]
+    subnets            = [var.network.subnet_id]
 
     max_vcpus = 2
   }
@@ -19,7 +19,7 @@ resource "aws_batch_compute_environment" "generator" {
 }
 
 resource "aws_batch_job_queue" "queue" {
-  name                 = "${local.prefix}Generator"
+  name                 = "${var.prefix}Generator"
   state                = "ENABLED"
   priority             = 1
   compute_environments = [
@@ -28,25 +28,25 @@ resource "aws_batch_job_queue" "queue" {
 }
 
 resource "aws_batch_job_definition" "generator" {
-  name                  = "${local.prefix}Generator"
+  name                  = "${var.prefix}Generator"
   type                  = "container"
   platform_capabilities = ["FARGATE"]
 
   container_properties = jsonencode({
-    command     = ["language=${var.languages}"]
-    image       = "ghcr.io/drzpk/wikilinks/generator:${var.versions.generator}"
+    command     = ["language=${var.generator_options.languages}"]
+    image       = "ghcr.io/drzpk/wikilinks/generator:${var.generator_options.version}"
     environment = [
       {
         name  = "WORKING_DIRECTORY"
-        value = "/data/dumps"
+        value = var.generator_options.working_directory
       },
       {
-        name  = "OUTPUT_LOCATION"
-        value = "file:////data/databases"
+        name  = format("OUTPUT_LOCATION%s", length(var.generator_options.output_location) == 0 ? "_DISABLED" : "")
+        value = var.generator_options.output_location
       },
       {
-        name  = "CURRENT_VERSION_LOCATION"
-        value = "file:////data/databases"
+        name  = format("CURRENT_VERSION_LOCATION%s", length(var.generator_options.current_version_location) == 0 ? "_DISABLED" : "")
+        value = var.generator_options.current_version_location
       },
       {
         name  = "BATCH_MODE"
@@ -57,26 +57,8 @@ resource "aws_batch_job_definition" "generator" {
         value = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0 -XX:ActiveProcessorCount=${local.generator_job_cpu_count}"
       }
     ]
-    volumes = [
-      {
-        name                   = "data"
-        efsVolumeConfiguration = {
-          fileSystemId        = aws_efs_file_system.fs.id
-          authorizationConfig = {
-            accessPointId = aws_efs_access_point.fs_root.id
-            iam           = "ENABLED"
-          }
-          rootDirectory     = "/"
-          transitEncryption = "ENABLED"
-        }
-      }
-    ]
-    mountPoints = [
-      {
-        sourceVolume  = "data"
-        containerPath = "/data"
-      }
-    ]
+    volumes              = local.efs_defined ? [local.efs_volume_config] : []
+    mountPoints          = local.efs_defined ? [local.efs_mount_point] : []
     networkConfiguration = {
       assignPublicIp = "ENABLED"
     }
@@ -99,6 +81,25 @@ resource "aws_batch_job_definition" "generator" {
 
   timeout {
     // 2.5h for each language
-    attempt_duration_seconds = 150 * 60 * length(split(",", var.languages))
+    attempt_duration_seconds = 150 * 60 * length(split(",", var.generator_options.languages))
+  }
+}
+
+locals {
+  efs_volume_config = {
+    name                   = "data"
+    efsVolumeConfiguration = {
+      fileSystemId        = var.efs.filesystem_id
+      authorizationConfig = {
+        accessPointId = var.efs.access_point_id
+        iam           = "ENABLED"
+      }
+      rootDirectory     = "/"
+      transitEncryption = "ENABLED"
+    }
+  }
+  efs_mount_point = {
+    sourceVolume  = "data"
+    containerPath = var.efs.container_path
   }
 }
