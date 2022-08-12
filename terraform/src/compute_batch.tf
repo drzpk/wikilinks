@@ -37,12 +37,16 @@ resource "aws_batch_job_definition" "generator" {
     image       = "ghcr.io/drzpk/wikilinks/generator:${var.versions.generator}"
     environment = [
       {
-        name  = "DATABASES_DIRECTORY"
-        value = "/data/databases"
-      },
-      {
         name  = "WORKING_DIRECTORY"
         value = "/data/dumps"
+      },
+      {
+        name  = "OUTPUT_LOCATION"
+        value = "file:////data/databases"
+      },
+      {
+        name  = "CURRENT_VERSION_LOCATION"
+        value = "file:////data/databases"
       },
       {
         name  = "BATCH_MODE"

@@ -8,6 +8,7 @@ import dev.drzepka.wikilinks.generator.model.Store
 import dev.drzepka.wikilinks.generator.pipeline.relocator.mover.FileMover
 import dev.drzepka.wikilinks.generator.pipeline.relocator.mover.LocalFilesystemMover
 import dev.drzepka.wikilinks.generator.pipeline.relocator.mover.S3Mover
+import dev.drzepka.wikilinks.generator.utils.getFilePath
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
 import java.io.BufferedOutputStream
 import java.io.File
@@ -51,13 +52,9 @@ class OutputRelocator(private val workingDirectory: File, private val outputUri:
         val uri = URI.create(rawUri)
         return when (uri.scheme) {
             "file" -> {
-                if (!uri.host.isNullOrBlank() || uri.path.isNullOrBlank())
-                    throw IllegalArgumentException("URI with the file scheme should start with 3 or more forward slashes")
-
-                // Remove leading slash from the path
-                val path = uri.path.substring(1)
-                println("Output file will be saved in the local filesystem: $path")
-                LocalFilesystemMover(File(path))
+                val file = uri.getFilePath()
+                println("Output file will be saved in the local filesystem: $file")
+                LocalFilesystemMover(file)
             }
             "s3" -> {
                 val bucket = uri.host

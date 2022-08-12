@@ -21,6 +21,7 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalTime::class)
 class DumpUpdaterService(scope: CoroutineScope, private val databaseRegistry: DatabaseRegistry) {
     private val log = KotlinLogging.logger {}
+    private val databaseResolver = DatabaseResolver(CommonConfiguration.databasesDirectory)
 
     init {
         scope.launch {
@@ -32,7 +33,7 @@ class DumpUpdaterService(scope: CoroutineScope, private val databaseRegistry: Da
 
     private suspend fun checkForDatabaseUpdate() {
         delay(1.minutes)
-        val files = DatabaseResolver.resolveDatabaseFiles()
+        val files = databaseResolver.resolveDatabaseFiles()
         if (files.isEmpty())
             return
 
@@ -90,7 +91,7 @@ class DumpUpdaterService(scope: CoroutineScope, private val databaseRegistry: Da
         sortedByDescending { it.version }.firstOrNull()
 
     private suspend fun deleteDatabases(files: Collection<DatabaseFile>) {
-        val databasesDir = MultiplatformDirectory(CommonConfiguration.databasesDirectory!!)
+        val databasesDir = MultiplatformDirectory(CommonConfiguration.databasesDirectory)
         val filesToDelete = files.map { it.fileName }
 
         databasesDir.listFiles()

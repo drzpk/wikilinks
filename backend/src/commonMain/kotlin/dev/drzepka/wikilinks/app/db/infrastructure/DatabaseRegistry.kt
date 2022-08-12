@@ -18,6 +18,7 @@ import kotlin.time.ExperimentalTime
 class DatabaseRegistry {
     private val log = KotlinLogging.logger {}
     private val provider = DatabaseProvider()
+    private val databaseResolver = DatabaseResolver(CommonConfiguration.databasesDirectory)
 
     private val canReadFromLanguageGroups = atomic(true)
     private val languageGroups = mutableMapOf<DumpLanguage, DatabaseGroup>()
@@ -120,7 +121,7 @@ class DatabaseRegistry {
     }
 
     private fun loadLanguageSpecificDatabase(language: DumpLanguage) {
-        val linksFile = DatabaseResolver.resolveNewestDatabaseFile(DatabaseType.LINKS, language)
+        val linksFile = databaseResolver.resolveNewestDatabaseFile(DatabaseType.LINKS, language)
         if (linksFile == null) {
             log.debug { "No Links database available for lang=$language" }
             return

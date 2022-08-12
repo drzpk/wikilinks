@@ -2,12 +2,14 @@ package dev.drzepka.wikilinks.generator
 
 import dev.drzepka.wikilinks.common.BuildConfig
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+import dev.drzepka.wikilinks.generator.version.UpdateChecker
 import java.io.File
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 
 
 private val workingDirectory = File(Configuration.workingDirectory)
+private val updateChecker = UpdateChecker(workingDirectory)
 
 fun main(args: Array<String>) {
     if (!workingDirectory.isDirectory)
@@ -31,14 +33,16 @@ fun main(args: Array<String>) {
 
     val versionUpdates = getVersions(args, languages)
     if (versionUpdates.isEmpty()) {
-        println("No new versions were found")
+        println("Nothing to update")
         return
     }
 
     setGeneratorActive(true)
     for (versionUpdate in versionUpdates) {
         val status = startGenerator(versionUpdate.key, versionUpdate.value)
-        if (!status)
+        if (status)
+            updateChecker.setVersion(versionUpdate.key, versionUpdate.value)
+        else
             exitProcess(1)
     }
 }
@@ -71,8 +75,7 @@ private fun getVersions(args: Array<String>, languages: List<DumpLanguage>): Map
         println("Exact version was specified in program arguments: $versionArg")
         languages.associateWith { versionArg }
     } else {
-        TODO("Update mechanism must be updated after the introduction of OutputRelocator")
-        // UpdateChecker().getNewVersions(languages)
+        updateChecker.getNewVersions(languages)
     }
 }
 
