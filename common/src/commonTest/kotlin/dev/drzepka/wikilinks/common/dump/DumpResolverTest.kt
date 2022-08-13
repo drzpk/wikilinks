@@ -18,10 +18,11 @@ internal class DumpResolverTest {
     @Test
     @JsName("test1")
     fun `should find last dump`() {
+        val ds = "$dumpSource/enwiki"
         val mockEngine = MockEngine {
             val url = it.url.toString()
             when {
-                url == dumpSource -> respondOk(DUMP_LISTING_CONTENT)
+                url == ds -> respondOk(DUMP_LISTING_CONTENT)
                 it.method == HttpMethod.Head && url.endsWith("20220620-page.sql.gz") -> respondWithLength(123)
                 it.method == HttpMethod.Head && url.endsWith("20220620-pagelinks.sql.gz") -> respondWithLength(456)
                 else -> respond("", HttpStatusCode.NotFound)
@@ -34,17 +35,18 @@ internal class DumpResolverTest {
 
         assertEquals("20220620", dumps.version)
         assertEquals(2, archives.size)
-        assertTrue(archives.contains(ArchiveDump("$dumpSource/20220620/enwiki-20220620-page.sql.gz", 123, false)))
-        assertTrue(archives.contains(ArchiveDump("$dumpSource/20220620/enwiki-20220620-pagelinks.sql.gz", 456, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-page.sql.gz", 123, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220620/enwiki-20220620-pagelinks.sql.gz", 456, false)))
     }
 
     @Test
     @JsName("test2")
     fun `should fall back to previous dump if the last one is missing required files`() {
+        val ds = "$dumpSource/enwiki"
         val mockEngine = MockEngine {
             val url = it.url.toString()
             when {
-                url == dumpSource -> respondOk(DUMP_LISTING_CONTENT)
+                url == ds -> respondOk(DUMP_LISTING_CONTENT)
                 it.method == HttpMethod.Head && url.endsWith("20220620-page.sql.gz") -> respondWithLength(1)
                 it.method == HttpMethod.Head && url.endsWith("20220601-page.sql.gz") -> respondWithLength(2)
                 it.method == HttpMethod.Head && url.endsWith("20220601-pagelinks.sql.gz") -> respondWithLength(3)
@@ -58,17 +60,18 @@ internal class DumpResolverTest {
 
         assertEquals("20220601", dumps.version)
         assertEquals(2, archives.size)
-        assertTrue(archives.contains(ArchiveDump("$dumpSource/20220601/enwiki-20220601-page.sql.gz", 2, false)))
-        assertTrue(archives.contains(ArchiveDump("$dumpSource/20220601/enwiki-20220601-pagelinks.sql.gz", 3, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-page.sql.gz", 2, false)))
+        assertTrue(archives.contains(ArchiveDump("$ds/20220601/enwiki-20220601-pagelinks.sql.gz", 3, false)))
     }
 
     @Test
     @JsName("test3")
     fun `should append source query string at then end of url`() {
+        val ds = "$dumpSource/enwiki"
         val mockEngine = MockEngine {
             val url = it.url.toString()
             when {
-                url == dumpSource -> respondOk(DUMP_LISTING_CONTENT)
+                url == ds -> respondOk(DUMP_LISTING_CONTENT)
                 it.method == HttpMethod.Head && url.endsWith("test.sql.gz?query=1&string=2") -> respondWithLength(1)
                 else -> respond("", HttpStatusCode.NotFound)
             }
@@ -78,7 +81,7 @@ internal class DumpResolverTest {
         val dump = testRunBlocking { resolver.resolveLatestDumps(DumpLanguage.EN) }
         val archives = dump.dumps
 
-        val archiveDump = ArchiveDump("$dumpSource/20220620/enwiki-20220620-test.sql.gz?query=1&string=2", 1, false)
+        val archiveDump = ArchiveDump("$ds/20220620/enwiki-20220620-test.sql.gz?query=1&string=2", 1, false)
 
         assertEquals(1, archives.size)
         assertTrue(archives.contains(archiveDump))
