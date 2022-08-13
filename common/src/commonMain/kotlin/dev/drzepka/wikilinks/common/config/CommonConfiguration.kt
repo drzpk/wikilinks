@@ -6,6 +6,7 @@ import kotlin.time.Duration.Companion.seconds
 object CommonConfiguration : BaseConfiguration() {
     val databasesDirectory by lazy { getString("DATABASES_DIRECTORY", required = true)!! }
     val frontendResourcesDirectory by lazy { getString("FRONTEND_RESOURCES_DIRECTORY", required = true)!! }
+    val dumpSourcePrefixUrl by lazy { getString("DUMP_SOURCE_PREFIX_URL", default = "https://dumps.wikimedia.org")!! }
 
     /**
      * Maximum amount of time to wait before closing database connection after detecting new Links database version.
