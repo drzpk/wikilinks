@@ -46,7 +46,7 @@ fun generate(language: DumpLanguage, version: String) {
     flow.step(ClearLookups)
     flow.segment(LinksFileSorter(File(workingDirectory, LinksFileWriter.LINKS_FILE_NAME)))
     flow.step(PopulateLinksTableStep)
-    flow.segment(OutputRelocator(workingDirectory, URI.create(Configuration.outputLocation)))
+    flow.segment(OutputRelocator(workingDirectory, URI.create(Configuration.outputLocation), version))
     flow.step(DeleteTemporaryDataStep)
 
     flow.start()

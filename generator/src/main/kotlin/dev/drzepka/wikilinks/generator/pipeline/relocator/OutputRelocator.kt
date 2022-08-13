@@ -1,6 +1,5 @@
 package dev.drzepka.wikilinks.generator.pipeline.relocator
 
-import dev.drzepka.wikilinks.generator.Configuration
 import dev.drzepka.wikilinks.generator.flow.FlowRuntime
 import dev.drzepka.wikilinks.generator.flow.FlowSegment
 import dev.drzepka.wikilinks.generator.flow.ProgressLogger
@@ -10,22 +9,37 @@ import dev.drzepka.wikilinks.generator.pipeline.relocator.mover.LocalFilesystemM
 import dev.drzepka.wikilinks.generator.pipeline.relocator.mover.S3Mover
 import dev.drzepka.wikilinks.generator.utils.getFilePath
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
+import org.apache.http.client.utils.URIBuilder
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.URI
 
-class OutputRelocator(private val workingDirectory: File, private val outputUri: URI) : FlowSegment<Store> {
-    override val numberOfSteps = (if (shouldCompress()) 1 else 0) + 1
+class OutputRelocator(private val workingDirectory: File, outputUri: URI, version: String) :
+    FlowSegment<Store> {
+    override val numberOfSteps = (if (shouldCompress(outputUri)) 1 else 0) + 1
 
-    private val mover = createMover(Configuration.outputLocation)
+    private val outputUri: URI
+    private val mover: FileMover
+
+    init {
+        this.outputUri = if (shouldIncludeVersionInPath(outputUri)) {
+            val builder = URIBuilder(outputUri)
+            val pathSegments = builder.pathSegments.toMutableList()
+            pathSegments.add(version)
+            builder.pathSegments = pathSegments
+            builder.build()
+        } else outputUri
+
+        mover = createMover(this.outputUri)
+    }
 
     override fun run(store: Store, runtime: FlowRuntime) {
         val databaseFile = File(workingDirectory, store.linksDatabaseFile.fileName)
         var fileToMove = databaseFile
 
-        if (shouldCompress()) {
+        if (shouldCompress(outputUri)) {
             runtime.startNextStep("Compressing the output file")
             val key = "CompressionStep"
             if (store[key] == null) {
@@ -48,29 +62,29 @@ class OutputRelocator(private val workingDirectory: File, private val outputUri:
         }
     }
 
-    private fun createMover(rawUri: String): FileMover {
-        val uri = URI.create(rawUri)
-        return when (uri.scheme) {
+    private fun createMover(outputUri: URI): FileMover {
+        return when (outputUri.scheme) {
             "file" -> {
-                val file = uri.getFilePath()
+                val file = outputUri.getFilePath()
                 println("Output file will be saved in the local filesystem: $file")
                 LocalFilesystemMover(file)
             }
             "s3" -> {
-                val bucket = uri.host
-                val directoryKey = uri.path
+                val bucket = outputUri.host
+                val directoryKey = outputUri.path
                 println("Output file fill be saved in the S3 bucket $bucket under key $directoryKey")
                 S3Mover(bucket, directoryKey)
             }
-            else -> throw IllegalArgumentException("Unsupported output uri scheme: ${uri.scheme}")
+            else -> throw IllegalArgumentException("Unsupported output uri scheme: ${outputUri.scheme}")
         }
     }
 
-    private fun shouldCompress(): Boolean = containsQueryParam("compress")
+    private fun shouldCompress(uri: URI): Boolean = uri.containsQueryParam("compress")
 
-    @Suppress("SameParameterValue")
-    private fun containsQueryParam(name: String): Boolean {
-        val query = outputUri.query ?: ""
+    private fun shouldIncludeVersionInPath(uri: URI): Boolean = uri.containsQueryParam("include-version-in-path")
+
+    private fun URI.containsQueryParam(name: String): Boolean {
+        val query = this.query ?: ""
         return query.startsWith("$name=") || query.contains("&$name=")
     }
 
