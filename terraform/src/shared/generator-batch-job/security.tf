@@ -5,27 +5,9 @@ resource "aws_iam_role" "generator" {
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
   ]
 
-  dynamic "inline_policy" {
-    for_each = local.efs_defined ? toset([1]) : toset([])
-    content {
-      name   = "EFSAccess"
-      policy = jsonencode({
-        Version   = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow"
-            Action = [
-              "elasticfilesystem:ClientMount",
-              "elasticfilesystem:ClientRootAccess",
-              "elasticfilesystem:ClientWrite",
-              "elasticfilesystem:DescribeMountTargets"
-            ]
-            Resource = var.efs.filesystem_arn
-          }
-        ]
-      })
-    }
-  }
+  // Inline policies can't be used in conjunction with aws_iam_role_policy (may be created outside this module).
+  // See the note on this page for more information:
+  // https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy
 
   assume_role_policy = jsonencode({
     Version   = "2012-10-17"

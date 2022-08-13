@@ -43,7 +43,6 @@ module "batch" {
   network = var.network
   efs     = {
     filesystem_id   = aws_efs_file_system.fs.id,
-    filesystem_arn  = aws_efs_file_system.fs.arn,
     access_point_id = aws_efs_access_point.fs_root.id,
     container_path  = "/data"
   }
@@ -54,4 +53,8 @@ module "batch" {
     output_location          = "file:////data/databases"
     current_version_location = "file:////data/databases"
   }
+}
+
+output "efs_arn" {
+  value = aws_efs_file_system.fs.arn
 }

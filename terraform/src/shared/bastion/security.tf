@@ -27,6 +27,26 @@ resource "aws_iam_role" "bastion" {
     }
   }
 
+  dynamic "inline_policy" {
+    for_each = length(var.s3bucket_arn) > 0 ? toset([1]) : toset([])
+    content {
+      name   = "S3Access"
+      policy = jsonencode({
+        Version   = "2012-10-17"
+        Statement = [
+          {
+            Effect   = "Allow"
+            Action   = "s3:*"
+            Resource = [
+              var.s3bucket_arn,
+              "${var.s3bucket_arn}/*"
+            ]
+          }
+        ]
+      })
+    }
+  }
+
   assume_role_policy = jsonencode({
     Version   = "2012-10-17"
     Statement = [

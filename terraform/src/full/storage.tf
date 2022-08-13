@@ -37,7 +37,3 @@ resource "aws_efs_mount_target" "public" {
   subnet_id       = var.network.subnet_id
   security_groups = [aws_security_group.efs.id]
 }
-
-resource "aws_s3_bucket" "links" {
-  bucket_prefix = "${var.prefix}links-storage-"
-}

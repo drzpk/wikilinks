@@ -18,6 +18,11 @@ variable "efs_arn" {
   default = ""
 }
 
+variable "s3bucket_arn" {
+  type = string
+  default = ""
+}
+
 output "security_group_id" {
   value = aws_security_group.bastion.id
 }

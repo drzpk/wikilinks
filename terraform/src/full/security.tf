@@ -82,6 +82,26 @@ resource "aws_iam_role" "application" {
   })
 }
 
+resource "aws_iam_role_policy" "generator_efs_policy" {
+  name   = "EFSAccess"
+  role   = module.batch.generator_role_id
+  policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientRootAccess",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:DescribeMountTargets"
+        ]
+        Resource = aws_efs_file_system.fs.arn
+      }
+    ]
+  })
+}
+
 resource "aws_security_group" "ecs_node" {
   name   = "${var.prefix}ECS-node"
   vpc_id = var.network.vpc_id
@@ -136,9 +156,4 @@ resource "aws_security_group_rule" "api_link_egress_rule" {
   protocol                 = "-1"
   to_port                  = 0
   source_security_group_id = aws_security_group.ecs_node.id
-}
-
-resource "aws_s3_bucket_acl" "links_bucket_acl" {
-  bucket = aws_s3_bucket.links.id
-  acl    = "private"
 }
