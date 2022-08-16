@@ -3,6 +3,111 @@
 Generator's job is to download and convert Wikipedia MySQL dump files to a format that is more suitable for
 searching connections between articles.
 
+The generator module downloads Wikipedia dumps for given languages, processes them, and generates search indexes.
+When launched, it compares the most recent Wikipedia dump available for given language with the current versions
+and exits if update is not needed. Generator should be launched periodically. Wikipedia releases new dumps
+on 1st and 20th day of each month, but some files may take a longer time to become available,
+so it's better to run generator the next day (`0 0 2,21 * *`).
+
+## Usage
+
+Generator requires minimum **6GiB of heap memory**. This is because at some point it needs to store
+all pageId-pageTitle mappings in memory. This requirement is for the english version of Wikipedia, which
+is [the largest](https://en.wikipedia.org/wiki/List_of_Wikipedias#Details_table). Other languages require proportionally
+less memory.
+
+### Environment variables
+
+* `OUTPUT_LOCATION` - **required** - target location of generated indexes, see below for more details.
+* `WORKING_DIRECTORY` - **required** - directory where downloaded Wikipedia dumps and temporary files are stored.
+* `JAVA_TOOL_OPTIONS` - **recommended** - should set max heap size (e.g. `-Xmx6G`) that generator will use.
+* `CURRENT_VERSION_LOCATION` - *optional* - Location of the current index versions, see below for more details.
+* `SKIP_DELETING_DUMPS` - *optional* - if set, downloaded Wikipedia dumps will be retained after processing is done (
+  they are deleted by default).
+* `BATCH_MODE` - *optional* - disables interactive mode (progress updates are printed periodically, each in new line).
+  Recommended to use when collecting generator output logs.
+
+#### Output location
+
+The `OUTPUT_LOCATION` environment variable tells the generator where to put generated indexes.
+It uses URI format. Files by default are put under the path `$OUTPUT_LOCATION/index-file.db` (for
+example: `$OUTPUT_LOCATION/links-en-20220801.db.gz`). The path can be changed by using the `include-version-in-path`
+parameter (more information below).
+
+The following schemes are supported:
+
+* **file** - moves output files to a directory in a local filesystem.
+  Examples:
+  ```
+  file:///relative/directory/path
+  file:////absolute/directory/path
+  file:////absolute/directory/path?compress=true
+  ```
+  Note the difference between relative and absolute paths - the latter uses one additional forward slash before path.
+* **s3** - moves output files to an Amazon S3 bucket.
+  Example:
+  ```
+  s3://bucket-name/object/key/prefix?compress=true?include-version-in-path=true
+  ```
+  Follow [this](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) guide to find out how to
+  configure AWS credentials.
+
+Additional parameters (URI query params):
+
+* `compress=true` - tells the generator to compress files before moving them to their destination.
+* `include-version-in-path=true` - adds version directory to the path (Example: after enabling this option the
+  path `s3://bucket-name/dumps/links.db` will change to `s3://bucket-name/dumps/20220801/links.db`).
+
+#### Current version location
+
+The `CURRENT_VERSION_LOCATION` environment variable contains the location from which information about currently
+used index versions can be obtained. This ensures that Wikipedia dumps are only downloaded when actually needed,
+no matter how often generator is launched.
+
+If the environment variable is not set, generator relies on the `version-manifest.properties`
+file in the working directory, which stores most recent version information.
+
+The following URI schemes are supported:
+
+* **file** - should point to the same directory that is being used by the application module as database source (
+  the `DATABASES_DIRECTORY` environment variable).
+  Examples (the same rules apply as in the `file` schema in the `OUTPUT_LOCATION` environment variable):
+  ```
+  file:///relative/directory/path
+  file:////absolute/directory/path
+  ```
+  If the generator and application modules run on the same filesystem, the `OUTPUT_LOCATION`
+  and `CURRENT_VERSION_LOCATION` environment variables should be set to the same value.
+
+### Program arguments
+
+* `language` (**required**) - a comma-separated list of [ISO 639-1](https://en.wikipedia.org/wiki/ISO_639-1) language
+  codes for which to generate search indexes. Supported languages are
+  listed [here](../common/src/commonMain/kotlin/dev/drzepka/wikilinks/common/model/dump/DumpLanguage.kt).
+* `version` (*optional*) - use specific version of Wikipedia dump. If not provided, the most recent version
+  available will be used.
+
+### Docker example
+
+```shell
+#!/bin/sh
+docker run \
+  --rm \
+  -it \
+  --name wikilinks-generator \
+  -p 8080:8080 \
+  -v "$(pwd)/databases:/databases" \
+  -v "$(pwd)/dumps:/dumps" \
+  -e OUTPUT_LOCATION=file:////databases \
+  -e CURRENT_VERSION_LOCATION=file:////databases \
+  -e WORKING_DIRECTORY=/dumps \
+  ghcr.io/drzpk/wikilinks/generator:latest \
+  language=pl,en
+```
+
+**Note**: don't forget to define the `SKIP_DELETING_DUMPS` environment variable if you wish to retain Wikipedia dumps
+downloaded by Generator. Otherwise, they will be deleted upon successful completion.
+
 ## Workflow
 
 The size of a Wikipedia dump is so large, that would require a significant amount of memory to be processable in a
@@ -31,7 +136,8 @@ their names: *page*, *pagelinks*, and *redirect* (each suffix denotes a table na
 Wikipedia [database schema](https://www.mediawiki.org/w/index.php?title=Manual:Database_layout/diagram&action=render).
 Example of such file: *enwiki-20220720-pagelinks.sql.gz*.
 
-If current dump version (set by the database swap step) is the same as the resolved version, generator is stopped.
+Then, the most recent version is compared against the version currently being used - the details are available in the
+*current version location* section above.
 
 #### 2. Dump files download
 
@@ -45,7 +151,7 @@ Database file and all tables are created.
 
 #### 4. Page table population
 
-File *<language>wiki-<version>-page.sql.gz* is read and data is extracted. From
+File `<language>wiki-<version>-page.sql.gz` is read and data is extracted. From
 the [page table](https://www.mediawiki.org/wiki/Manual:Page_table), the `page_id` and `page_title` columns are
 extracted, but only if `page_namespace == 0`. All articles are assigned
 to [namespace](https://en.wikipedia.org/wiki/Wikipedia:Namespace) 0.
@@ -55,7 +161,7 @@ lookup `page_id -> page_title` is kept in memory for use in the next steps. All 
 
 #### 5. Page redirect resolution
 
-File *<language>wiki-<version>-redirect.sql.gz* is read and data is extracted. From
+File `<language>wiki-<version>-redirect.sql.gz` is read and data is extracted. From
 the [redirect table](https://www.mediawiki.org/wiki/Manual:Redirect_table), the `rd_from` and `rd_title` columns are
 extracted, but only if `rd_namepace == 0`.
 
@@ -66,7 +172,7 @@ memory: `source_page_id -> target_page_id`.
 
 #### 6. Links extraction
 
-File *<language>wiki-<version>-pagelinks.sql.gz* is read and data is extracted.
+File `<language>wiki-<version>-pagelinks.sql.gz` is read and data is extracted.
 The [pagelinks table](https://www.mediawiki.org/wiki/Manual:Pagelinks_table) contains all internal Wikipedia links, but
 the storage format is not optimal for fast searching, because each link is a separate table row. The format used by this
 project will be revealed in one of the next steps.
@@ -142,10 +248,13 @@ found in the [LinksPipelineManager](src/main/kotlin/dev/drzepka/wikilinks/genera
 This was the last step involved in building the resulting database. The database file is named using the following
 format: `links-<language>-<version>.db`.
 
-#### 9. Database replacement
+#### 9. Database file moving
 
-The next step is to move the generated database into the `$DATABASES_DIRECTORY`. The application module periodically
-scans this directory and if new or updated database is detected, it is replaced.
+The next step is to move the generated database into the chosen directory. Generator has the ability to move
+files into different locations, as described in detail in the usage section.
+
+When the output directory is the same as `DATABASE_DIRECTORY` in the application module and compression is disabled,
+the file will be automatically picked up by the application module.
 
 #### 10. Temporary files deletion
 
