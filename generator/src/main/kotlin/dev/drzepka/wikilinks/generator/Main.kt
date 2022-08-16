@@ -46,6 +46,10 @@ fun main(args: Array<String>) {
         else
             exitProcess(1)
     }
+
+    // Something is keeping the JVM alive when running on AWS Batch,
+    // I can't reproduce this locally.
+    exitProcess(0)
 }
 
 private fun getLanguages(args: Array<String>): List<DumpLanguage> {
