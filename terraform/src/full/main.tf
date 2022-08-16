@@ -36,25 +36,14 @@ variable "bastion_security_group_id" {
   type = string
 }
 
-module "batch" {
-  source = "../shared/generator-batch-job"
-
-  prefix  = var.prefix
-  network = var.network
-  efs     = {
-    filesystem_id   = aws_efs_file_system.fs.id,
-    access_point_id = aws_efs_access_point.fs_root.id,
-    container_path  = "/data"
-  }
-  generator_options = {
-    version                  = var.versions.generator,
-    languages                = var.languages,
-    working_directory        = "/data/dumps",
-    output_location          = "file:////data/databases"
-    current_version_location = "file:////data/databases"
-  }
+variable "efs" {
+  type = object({
+    filesystem_id = string,
+    access_point_id = string,
+    policy_arn = string
+  })
 }
 
-output "efs_arn" {
-  value = aws_efs_file_system.fs.arn
+output "ecs_node_security_group_id" {
+  value = aws_security_group.ecs_node.id
 }

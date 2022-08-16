@@ -163,10 +163,10 @@ resource "aws_ecs_task_definition" "application" {
     name = "data"
 
     efs_volume_configuration {
-      file_system_id     = aws_efs_file_system.fs.id
+      file_system_id     = var.efs.filesystem_id
       transit_encryption = "ENABLED"
       authorization_config {
-        access_point_id = aws_efs_access_point.fs_root.id
+        access_point_id = var.efs.access_point_id
         iam             = "ENABLED"
       }
     }

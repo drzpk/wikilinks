@@ -38,7 +38,7 @@ resource "aws_batch_job_definition" "generator" {
     environment = [
       {
         name  = "WORKING_DIRECTORY"
-        value = var.generator_options.working_directory
+        value = "/data/dumps"
       },
       {
         name  = format("OUTPUT_LOCATION%s", length(var.generator_options.output_location) == 0 ? "_DISABLED" : "")
@@ -57,8 +57,26 @@ resource "aws_batch_job_definition" "generator" {
         value = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0 -XX:ActiveProcessorCount=${local.generator_job_cpu_count}"
       }
     ]
-    volumes              = local.efs_defined ? [local.efs_volume_config] : []
-    mountPoints          = local.efs_defined ? [local.efs_mount_point] : []
+    volumes = [
+      {
+        name                   = "data"
+        efsVolumeConfiguration = {
+          fileSystemId        = var.efs.filesystem_id
+          authorizationConfig = {
+            accessPointId = var.efs.access_point_id
+            iam           = "ENABLED"
+          }
+          rootDirectory     = "/"
+          transitEncryption = "ENABLED"
+        }
+      }
+    ]
+    mountPoints = [
+      {
+        sourceVolume  = "data"
+        containerPath = "/data"
+      }
+    ]
     networkConfiguration = {
       assignPublicIp = "ENABLED"
     }
@@ -82,24 +100,5 @@ resource "aws_batch_job_definition" "generator" {
   timeout {
     // 2.5h for each language
     attempt_duration_seconds = 150 * 60 * length(split(",", var.generator_options.languages))
-  }
-}
-
-locals {
-  efs_volume_config = {
-    name                   = "data"
-    efsVolumeConfiguration = {
-      fileSystemId        = var.efs.filesystem_id
-      authorizationConfig = {
-        accessPointId = var.efs.access_point_id
-        iam           = "ENABLED"
-      }
-      rootDirectory     = "/"
-      transitEncryption = "ENABLED"
-    }
-  }
-  efs_mount_point = {
-    sourceVolume  = "data"
-    containerPath = var.efs.container_path
   }
 }

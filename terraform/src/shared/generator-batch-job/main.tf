@@ -13,7 +13,6 @@ variable "generator_options" {
   type = object({
     version                  = string,
     languages                = string,
-    working_directory        = string,
     output_location          = string,
     current_version_location = string
   })
@@ -22,18 +21,8 @@ variable "generator_options" {
 variable "efs" {
   type = object({
     filesystem_id   = string,
-    access_point_id = string,
-    container_path  = string
+    access_point_id = string
   })
-  default = {
-    filesystem_id   = "",
-    access_point_id = "",
-    container_path  = ""
-  }
-}
-
-locals {
-  efs_defined = length(var.efs.filesystem_id) > 0 && length(var.efs.access_point_id) > 0
 }
 
 output "generator_role_id" {

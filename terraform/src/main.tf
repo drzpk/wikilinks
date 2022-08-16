@@ -23,40 +23,39 @@ module "full" {
     vpc_id    = aws_vpc.vpc.id
     subnet_id = aws_subnet.public.id
   }
+  efs = {
+    filesystem_id   = aws_efs_file_system.fs.id,
+    access_point_id = aws_efs_access_point.fs_root.id,
+    policy_arn      = aws_iam_policy.efs_access.arn
+  }
   languages                 = var.languages
   versions                  = var.versions
   dev_tools                 = var.dev_tools
   project_name              = local.project_name
   owner                     = var.owner
-  bastion_security_group_id = module.bastion.security_group_id
+  bastion_security_group_id = aws_security_group.bastion.id
 }
 
-module "generator_only" {
-  count  = var.variant == "generator-only" ? 1 : 0
-  source = "./generator-only"
+module "batch" {
+  source = "./shared/generator-batch-job"
 
   prefix  = local.prefix
   network = {
     vpc_id    = aws_vpc.vpc.id
     subnet_id = aws_subnet.public.id
   }
-  languages         = var.languages
-  generator_version = var.versions.generator
-}
-
-module "bastion" {
-  source = "./shared/bastion"
-
-  prefix  = local.prefix
-  network = {
-    vpc_id    = aws_vpc.vpc.id
-    subnet_id = aws_subnet.public.id
+  efs = {
+    filesystem_id   = aws_efs_file_system.fs.id,
+    access_point_id = aws_efs_access_point.fs_root.id,
   }
-  efs_arn         = length(module.full) == 1 ? module.full[0].efs_arn : ""
-  s3bucket_arn    = length(module.generator_only) == 1 ? module.generator_only[0].s3bucket_arn : ""
-  create_instance = var.dev_tools
+  generator_options = {
+    version                  = var.versions.generator,
+    languages                = var.languages,
+    output_location          = length(module.full) == 1 ? "file:////data/databases" : "s3://${aws_s3_bucket.links.bucket}/indexes?compress=true&include-version-in-path=true"
+    current_version_location = length(module.full) == 1 ? "file:////data/databases" : ""
+  }
 }
 
 output "bastion_instance_ip" {
-  value = module.bastion.instance_ip
+  value = length(aws_instance.bastion) == 1 ? aws_instance.bastion[0].public_ip : "<not available>"
 }

@@ -1,25 +1,25 @@
 locals {
-  key_name = "${var.prefix}bastion-key"
+  key_name = "${local.prefix}bastion-key"
 }
 
 resource "aws_instance" "bastion" {
-  count = var.create_instance ? 1 : 0
+  count = var.dev_tools ? 1 : 0
 
   instance_type               = "t3.micro"
   ami                         = data.aws_ami.amazon_linux.id
-  subnet_id                   = var.network.subnet_id
+  subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.bastion.id]
   iam_instance_profile        = aws_iam_instance_profile.bastion.name
   associate_public_ip_address = true
   key_name                    = local.key_name
 
   tags = {
-    Name = "${var.prefix}Bastion"
+    Name = "${local.prefix}Bastion"
   }
 }
 
 resource "aws_iam_instance_profile" "bastion" {
-  name = "${var.prefix}Bastion"
+  name = "${local.prefix}Bastion"
   role = aws_iam_role.bastion.name
 }
 

@@ -44,27 +44,9 @@ resource "aws_iam_role" "application" {
   name_prefix = "${var.prefix}Application-"
 
   managed_policy_arns = [
-    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+    "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+    var.efs.policy_arn
   ]
-
-  inline_policy {
-    name   = "EFSAccess"
-    policy = jsonencode({
-      Version   = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "elasticfilesystem:ClientMount",
-            "elasticfilesystem:ClientRootAccess",
-            "elasticfilesystem:ClientWrite",
-            "elasticfilesystem:DescribeMountTargets"
-          ]
-          Resource = aws_efs_file_system.fs.arn
-        }
-      ]
-    })
-  }
 
   assume_role_policy = jsonencode({
     Version   = "2012-10-17"
@@ -77,26 +59,6 @@ resource "aws_iam_role" "application" {
             "ecs-tasks.amazonaws.com"
           ]
         }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy" "generator_efs_policy" {
-  name   = "EFSAccess"
-  role   = module.batch.generator_role_id
-  policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticfilesystem:ClientMount",
-          "elasticfilesystem:ClientRootAccess",
-          "elasticfilesystem:ClientWrite",
-          "elasticfilesystem:DescribeMountTargets"
-        ]
-        Resource = aws_efs_file_system.fs.arn
       }
     ]
   })
@@ -125,22 +87,6 @@ resource "aws_security_group" "ecs_node" {
     protocol    = "-1"
     to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_security_group" "efs" {
-  name   = "${var.prefix}efs"
-  vpc_id = var.network.vpc_id
-
-  ingress {
-    from_port       = 2049
-    protocol        = "tcp"
-    to_port         = 2049
-    security_groups = [
-      module.batch.generator_security_group_id,
-      aws_security_group.ecs_node.id,
-      var.bastion_security_group_id
-    ]
   }
 }
 
