@@ -31,6 +31,8 @@ class SearchComponent(state: State) : Div(className = "search-component") {
             add(this@SearchComponent.targetInput)
         }
 
+        add(PageError(state.error))
+
         hPanel(justify = JustifyContent.CENTER) {
             add(searchButton)
         }

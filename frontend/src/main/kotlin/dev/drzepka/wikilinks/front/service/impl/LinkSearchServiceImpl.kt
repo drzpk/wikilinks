@@ -3,6 +3,7 @@ package dev.drzepka.wikilinks.front.service.impl
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
+import dev.drzepka.wikilinks.front.model.decodeErrorResponse
 import dev.drzepka.wikilinks.front.service.LinkSearchService
 import dev.drzepka.wikilinks.front.util.http
 import io.ktor.client.call.*
@@ -43,6 +44,10 @@ class LinkSearchServiceImpl : LinkSearchService, CoroutineScope {
             contentType(ContentType.Application.Json)
             setBody(request)
         }
-        return response.body()
+
+        return if (response.status.isSuccess())
+            response.body()
+        else
+            decodeErrorResponse(response)
     }
 }

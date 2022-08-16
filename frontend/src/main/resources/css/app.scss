@@ -94,7 +94,7 @@ header {
     align-items: center;
     justify-content: center;
     margin-top: 1em;
-    margin-bottom: 4em;
+    margin-bottom: 2em;
 
     @media (max-width: 992px) {
       flex-direction: column;
@@ -142,6 +142,7 @@ header {
   }
 
   button {
+    margin-top: 2em;
     font-size: x-large;
     font-weight: bold;
     padding: 0.7em 2.5em;
@@ -210,6 +211,30 @@ header {
         border: 1px solid $inner-border-color;
         border-radius: 0.5em;
       }
+    }
+  }
+}
+
+.errors {
+  width: 50%;
+  margin: auto;
+  text-align: center;
+
+  .error {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    font-size: 1.1em;
+    //noinspection SassScssUnresolvedVariable
+    background: $red-200;
+    padding: 0.3em;
+
+    //noinspection SassScssUnresolvedVariable
+    border: 1px solid $red-600;
+
+    i {
+      font-size: 1.2em;
+      margin-right: 0.5em;
     }
   }
 }

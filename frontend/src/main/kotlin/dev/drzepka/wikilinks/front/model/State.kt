@@ -25,6 +25,7 @@ class State(
     val canSearch = ObservableValue(false)
     val searchInProgress = ObservableValue(false)
     val searchResult = ObservableValue<LinkSearchResult?>(null)
+    val error = ObservableValue<ErrorInfo?>(null)
 
     init {
         setupLanguages()
@@ -84,6 +85,7 @@ class State(
             historyState.putSearchQuery(SearchQuery(source.second, target.second, selectedLanguage.value!!))
 
         searchInProgress.setState(true)
+        error.setState(null)
         sourceInput.onSearch()
         targetInput.onSearch()
         updateCanSearch()
@@ -98,11 +100,21 @@ class State(
                 searchResult.setState(it)
             }
             .catch {
-                console.error("Error while downloading links", it)
+                handleException(it)
             }
             .then {
                 searchInProgress.setState(false)
             }
+    }
+
+    private fun handleException(throwable: Throwable) {
+        val info = if (throwable is ResponseException)
+            ErrorInfo(throwable.response.message)
+        else
+            ErrorInfo("Unknown error occurred")
+
+        searchResult.setState(null)
+        error.setState(info)
     }
 
     private fun onSelectedPageChanged() = updateCanSearch()
