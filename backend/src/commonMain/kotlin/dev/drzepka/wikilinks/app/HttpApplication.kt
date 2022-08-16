@@ -54,22 +54,6 @@ private fun configureKoin(scope: CoroutineScope) {
 
 private fun Application.configureRouting() {
     routing {
-        get("/") {
-            val resource = frontendResourceService.getResource("index.html")!!
-            call.respondBytes(resource.content, resource.contentType)
-        }
-
-        route("app") {
-            get("*") {
-                val path = call.request.path().substringAfter("/app")
-                val resource = frontendResourceService.getResource(path)
-                if (resource != null)
-                    call.respondBytes(resource.content, resource.contentType)
-                else
-                    call.respond(HttpStatusCode.NotFound, "")
-            }
-        }
-
         route("api") {
             route("links") {
                 post("search") {
@@ -91,6 +75,20 @@ private fun Application.configureRouting() {
             get("health") {
                 call.respond(healthService.getHealth())
             }
+        }
+
+        get("/") {
+            val resource = frontendResourceService.getResource("index.html")!!
+            call.respondBytes(resource.content, resource.contentType)
+        }
+
+        get("*") {
+            val path = call.request.path().substringAfter("/app")
+            val resource = frontendResourceService.getResource(path)
+            if (resource != null)
+                call.respondBytes(resource.content, resource.contentType)
+            else
+                call.respond(HttpStatusCode.NotFound, "")
         }
     }
 }
