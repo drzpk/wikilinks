@@ -8,13 +8,12 @@ import kotlinx.datetime.Instant
 class HistoryService(private val historyRepository: HistoryRepository) {
 
     suspend fun addResult(searchDate: Instant, result: LinkSearchResult) {
-        val pages = result.paths.firstOrNull()?.pages
         val entry = HistoryEntry(
             searchDate.toEpochMilliseconds(),
             result.wikipedia.language,
             result.wikipedia.version,
-            pages?.firstOrNull(),
-            pages?.lastOrNull(),
+            result.source,
+            result.target,
             result.paths.size,
             result.degreesOfSeparation,
             result.duration.graphMs,

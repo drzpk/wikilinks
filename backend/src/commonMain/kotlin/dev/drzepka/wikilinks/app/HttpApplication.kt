@@ -3,10 +3,8 @@ package dev.drzepka.wikilinks.app
 import dev.drzepka.wikilinks.app.KoinApp.databaseRegistry
 import dev.drzepka.wikilinks.app.KoinApp.frontendResourceService
 import dev.drzepka.wikilinks.app.KoinApp.healthService
-import dev.drzepka.wikilinks.app.KoinApp.historyService
-import dev.drzepka.wikilinks.app.KoinApp.searchService
+import dev.drzepka.wikilinks.app.route.linksSearch
 import dev.drzepka.wikilinks.common.model.LanguageInfo
-import dev.drzepka.wikilinks.common.model.LinkSearchRequest
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -16,7 +14,6 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import org.koin.core.context.startKoin
 
@@ -56,13 +53,7 @@ private fun Application.configureRouting() {
     routing {
         route("api") {
             route("links") {
-                post("search") {
-                    val request = call.receive<LinkSearchRequest>()
-                    val searchDate = Clock.System.now()
-                    val result = searchService.search(request)
-                    historyService.addResult(searchDate, result)
-                    call.respond(result)
-                }
+                linksSearch()
             }
 
             get("languages") {

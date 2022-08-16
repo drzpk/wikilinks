@@ -6,6 +6,8 @@ import dev.drzepka.wikilinks.common.model.Path
 @kotlinx.serialization.Serializable
 data class LinkSearchResult(
     val degreesOfSeparation: Int,
+    val source: Int,
+    val target: Int,
     val paths: List<Path>,
     val pages: Map<Int, PageInfo>,
     val duration: SearchDuration,

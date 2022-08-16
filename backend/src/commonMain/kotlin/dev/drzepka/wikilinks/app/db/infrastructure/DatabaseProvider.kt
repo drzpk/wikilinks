@@ -131,7 +131,7 @@ class DatabaseProvider {
     companion object {
         private const val LINKS_DATABASE_VERSION = 1
         private const val CACHE_DATABASE_VERSION = 1
-        private const val HISTORY_DATABASE_VERSION = 2
+        private const val HISTORY_DATABASE_VERSION = 3
     }
 }
 

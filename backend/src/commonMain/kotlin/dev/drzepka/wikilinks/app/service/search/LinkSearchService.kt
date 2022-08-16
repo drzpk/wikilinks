@@ -2,6 +2,7 @@ package dev.drzepka.wikilinks.app.service.search
 
 import dev.drzepka.wikilinks.app.db.PagesRepository
 import dev.drzepka.wikilinks.app.db.infrastructure.DatabaseRegistry
+import dev.drzepka.wikilinks.app.model.SearchResultWrapper
 import dev.drzepka.wikilinks.common.model.LanguageInfo
 import dev.drzepka.wikilinks.common.model.LinkSearchRequest
 import dev.drzepka.wikilinks.common.model.Path
@@ -23,24 +24,20 @@ class LinkSearchService(
 ) {
     private val log = KotlinLogging.logger {}
 
-    suspend fun search(request: LinkSearchRequest): LinkSearchResult {
-        val sourceId = getPageId(request.language, request.source, "source")
-        if (sourceId == null) {
-            log.debug { "Source page id wasn't found for language ${request.language} and query ${request.source}" }
-            return emptySearchResult(request.language)
-        }
+    suspend fun search(request: LinkSearchRequest): SearchResultWrapper {
+        val (sourceId, targetId) = getPageIds(request)
 
-        val targetId = getPageId(request.language, request.target, "target")
-        if (targetId == null) {
-            log.debug { "Target page id wasn't found for language ${request.language} and query ${request.target}" }
-            return emptySearchResult(request.language)
-        }
+        if (sourceId == null || targetId == null)
+            return SearchResultWrapper(
+                null,
+                request.source.getIdOrTitle(),
+                request.target.getIdOrTitle(),
+                sourceId == null,
+                targetId == null
+            )
 
-        return search(
-            request.language,
-            sourceId,
-            targetId
-        )
+        val result = search(request.language, sourceId, targetId)
+        return SearchResultWrapper(result, sourceId.toString(), targetId.toString())
     }
 
     suspend fun simpleSearch(language: DumpLanguage, sourcePage: Int, targetPage: Int): Pair<List<Path>, Long> {
@@ -51,21 +48,76 @@ class LinkSearchService(
         return pathTimedValue.value to pathTimedValue.duration.inWholeMilliseconds
     }
 
-    private suspend fun getPageId(language: DumpLanguage, point: LinkSearchRequest.SearchPoint, name: String): Int? {
-        if (point.id != null)
-            return point.id!!
-
+    private suspend fun getPageIds(request: LinkSearchRequest): Pair<Int?, Int?> {
         if (pagesRepository == null) {
             log.warn { "Pages repository is null" }
-            return null
+            return null to null
         }
+
+        val pageIds = when {
+            request.source.id != null && request.target.id != null -> verifyPagesExistByIds(
+                request.language,
+                request.source.id!!,
+                request.target.id!!
+            )
+            request.source.title != null && request.target.title != null -> getPageIdsByTitles(
+                request.language,
+                request.source.title!!,
+                request.target.title!!
+            )
+            else -> getPageIdsSeparately(request.language, request.source, request.target)
+        }
+
+        if (pageIds.first == null)
+            log.debug { "Source page id wasn't found for language ${request.language} and query ${request.source}" }
+        if (pageIds.second == null)
+            log.debug { "Target page id wasn't found for language ${request.language} and query ${request.target}" }
+
+        return pageIds
+    }
+
+    private suspend fun verifyPagesExistByIds(language: DumpLanguage, source: Int, target: Int): Pair<Int?, Int?> {
+        val exists = pagesRepository!!.pagesExist(language, listOf(source, target))
+        return Pair(
+            if (exists[0]) source else null,
+            if (exists[1]) target else null,
+        )
+    }
+
+    private suspend fun getPageIdsByTitles(language: DumpLanguage, source: String, target: String): Pair<Int?, Int?> {
+        val sanitizedSource = sanitizePageTitle(source)
+        val sanitizedTarget = sanitizePageTitle(target)
+        val result = pagesRepository!!.getPageIds(language, listOf(sanitizedSource, sanitizedTarget))
+        return Pair(
+            result[sanitizedSource],
+            result[sanitizedTarget]
+        )
+    }
+
+    private suspend fun getPageIdsSeparately(
+        language: DumpLanguage,
+        source: LinkSearchRequest.SearchPoint,
+        target: LinkSearchRequest.SearchPoint
+    ): Pair<Int?, Int?> = Pair(
+        getOrVerifyPageId(language, source, "source"),
+        getOrVerifyPageId(language, target, "target")
+    )
+
+    private suspend fun getOrVerifyPageId(
+        language: DumpLanguage,
+        point: LinkSearchRequest.SearchPoint,
+        name: String
+    ): Int? {
+        if (point.id != null)
+            return if (pagesRepository!!.pagesExist(language, listOf(point.id!!)).first()) point.id!! else null
 
         if (point.title == null) {
             log.debug { "Neither id nor title is defined for $name" }
             return null
         }
 
-        return pagesRepository.getPageId(language, sanitizePageTitle(point.title!!))
+        val sanitizedTitle = sanitizePageTitle(point.title!!)
+        return pagesRepository!!.getPageIds(language, listOf(sanitizedTitle))[sanitizedTitle]
     }
 
     private suspend fun search(language: DumpLanguage, sourcePage: Int, targetPage: Int): LinkSearchResult {
@@ -90,6 +142,8 @@ class LinkSearchService(
 
         return LinkSearchResult(
             paths.firstOrNull()?.let { it.pages.size - 1 } ?: 0,
+            sourcePage,
+            targetPage,
             paths,
             pageInfoResult.pages,
             searchDuration,
@@ -98,17 +152,10 @@ class LinkSearchService(
         )
     }
 
-    private suspend fun emptySearchResult(language: DumpLanguage): LinkSearchResult = LinkSearchResult(
-        0,
-        emptyList(),
-        emptyMap(),
-        SearchDuration(0, 0, 0),
-        0f,
-        language.toDumpInfo()
-    )
-
     private suspend fun DumpLanguage.toDumpInfo(): LanguageInfo = LanguageInfo(
         this,
         databaseRegistry.getAvailableLanguages()[this]!!
     )
+
+    private fun LinkSearchRequest.SearchPoint.getIdOrTitle(): String = id?.toString() ?: title ?: "null"
 }

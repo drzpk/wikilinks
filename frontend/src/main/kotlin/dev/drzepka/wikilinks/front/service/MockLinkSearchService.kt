@@ -33,6 +33,8 @@ object MockLinkSearchService : LinkSearchService {
 
         val result = LinkSearchResult(
             degrees,
+            paths[0].pages.first(),
+            paths[0].pages.last(),
             paths,
             getRandomPageInfo(paths.flatMap { it.pages }.toSet()),
             getRandomDuration(),

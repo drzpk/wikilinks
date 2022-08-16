@@ -1,0 +1,31 @@
+DELETE FROM SearchHistory
+WHERE source IS NULL OR target IS NULL;
+
+ALTER TABLE SearchHistory RENAME TO SearchHistory_old;
+DROP INDEX idx_search_history_date;
+
+CREATE TABLE SearchHistory (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  date INTEGER NOT NULL,
+  language TEXT NOT NULL DEFAULT "en",
+  version TEXT NOT NULL,
+  source INTEGER NOT NULL,
+  target INTEGER NOT NULL,
+  path_count INTEGER NOT NULL,
+  degs_of_separation INTEGER NOT NULL,
+  search_duration_paths_ms INTEGER NOT NULL,
+  search_duration_total_ms INTEGER NOT NULL,
+  cache_hit_ratio REAL NOT NULL
+);
+
+CREATE INDEX idx_search_history_date ON SearchHistory(date);
+
+INSERT INTO SearchHistory(id, date, language, version, source, target, path_count, degs_of_separation, search_duration_paths_ms, search_duration_total_ms, cache_hit_ratio)
+SELECT id, date, language, version, source, target, path_count, degs_of_separation, search_duration_paths_ms, search_duration_total_ms, cache_hit_ratio
+FROM SearchHistory_old;
+
+UPDATE SQLITE_SEQUENCE
+SET seq = (SELECT seq FROM SQLITE_SEQUENCE WHERE name = 'SearchHistory_old')
+WHERE name = 'SearchHistory';
+
+DROP TABLE SearchHistory_old;
