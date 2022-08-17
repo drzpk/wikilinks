@@ -6,6 +6,8 @@ import dev.drzepka.wikilinks.front.model.Node
 import dev.drzepka.wikilinks.front.model.countRows
 import dev.drzepka.wikilinks.front.model.toEdges
 import dev.drzepka.wikilinks.front.model.toNodes
+import dev.drzepka.wikilinks.front.util.AnalyticsEvent
+import dev.drzepka.wikilinks.front.util.ScopedAnalytics
 import dev.drzepka.wikilinks.front.util.getBorderColorForLevel
 import dev.drzepka.wikilinks.front.util.getFillColorForLevel
 import io.kvision.html.Div
@@ -14,7 +16,7 @@ import io.kvision.html.div
 import io.kvision.html.tag
 import kotlinx.browser.window
 
-class LinksGraph(result: LinkSearchResult) : Div() {
+class LinksGraph(private val result: LinkSearchResult, private val analytics: ScopedAnalytics<out Any>) : Div() {
     private var d3Nodes: dynamic = null
     private var d3Edges: dynamic = null
 
@@ -101,7 +103,11 @@ class LinksGraph(result: LinkSearchResult) : Div() {
             .attr("font-family", "system-ui")
             .style("cursor", "pointer")
             .each(js("function (d) { d.bbox = this.getBBox(); }"))
-            .on("click") { _, d -> window.open(d.url as String, "_blank") }
+            .on("click") { _, d ->
+                val event = AnalyticsEvent.GraphLinkClicked(result.wikipedia.language)
+                analytics.triggerEvent(event)
+                window.open(d.url as String, "_blank")
+            }
 
         d3Rects
             .attr("x") { d -> d.bbox.x }
@@ -164,6 +170,10 @@ class LinksGraph(result: LinkSearchResult) : Div() {
         val dragStarted = evt@{ event: dynamic ->
             if (event.subject.fixed == true)
                 return@evt
+
+            val analyticsEvent =
+                AnalyticsEvent.GraphTouched(result.wikipedia.language, result.degreesOfSeparation, result.paths.size)
+            analytics.triggerEvent(analyticsEvent)
 
             if (SIMULATION_ACTIVE) {
                 if (!event.active as Boolean) simulation.alphaTarget(0.3).restart()

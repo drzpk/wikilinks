@@ -5,7 +5,10 @@ import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.front.service.LanguageService
 import dev.drzepka.wikilinks.front.service.LinkSearchService
 import dev.drzepka.wikilinks.front.service.PageSearchService
+import dev.drzepka.wikilinks.front.util.AnalyticsEvent
 import dev.drzepka.wikilinks.front.util.DebounceBuffer
+import dev.drzepka.wikilinks.front.util.ScopedAnalytics
+import dev.drzepka.wikilinks.front.util.triggerAnalyticsEvent
 import io.kvision.state.ObservableListWrapper
 import io.kvision.state.ObservableValue
 import kotlin.time.Duration.Companion.seconds
@@ -27,6 +30,8 @@ class State(
     val searchResult = ObservableValue<LinkSearchResult?>(null)
     val error = ObservableValue<ErrorInfo?>(null)
 
+    val analytics = ScopedAnalytics<LinkSearchResult>()
+
     init {
         setupLanguages()
 
@@ -36,6 +41,10 @@ class State(
 
         historyState.getSearchQuery()?.let {
             initialSearch(it)
+        }
+
+        searchResult.subscribe {
+            analytics.updateScope(it)
         }
     }
 
@@ -65,6 +74,7 @@ class State(
         if (searchInProgress.value)
             return
 
+        val previousLanguage = selectedLanguage.value
         selectedLanguage.setState(language)
         languageService.saveRecentLanguage(language)
 
@@ -72,6 +82,11 @@ class State(
         targetInput.clear()
         searchResult.setState(null)
         historyState.clearSearchQuery()
+
+        if (previousLanguage != null) {
+            val event = AnalyticsEvent.LanguageChanged(previousLanguage, language)
+            triggerAnalyticsEvent(event)
+        }
     }
 
     fun search(putHistory: Boolean = true) {

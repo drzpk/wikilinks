@@ -1,7 +1,10 @@
 package dev.drzepka.wikilinks.front.component.searchresult
 
+import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.model.searchresult.PageInfo
+import dev.drzepka.wikilinks.front.util.AnalyticsEvent
 import dev.drzepka.wikilinks.front.util.Images
+import dev.drzepka.wikilinks.front.util.ScopedAnalytics
 import dev.drzepka.wikilinks.front.util.getFillColorForLevel
 import io.kvision.core.Background
 import io.kvision.core.Color
@@ -10,7 +13,15 @@ import io.kvision.html.div
 import io.kvision.html.image
 import io.kvision.html.p
 
-class PathPage(info: PageInfo, level: Int, levelCount: Int) : Link("", className = "page", target = "_blank") {
+class PathPage(
+    info: PageInfo,
+    level: Int,
+    levelCount: Int,
+    language: DumpLanguage,
+    analytics: ScopedAnalytics<out Any>
+) :
+    Link("", className = "page", target = "_blank") {
+
     init {
         url = info.url
         div(className = "text") {
@@ -25,6 +36,11 @@ class PathPage(info: PageInfo, level: Int, levelCount: Int) : Link("", className
             info.imageUrl ?: Images.EMPTY,
             alt = if (info.imageUrl != null) "Page thumbnail" else "Empty page thumbnail"
         )
+
+        onClick {
+            val event = AnalyticsEvent.ListLinkClicked(language)
+            analytics.triggerEvent(event)
+        }
     }
 
     private fun createAccentGradient(level: Int, levelCount: Int): Color {

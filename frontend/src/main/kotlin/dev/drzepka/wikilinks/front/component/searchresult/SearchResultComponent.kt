@@ -2,6 +2,7 @@ package dev.drzepka.wikilinks.front.component.searchresult
 
 import dev.drzepka.wikilinks.common.model.Path
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
+import dev.drzepka.wikilinks.front.util.ScopedAnalytics
 import io.kvision.core.Display
 import io.kvision.html.Div
 import io.kvision.html.button
@@ -11,7 +12,8 @@ import io.kvision.state.ObservableValue
 import io.kvision.state.bind
 import io.kvision.state.bindEach
 
-class SearchResultComponent(result: ObservableState<LinkSearchResult?>) : Div(className = "search-result") {
+class SearchResultComponent(result: ObservableState<LinkSearchResult?>, analytics: ScopedAnalytics<out Any>) :
+    Div(className = "search-result") {
     private val pathDisplayIncrement = 25
     private var displayedPaths = ObservableValue(listOf<Path>())
 
@@ -20,14 +22,14 @@ class SearchResultComponent(result: ObservableState<LinkSearchResult?>) : Div(cl
             if (it != null) {
                 displayedPaths.setState(it.paths.take(pathDisplayIncrement))
 
-                add(ResultDescription(it))
-                add(LinksGraph(it))
+                add(ResultDescription(it, analytics))
+                add(LinksGraph(it, analytics))
 
                 if (it.paths.isNotEmpty())
                     div("Discovered paths", className = "found-paths-text")
 
                 div(className = "paths").bindEach(displayedPaths) { path ->
-                    add(ResultPath(path, it.pages))
+                    add(ResultPath(path, it.pages, it.wikipedia.language, analytics))
                 }
 
                 div(className = "more-paths") {

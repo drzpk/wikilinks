@@ -2,29 +2,41 @@ package dev.drzepka.wikilinks.front.component.searchresult
 
 import dev.drzepka.wikilinks.common.model.searchresult.LinkSearchResult
 import dev.drzepka.wikilinks.common.model.searchresult.SearchDuration
+import dev.drzepka.wikilinks.front.util.AnalyticsEvent
+import dev.drzepka.wikilinks.front.util.ScopedAnalytics
 import dev.drzepka.wikilinks.front.util.sourcePage
 import dev.drzepka.wikilinks.front.util.targetPage
 import io.kvision.core.onEvent
 import io.kvision.html.*
 import kotlin.math.floor
 
-class ResultDescription(result: LinkSearchResult) : Div() {
+class ResultDescription(result: LinkSearchResult, analytics: ScopedAnalytics<out Any>) : Div() {
 
     init {
         p(className = "result-description") {
-            if (!this@ResultDescription.createResultDescription(this, result))
+            if (!this@ResultDescription.createResultDescription(this, result, analytics))
                 this@ResultDescription.createEmptyResultDescription(this)
         }
     }
 
-    private fun createResultDescription(p: P, result: LinkSearchResult): Boolean {
+    private fun createResultDescription(p: P, result: LinkSearchResult, analytics: ScopedAnalytics<out Any>): Boolean {
         val source = result.sourcePage() ?: return false
         val target = result.targetPage() ?: return false
 
         p.apply {
-            link(source.title, source.url, target = "_blank")
+            link(source.title, source.url, target = "_blank") {
+                onClick {
+                    val event = AnalyticsEvent.ResultDescriptionLinkClicked(result.wikipedia.language)
+                    analytics.triggerEvent(event)
+                }
+            }
             span(" and ")
-            link(target.title, target.url, target = "_blank")
+            link(target.title, target.url, target = "_blank") {
+                onClick {
+                    val event = AnalyticsEvent.ResultDescriptionLinkClicked(result.wikipedia.language)
+                    analytics.triggerEvent(event)
+                }
+            }
 
             span(" are connected by ")
             b(result.paths.size.toString())
@@ -45,7 +57,7 @@ class ResultDescription(result: LinkSearchResult) : Div() {
                     strong(" $totalFormatted seconds")
                     span(".")
                 }
-                this@ResultDescription.createSearchDurationDetails(this, text, result.duration)
+                this@ResultDescription.createSearchDurationDetails(this, text, result.duration, analytics)
             }
         }
 
@@ -61,7 +73,12 @@ class ResultDescription(result: LinkSearchResult) : Div() {
         }
     }
 
-    private fun createSearchDurationDetails(parent: Tag, hoverTrigger: Tag, duration: SearchDuration) {
+    private fun createSearchDurationDetails(
+        parent: Tag,
+        hoverTrigger: Tag,
+        duration: SearchDuration,
+        analytics: ScopedAnalytics<out Any>
+    ) {
         parent.apply {
             val container = div(className = "details-container") {
                 div(className = "details") {
@@ -84,13 +101,15 @@ class ResultDescription(result: LinkSearchResult) : Div() {
                 }
             }
 
-            this@ResultDescription.setUpDisplayOnHover(hoverTrigger, container)
+            this@ResultDescription.setUpDisplayOnHover(hoverTrigger, container, analytics)
         }
     }
 
-    private fun setUpDisplayOnHover(hoveredElement: Tag, displayedElement: Tag) {
+    private fun setUpDisplayOnHover(hoveredElement: Tag, displayedElement: Tag, analytics: ScopedAnalytics<out Any>) {
         hoveredElement.onEvent {
             mouseenter = {
+                val event = AnalyticsEvent.SearchTimeDetailsShown()
+                analytics.triggerEvent(event)
                 displayedElement.addCssClass("visible")
             }
 

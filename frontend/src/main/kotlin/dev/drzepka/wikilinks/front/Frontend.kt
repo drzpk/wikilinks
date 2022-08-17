@@ -42,7 +42,7 @@ class Frontend : Application(), HistoryState {
                 }
 
                 options(1, 2, 12, 0) {
-                    add(SearchResultComponent(this@Frontend.state.searchResult))
+                    add(SearchResultComponent(this@Frontend.state.searchResult, this@Frontend.state.analytics))
                 }
             }
         }
