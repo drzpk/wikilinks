@@ -42,8 +42,9 @@ class OutputRelocator(private val workingDirectory: File, outputUri: URI, versio
         if (shouldCompress(outputUri)) {
             runtime.startNextStep("Compressing the output file")
             val key = "CompressionStep"
+            fileToMove = File(databaseFile.absolutePath + ".gz")
             if (store[key] == null) {
-                fileToMove = compress(databaseFile, runtime)
+                fileToMove = compress(databaseFile, fileToMove, runtime)
                 store[key] = "done"
             } else {
                 println("Already compressed")
@@ -88,8 +89,7 @@ class OutputRelocator(private val workingDirectory: File, outputUri: URI, versio
         return query.startsWith("$name=") || query.contains("&$name=")
     }
 
-    private fun compress(inputFile: File, logger: ProgressLogger): File {
-        val outputFile = File(inputFile.absolutePath + ".gz")
+    private fun compress(inputFile: File, outputFile: File, logger: ProgressLogger): File {
         val bufferedOutStream = BufferedOutputStream(FileOutputStream(outputFile), COMPRESSION_BUFFERS_SIZE)
         val gzipOutStream = ParallelGZIPOutputStream(bufferedOutStream)
 
