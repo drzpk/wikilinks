@@ -238,3 +238,41 @@ header {
     }
   }
 }
+
+#cookie-consent {
+  position: fixed;
+  bottom: 0;
+  padding: 0;
+
+  .content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 1.2em 10em;
+    background-color: white;
+    border-top: 2px solid $outer-border-color;
+    box-shadow: 0 2px 7px 1px rgb(60 64 67 / 30%);
+
+    .text {
+      flex-basis: 0;
+      flex-grow: 1;
+    }
+
+    .controls {
+      margin-left: 1em;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+
+      button {
+        margin: 0.3em 0;
+
+        &:first-child {
+          font-size: 1.1em;
+          padding-left: 2em;
+          padding-right: 2em;
+        }
+      }
+    }
+  }
+}

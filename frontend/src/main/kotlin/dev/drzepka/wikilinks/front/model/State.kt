@@ -83,7 +83,7 @@ class State(
         searchResult.setState(null)
         historyState.clearSearchQuery()
 
-        if (previousLanguage != null) {
+        if (previousLanguage != null && previousLanguage != language) {
             val event = AnalyticsEvent.LanguageChanged(previousLanguage, language)
             triggerAnalyticsEvent(event)
         }

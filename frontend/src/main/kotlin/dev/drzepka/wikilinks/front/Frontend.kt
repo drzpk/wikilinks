@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.front
 
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
+import dev.drzepka.wikilinks.front.component.CookieConsent
 import dev.drzepka.wikilinks.front.component.SearchComponent
 import dev.drzepka.wikilinks.front.component.header.HeaderComponent
 import dev.drzepka.wikilinks.front.component.searchresult.SearchResultComponent
@@ -34,6 +35,7 @@ class Frontend : Application(), HistoryState {
         this.state = (state["state"] as State?) ?: createState()
 
         root("wikilinks", ContainerType.FLUID) {
+            add(CookieConsent())
             add(HeaderComponent(this@Frontend.state))
 
             responsiveGridPanel {

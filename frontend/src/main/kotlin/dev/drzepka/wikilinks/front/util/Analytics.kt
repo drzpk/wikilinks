@@ -52,7 +52,7 @@ class ScopedAnalytics<T>(private var scope: T? = null) {
 }
 
 fun triggerAnalyticsEvent(event: AnalyticsEvent) {
-    val gtag = window.asDynamic().gtag
+    val gtag = window.asDynamic().gtag ?: return
 
     val eventData = js("{}")
     event.additionalData.forEach {
