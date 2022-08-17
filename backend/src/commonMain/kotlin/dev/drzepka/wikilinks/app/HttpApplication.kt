@@ -4,6 +4,7 @@ import dev.drzepka.wikilinks.app.KoinApp.databaseRegistry
 import dev.drzepka.wikilinks.app.KoinApp.frontendResourceService
 import dev.drzepka.wikilinks.app.KoinApp.healthService
 import dev.drzepka.wikilinks.app.route.linksSearch
+import dev.drzepka.wikilinks.app.route.respondWithIndexHtml
 import dev.drzepka.wikilinks.common.model.LanguageInfo
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -69,17 +70,20 @@ private fun Application.configureRouting() {
         }
 
         get("/") {
-            val resource = frontendResourceService.getResource("index.html")!!
-            call.respondBytes(resource.content, resource.contentType)
+            respondWithIndexHtml()
         }
 
         get("*") {
             val path = call.request.path().substringAfter("/app")
-            val resource = frontendResourceService.getResource(path)
-            if (resource != null)
-                call.respondBytes(resource.content, resource.contentType)
-            else
-                call.respond(HttpStatusCode.NotFound, "")
+            if (path == "index.html") {
+                respondWithIndexHtml()
+            } else {
+                val resource = frontendResourceService.getResource(path)
+                if (resource != null)
+                    call.respondBytes(resource.content, resource.contentType)
+                else
+                    call.respond(HttpStatusCode.NotFound, "")
+            }
         }
     }
 }
