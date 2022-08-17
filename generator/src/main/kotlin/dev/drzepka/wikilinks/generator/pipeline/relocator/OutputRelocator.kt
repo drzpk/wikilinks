@@ -75,7 +75,7 @@ class OutputRelocator(private val workingDirectory: File, outputUri: URI, versio
                 println("Output file fill be saved in the S3 bucket $bucket under key $directoryKey")
                 S3Mover(bucket, directoryKey)
             }
-            else -> throw IllegalArgumentException("Unsupported output uri scheme: ${outputUri.scheme}")
+            else -> throw IllegalArgumentException("Unsupported output scheme in mover URL: ${outputUri.scheme} ($outputUri)")
         }
     }
 
