@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.generator.pipeline.reader
 
+import dev.drzepka.wikilinks.generator.Configuration
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.util.zip.GZIPInputStream
@@ -14,6 +15,10 @@ open class GZipReader(stream: InputStream, bufferCapacity: Int = 32 * 1024) : Re
     private var lineStartPos = 0
     private var line: String? = null
     private var eosReached = false
+
+    // For debugging purposes
+    private val readBlocksLimit = Configuration.readBlocksLimit ?: Int.MAX_VALUE
+    private var readBlocks = 0
 
     init {
         val gzipStream = GZIPInputStream(stream, bufferCapacity)
@@ -111,6 +116,11 @@ open class GZipReader(stream: InputStream, bufferCapacity: Int = 32 * 1024) : Re
     }
 
     private fun fetchNextBlock() {
+        if (++readBlocks == readBlocksLimit) {
+            eosReached = true
+            return
+        }
+
         bufferSize = reader.read(buffer)
         if (bufferSize == -1)
             eosReached = true
