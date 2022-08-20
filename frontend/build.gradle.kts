@@ -26,7 +26,7 @@ kotlin {
         browser {
             // https://webpack.js.org/configuration
             runTask {
-                outputFileName = "main.bundle.js"
+                outputFileName = "main.bundle.[contenthash].js"
                 sourceMaps = false
                 devServer = KotlinWebpackConfig.DevServer(
                     open = false,
@@ -39,7 +39,7 @@ kotlin {
                 )
             }
             webpackTask {
-                outputFileName = "main.bundle.js"
+                outputFileName = "main.bundle.[contenthash].js"
             }
             testTask {
                 useKarma {
@@ -68,10 +68,17 @@ kotlin {
         implementation(devNpm("flag-icons", "^6.6.3"))
         implementation(devNpm("sass-loader", "^13.0.2"))
         implementation(devNpm("sass", "^1.54.3"))
+        implementation(devNpm("html-webpack-plugin", "^5.5.0"))
     }
     sourceSets["test"].dependencies {
         implementation(kotlin("test-js"))
         implementation("io.kvision:kvision-testutils:$kvisionVersion")
     }
     sourceSets["main"].resources.srcDir(webDir)
+}
+
+afterEvaluate {
+      tasks.named<Zip>("zip").get().apply {
+        exclude("index.template.html")
+    }
 }
