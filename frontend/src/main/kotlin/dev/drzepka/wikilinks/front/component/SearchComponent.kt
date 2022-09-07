@@ -1,6 +1,7 @@
 package dev.drzepka.wikilinks.front.component
 
 import dev.drzepka.wikilinks.front.model.State
+import dev.drzepka.wikilinks.front.model.displayName
 import io.kvision.core.Display
 import io.kvision.core.JustifyContent
 import io.kvision.html.*
@@ -21,8 +22,12 @@ class SearchComponent(state: State) : Div(className = "search-component") {
             display = if (it) Display.NONE else Display.INITIAL
         }
 
-        h2("Find the shortest paths between Wikipedia articles.") {
+        h2 {
             id = "headline"
+            bind(state.selectedLanguage) { language ->
+                val suffix = "${language?.displayName() ?: ""} Wikipedia articles."
+                content = "Find the shortest paths between ${suffix.trimStart()}"
+            }
         }
 
         div(className = "inputs") {

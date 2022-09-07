@@ -88,13 +88,13 @@ Initial setup:
         1. Main class: `dev.drzepka.wikilinks.app.JvmMainKt`
         2. Program arguments: `http`
         3. Required environment variables: same as in the usage section
-    2. Frontend - Gradle task: `gradle :frontend:browserDevelopmentRun --continuous`
+    2. Frontend - Gradle task: `gradle -t :frontend:browserDevelopmentRun`
     3. Generator
         1. Main class: `dev.drzepka.wikilinks.generator.MainKt`
         2. VM options: `-Xmx7G`
         3. Required environment variables: same as in the usage section
 
-When the frontend Gradle task is started with the `--continuous` flag, the code changes are automatically detected
+When the frontend Gradle task is started with the `-t` flag, the code changes are automatically detected
 and the module is recompiled. Frontend expects the backend module to be up and running unless the `Frontend#USE_MOCKS`
 constant is set to `true`.
 
