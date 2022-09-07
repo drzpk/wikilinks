@@ -4,10 +4,9 @@ import dev.drzepka.wikilinks.front.core.Router
 import dev.drzepka.wikilinks.front.model.State
 import dev.drzepka.wikilinks.front.model.displayName
 import dev.drzepka.wikilinks.front.model.flagCss
-import io.kvision.core.onClick
 import io.kvision.dropdown.DropDown
 import io.kvision.html.ButtonStyle
-import io.kvision.html.div
+import io.kvision.html.link
 import io.kvision.html.span
 import io.kvision.state.bind
 import io.kvision.state.bindEach
@@ -22,11 +21,14 @@ class LanguageSelector(state: State) : DropDown("", style = ButtonStyle.OUTLINED
             text = lang?.let { "Wikipedia: ${it.displayName()}" } ?: "no language available"
 
             bindEach(state.availableLanguages) { availableLang ->
-                div(className = "item") {
+                val route = Router.getLanguageRoute(availableLang)
+
+                link(className = "item", label="", url = route.url) {
                     span(className = availableLang.flagCss())
                     span(availableLang.displayName())
                     onClick {
-                        Router.goToLanguage(availableLang) // todo: add A tag
+                        it.preventDefault()
+                        route.navigate()
                     }
                 }
             }

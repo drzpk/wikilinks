@@ -27,9 +27,7 @@ object Router : RouteState {
             .resolve()
     }
 
-    fun goToLanguage(language: DumpLanguage) {
-        routing.navigate("/${language.value}")
-    }
+    fun getLanguageRoute(language: DumpLanguage): DeferredRoute = DeferredRoute("/${language.value}")
 
     override fun putSearchQuery(query: SearchQuery) = doPutSearchQuery(query)
 
@@ -64,5 +62,11 @@ object Router : RouteState {
             options.historyAPIMethod = "replaceState"
 
         routing.navigate("/${query.language!!.value}?$QUERY_SOURCE=${query.sourcePage}&$QUERY_TARGET=${query.targetPage}", options)
+    }
+}
+
+class DeferredRoute(val url: String) {
+    fun navigate() {
+        routing.navigate(url)
     }
 }
