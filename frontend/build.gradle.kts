@@ -28,15 +28,6 @@ kotlin {
             runTask {
                 outputFileName = "main.bundle.[contenthash].js"
                 sourceMaps = false
-                devServer = KotlinWebpackConfig.DevServer(
-                    open = false,
-                    port = 3000,
-                    proxy = mutableMapOf(
-                        "/api" to "http://localhost:8080",
-                        "/kvws/*" to mapOf("target" to "ws://localhost:8080", "ws" to true)
-                    ),
-                    static = mutableListOf("$buildDir/processedResources/js/main")
-                )
             }
             webpackTask {
                 outputFileName = "main.bundle.[contenthash].js"
@@ -60,6 +51,7 @@ kotlin {
         implementation("io.kvision:kvision-bootstrap:$kvisionVersion")
         implementation("io.kvision:kvision-bootstrap-css:$kvisionVersion")
         implementation("io.kvision:kvision-i18n:$kvisionVersion")
+        implementation("io.kvision:kvision-routing-navigo-ng:$kvisionVersion")
         implementation("io.ktor:ktor-client-core-js:$ktorVersion")
         implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
         implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")

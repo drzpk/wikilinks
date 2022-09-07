@@ -67,14 +67,16 @@ private fun Application.configureRouting() {
             get("health") {
                 call.respond(healthService.getHealth())
             }
+
+            route("{...}") {
+                handle {
+                    call.respond(HttpStatusCode.NotFound)
+                }
+            }
         }
 
-        get("/") {
-            respondWithIndexHtml()
-        }
-
-        get("*") {
-            val path = call.request.path().substringAfter("/app")
+        get("/static/{...}") {
+            val path = call.request.path().substringAfter("/static")
             if (path == "index.html") {
                 respondWithIndexHtml()
             } else {
@@ -85,5 +87,10 @@ private fun Application.configureRouting() {
                     call.respond(HttpStatusCode.NotFound, "")
             }
         }
+
+        get("{...}") {
+            respondWithIndexHtml()
+        }
+
     }
 }

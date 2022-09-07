@@ -1,5 +1,6 @@
 package dev.drzepka.wikilinks.front.component.header
 
+import dev.drzepka.wikilinks.front.core.Router
 import dev.drzepka.wikilinks.front.model.State
 import dev.drzepka.wikilinks.front.model.displayName
 import dev.drzepka.wikilinks.front.model.flagCss
@@ -25,7 +26,7 @@ class LanguageSelector(state: State) : DropDown("", style = ButtonStyle.OUTLINED
                     span(className = availableLang.flagCss())
                     span(availableLang.displayName())
                     onClick {
-                        state.selectLanguage(availableLang)
+                        Router.goToLanguage(availableLang) // todo: add A tag
                     }
                 }
             }

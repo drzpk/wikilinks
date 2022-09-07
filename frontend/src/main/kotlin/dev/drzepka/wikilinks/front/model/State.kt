@@ -17,7 +17,7 @@ class State(
     pageSearchService: PageSearchService,
     private val linkSearchService: LinkSearchService,
     private val languageService: LanguageService,
-    private val historyState: HistoryState
+    private val routeState: RouteState
 ) {
     val availableLanguages = ObservableListWrapper(mutableListOf<DumpLanguage>())
     val selectedLanguage = ObservableValue<DumpLanguage?>(null)
@@ -39,10 +39,6 @@ class State(
         targetInput.selectedPage.subscribe { onSelectedPageChanged() }
         selectedLanguage.subscribe { onSelectedLanguageChanged() }
 
-        historyState.getSearchQuery()?.let {
-            initialSearch(it)
-        }
-
         searchResult.subscribe {
             analytics.updateScope(it)
         }
@@ -61,7 +57,7 @@ class State(
         }
     }
 
-    private fun initialSearch(query: SearchQuery) {
+    fun search(query: SearchQuery) {
         val language = query.language ?: DumpLanguage.EN
         selectedLanguage.setState(language)
 
@@ -71,17 +67,17 @@ class State(
     }
 
     fun selectLanguage(language: DumpLanguage) {
-        if (searchInProgress.value)
+        val previousLanguage = selectedLanguage.value
+        if (searchInProgress.value || language == previousLanguage)
             return
 
-        val previousLanguage = selectedLanguage.value
         selectedLanguage.setState(language)
         languageService.saveRecentLanguage(language)
 
         sourceInput.clear()
         targetInput.clear()
         searchResult.setState(null)
-        historyState.clearSearchQuery()
+        error.setState(null)
 
         if (previousLanguage != null && previousLanguage != language) {
             val event = AnalyticsEvent.LanguageChanged(previousLanguage, language)
@@ -97,7 +93,7 @@ class State(
         val target = targetInput.selectedPage.value!!
 
         if (putHistory)
-            historyState.putSearchQuery(SearchQuery(source.second, target.second, selectedLanguage.value!!))
+            routeState.putSearchQuery(SearchQuery(source.second, target.second, selectedLanguage.value!!))
 
         searchInProgress.setState(true)
         error.setState(null)
@@ -224,8 +220,6 @@ class SearchInputState(
     }
 }
 
-interface HistoryState {
-    fun getSearchQuery(): SearchQuery?
+interface RouteState {
     fun putSearchQuery(query: SearchQuery)
-    fun clearSearchQuery()
 }

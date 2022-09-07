@@ -6,7 +6,7 @@ import dev.drzepka.wikilinks.front.component.CookieConsent
 import dev.drzepka.wikilinks.front.component.SearchComponent
 import dev.drzepka.wikilinks.front.component.header.HeaderComponent
 import dev.drzepka.wikilinks.front.component.searchresult.SearchResultComponent
-import dev.drzepka.wikilinks.front.model.HistoryState
+import dev.drzepka.wikilinks.front.core.Router
 import dev.drzepka.wikilinks.front.model.SearchQuery
 import dev.drzepka.wikilinks.front.model.State
 import dev.drzepka.wikilinks.front.model.displayName
@@ -25,7 +25,7 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLMetaElement
 import org.w3c.dom.url.URLSearchParams
 
-class Frontend : Application(), HistoryState {
+class Frontend : Application() {
     init {
         io.kvision.require("./css/root.scss")
         io.kvision.require("bootstrap-icons/font/bootstrap-icons.css")
@@ -37,6 +37,7 @@ class Frontend : Application(), HistoryState {
     override fun start(state: Map<String, Any>) {
         console.log(state)
         this.state = (state["state"] as State?) ?: createState()
+        Router.initialize(this.state)
         setupStateListeners()
 
         root("wikilinks", ContainerType.FLUID) {
@@ -62,32 +63,30 @@ class Frontend : Application(), HistoryState {
         )
     }
 
-    override fun getSearchQuery(): SearchQuery? {
+    fun getSearchQuery(): SearchQuery? {
         val params = URLSearchParams(window.location.search)
         val source = params.get(QUERY_SOURCE)
         val target = params.get(QUERY_TARGET)
-        val language = params.get(QUERY_LANGUAGE)?.let { DumpLanguage.fromString(it) }
+        val language = params.get("QUERY_LANGUAGE")?.let { DumpLanguage.fromString(it) }
 
         return if (source != null && target != null)
             SearchQuery(source, target, language)
         else null
     }
 
-    override fun putSearchQuery(query: SearchQuery) {
+    fun putSearchQuery(query: SearchQuery) {
         val params = URLSearchParams(window.location.search)
         params.set(QUERY_SOURCE, query.sourcePage)
         params.set(QUERY_TARGET, query.targetPage)
-        query.language?.apply { params.set(QUERY_LANGUAGE, value) }
 
         val url = "${window.location.pathname}?$params"
         window.history.pushState(null, "", url)
     }
 
-    override fun clearSearchQuery() {
+    fun clearSearchQuery() {
         val params = URLSearchParams(window.location.search)
         params.delete(QUERY_SOURCE)
         params.delete(QUERY_TARGET)
-        params.delete(QUERY_LANGUAGE)
 
         val query = "?$params".let { if (it == "?") "" else it }
         val url = "${window.location.pathname}$query"
@@ -99,7 +98,7 @@ class Frontend : Application(), HistoryState {
         val linkSearchService = if (USE_MOCKS) MockLinkSearchService else LinkSearchServiceImpl()
         val languageService = if (USE_MOCKS) MockLanguageService else LanguageServiceImpl()
 
-        return State(pageSearchService, linkSearchService, languageService, this)
+        return State(pageSearchService, linkSearchService, languageService, Router)
     }
 
     private fun setupStateListeners() {
@@ -158,6 +157,5 @@ class Frontend : Application(), HistoryState {
         private const val USE_MOCKS = false
         private const val QUERY_SOURCE = "source"
         private const val QUERY_TARGET = "target"
-        private const val QUERY_LANGUAGE = "language"
     }
 }
