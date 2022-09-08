@@ -49,10 +49,12 @@ The following schemes are supported:
   ```
   s3://bucket-name/object/key/prefix?compress=true?include-version-in-path=true
   ```
-  Follow [this](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) guide to find out how to
-  configure AWS credentials.
+  Additional S3-specific parameters:
+    * `endpoint-host` - override default S3 endpoint, if using another S3-compatible storage provider
 
-Additional parameters (URI query params):
+  To find out how to configure AWS credentials, follow [this](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) guide.
+
+Common parameters (URI query params):
 
 * `compress=true` - tells the generator to compress files before moving them to their destination.
 * `include-version-in-path=true` - adds version directory to the path (Example: after enabling this option the

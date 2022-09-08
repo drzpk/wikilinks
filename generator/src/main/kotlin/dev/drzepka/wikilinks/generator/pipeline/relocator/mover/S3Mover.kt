@@ -11,9 +11,13 @@ import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload
 import software.amazon.awssdk.services.s3.model.CompletedPart
 import software.amazon.awssdk.services.s3.model.UploadPartRequest
 import java.io.File
+import java.net.URI
 
-class S3Mover(private val bucketName: String, private val directoryKey: String) : FileMover {
-    private val s3Client = S3Client.create()
+class S3Mover(private val bucketName: String, private val directoryKey: String, endpointHost: String? = null) : FileMover {
+    private val s3Client = S3Client
+        .builder()
+        .endpointOverride(if (endpointHost != null) URI.create("https://$endpointHost") else null)
+        .build()
 
     override fun move(file: File, logger: ProgressLogger) {
         val fullKey = "$directoryKey/${file.name}".removePrefix("/")

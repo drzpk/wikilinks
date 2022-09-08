@@ -2,6 +2,8 @@ package dev.drzepka.wikilinks.generator.utils
 
 import java.io.File
 import java.net.URI
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 fun URI.getFilePath(): File {
     if (scheme != "file")
@@ -12,4 +14,13 @@ fun URI.getFilePath(): File {
 
     // Remove leading slash from the path
     return File(path.substring(1))
+}
+
+fun URI.isQueryParamTrue(name: String): Boolean = getQueryParamValue(name)?.lowercase() == "true"
+
+fun URI.getQueryParamValue(name: String): String? {
+    val query = this.rawQuery ?: ""
+    return query.split('&')
+        .firstOrNull { it.startsWith("$name=") }
+        ?.let { URLDecoder.decode(it.substringAfter('='), StandardCharsets.UTF_8) }
 }

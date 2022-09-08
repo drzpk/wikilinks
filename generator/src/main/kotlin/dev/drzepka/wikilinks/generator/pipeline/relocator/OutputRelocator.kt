@@ -7,7 +7,9 @@ import dev.drzepka.wikilinks.generator.model.Store
 import dev.drzepka.wikilinks.generator.pipeline.relocator.mover.FileMover
 import dev.drzepka.wikilinks.generator.pipeline.relocator.mover.LocalFilesystemMover
 import dev.drzepka.wikilinks.generator.pipeline.relocator.mover.S3Mover
+import dev.drzepka.wikilinks.generator.utils.isQueryParamTrue
 import dev.drzepka.wikilinks.generator.utils.getFilePath
+import dev.drzepka.wikilinks.generator.utils.getQueryParamValue
 import org.anarres.parallelgzip.ParallelGZIPOutputStream
 import org.apache.http.client.utils.URIBuilder
 import java.io.BufferedOutputStream
@@ -55,7 +57,7 @@ class OutputRelocator(private val workingDirectory: File, outputUri: URI, versio
         val key = "MovingStep"
         if (store[key] == null) {
             val strippedUri = outputUri.toString().substringBefore("?")
-            println("target: $strippedUri")
+            println("target directory: $strippedUri")
             mover.move(fileToMove, runtime)
             store[key] = "done"
         } else {
@@ -74,20 +76,15 @@ class OutputRelocator(private val workingDirectory: File, outputUri: URI, versio
                 val bucket = outputUri.host
                 val directoryKey = outputUri.path
                 println("Output file fill be saved in the S3 bucket $bucket under key $directoryKey")
-                S3Mover(bucket, directoryKey)
+                S3Mover(bucket, directoryKey, outputUri.getQueryParamValue("endpoint-host"))
             }
             else -> throw IllegalArgumentException("Unsupported output scheme in mover URL: ${outputUri.scheme} ($outputUri)")
         }
     }
 
-    private fun shouldCompress(uri: URI): Boolean = uri.containsQueryParam("compress")
+    private fun shouldCompress(uri: URI): Boolean = uri.isQueryParamTrue("compress")
 
-    private fun shouldIncludeVersionInPath(uri: URI): Boolean = uri.containsQueryParam("include-version-in-path")
-
-    private fun URI.containsQueryParam(name: String): Boolean {
-        val query = this.query ?: ""
-        return query.startsWith("$name=") || query.contains("&$name=")
-    }
+    private fun shouldIncludeVersionInPath(uri: URI): Boolean = uri.isQueryParamTrue("include-version-in-path")
 
     private fun compress(inputFile: File, outputFile: File, logger: ProgressLogger): File {
         val bufferedOutStream = BufferedOutputStream(FileOutputStream(outputFile), COMPRESSION_BUFFERS_SIZE)
