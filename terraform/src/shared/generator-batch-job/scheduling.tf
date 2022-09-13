@@ -1,7 +1,7 @@
 resource "aws_cloudwatch_event_rule" "generator" {
   name                = "${var.prefix}run-generator"
   description         = "Runs WikiLinks generator"
-  schedule_expression = "cron(0 0 */14 * ? *)"
+  schedule_expression = "cron(0 0 3 * ? *)"
 }
 
 resource "aws_cloudwatch_event_target" "generator" {
