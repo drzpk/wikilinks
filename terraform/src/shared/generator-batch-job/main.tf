@@ -18,6 +18,17 @@ variable "generator_options" {
   })
 }
 
+variable "authentication_override" {
+  type = object({
+    access_key_id     = string,
+    secret_access_key = string
+  })
+  default = {
+    access_key_id     = "",
+    secret_access_key = ""
+  }
+}
+
 variable "efs" {
   type = object({
     filesystem_id   = string,

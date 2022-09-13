@@ -57,6 +57,23 @@ variable "languages" {
   default     = "pl,en"
 }
 
+variable "external_s3" {
+  type = object({
+    endpoint_host     = string,
+    bucket_name       = string,
+    access_key_id     = string,
+    secret_access_key = string
+  })
+  description = "If defined, the specified S3-compatible storage is used and local bucket is not created."
+  default     = {
+    endpoint_host     = "",
+    bucket_name       = "",
+    access_key_id     = "",
+    secret_access_key = ""
+  }
+}
+
 locals {
-  prefix = "${var.resource_name_prefix}wikilinks-"
+  prefix          = "${var.resource_name_prefix}wikilinks-"
+  use_external_s3 = length(var.external_s3.endpoint_host) > 0 && length(var.external_s3.bucket_name) > 0
 }

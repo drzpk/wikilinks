@@ -1,4 +1,5 @@
 resource "aws_s3_bucket" "links" {
+  count  = local.use_external_s3 ? 0 : 1
   bucket = "${local.prefix}index-storage"
 }
 

@@ -18,6 +18,8 @@ resource "aws_iam_policy" "efs_access" {
 }
 
 resource "aws_iam_role_policy" "generator_s3_access" {
+  count = length(aws_s3_bucket.links) == 1 ? 1 : 0
+
   name   = "S3Access"
   role   = module.batch.generator_role_id
   policy = jsonencode({
@@ -26,7 +28,7 @@ resource "aws_iam_role_policy" "generator_s3_access" {
       {
         Effect   = "Allow"
         Action   = "s3:ListBucket"
-        Resource = aws_s3_bucket.links.arn
+        Resource = aws_s3_bucket.links[0].arn
       },
       {
         Effect = "Allow"
@@ -34,7 +36,7 @@ resource "aws_iam_role_policy" "generator_s3_access" {
           "s3:GetObject",
           "s3:PutObject"
         ],
-        Resource = "${aws_s3_bucket.links.arn}/*"
+        Resource = "${aws_s3_bucket.links[0].arn}/*"
       }
     ]
   })
@@ -64,21 +66,24 @@ resource "aws_iam_role" "bastion" {
     aws_iam_policy.efs_access.arn
   ]
 
-  inline_policy {
-    name   = "S3Access"
-    policy = jsonencode({
-      Version   = "2012-10-17"
-      Statement = [
-        {
-          Effect   = "Allow"
-          Action   = "s3:*"
-          Resource = [
-            aws_s3_bucket.links.arn,
-            "${aws_s3_bucket.links.arn}/*"
-          ]
-        }
-      ]
-    })
+  dynamic "inline_policy" {
+    for_each = length(aws_s3_bucket.links) == 1 ? toset([1]) : toset([])
+    content {
+      name   = "S3Access"
+      policy = jsonencode({
+        Version   = "2012-10-17"
+        Statement = [
+          {
+            Effect   = "Allow"
+            Action   = "s3:*"
+            Resource = [
+              aws_s3_bucket.links[0].arn,
+              "${aws_s3_bucket.links[0].arn}/*"
+            ]
+          }
+        ]
+      })
+    }
   }
 
   assume_role_policy = jsonencode({
@@ -121,6 +126,7 @@ resource "aws_security_group" "bastion" {
 }
 
 resource "aws_s3_bucket_acl" "links_bucket_acl" {
-  bucket = aws_s3_bucket.links.id
+  for_each = toset(range(length(aws_s3_bucket.links)))
+  bucket = aws_s3_bucket.links[each.key].id
   acl    = "private"
 }

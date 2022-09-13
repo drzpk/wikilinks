@@ -1,5 +1,9 @@
 locals {
-  project_name = "WikiLinks"
+  project_name                = "WikiLinks"
+  s3_common_options           = "compress=true&include-version-in-path=true"
+  internal_s3_output_location = local.use_external_s3 ? "" : "s3://${aws_s3_bucket.links[0].bucket}/indexes?${local.s3_common_options}"
+  external_s3_output_location = local.use_external_s3 ? "s3://${var.external_s3.bucket_name}/indexes?endpoint-host=${var.external_s3.endpoint_host}&${local.s3_common_options}" : ""
+  s3_output_location          = local.use_external_s3 ? local.external_s3_output_location : local.internal_s3_output_location
 }
 
 provider "aws" {
@@ -51,8 +55,12 @@ module "batch" {
   generator_options = {
     version                  = var.versions.generator,
     languages                = var.languages,
-    output_location          = length(module.full) == 1 ? "file:////data/databases" : "s3://${aws_s3_bucket.links.bucket}/indexes?compress=true&include-version-in-path=true"
+    output_location          = length(module.full) == 1 ? "file:////data/databases" : local.s3_output_location
     current_version_location = length(module.full) == 1 ? "file:////data/databases" : ""
+  }
+  authentication_override = {
+    access_key_id     = var.external_s3.access_key_id
+    secret_access_key = var.external_s3.secret_access_key
   }
 }
 
