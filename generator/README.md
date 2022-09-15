@@ -26,6 +26,9 @@ less memory.
   they are deleted by default).
 * `BATCH_MODE` - *optional* - disables interactive mode (progress updates are printed periodically, each in new line).
   Recommended to use when collecting generator output logs.
+* `GENERATOR_ACTIVE_MAX_AGE` - *optional* - maximum duration (in seconds) of a single generator execution. Note that exceeding
+  this value doesn't cause generator to stop. Instead, it is used to detect whether previous generator instance was
+  abruptly stopped (and didn't have a chance to update its status).
 
 #### Output location
 

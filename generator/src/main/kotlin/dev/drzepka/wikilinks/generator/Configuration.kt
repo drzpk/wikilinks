@@ -9,6 +9,7 @@ object Configuration : BaseConfiguration() {
     val outputLocation = getString("OUTPUT_LOCATION", required = true)!!
     val currentVersionLocation = getString("CURRENT_VERSION_LOCATION")
     val batchMode = getBoolean("BATCH_MODE", false)
+    val generatorActiveMaxAge = getInt("GENERATOR_ACTIVE_MAX_AGE")
 
     // Debugging/test variables
     val readBlocksLimit = getInt("READ_BLOCKS_LIMIT")

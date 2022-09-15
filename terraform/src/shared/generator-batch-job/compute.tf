@@ -1,5 +1,7 @@
 locals {
   generator_job_cpu_count = 2
+  // 2.5h for each language
+  generator_timeout       = 150 * 60 * length(split(",", var.generator_options.languages))
 }
 
 resource "aws_batch_compute_environment" "generator" {
@@ -53,15 +55,19 @@ resource "aws_batch_job_definition" "generator" {
         value = "true"
       },
       {
+        name  = "GENERATOR_ACTIVE_MAX_AGE"
+        value = tostring(local.generator_timeout)
+      },
+      {
         name  = "JAVA_TOOL_OPTIONS"
         value = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0 -XX:ActiveProcessorCount=${local.generator_job_cpu_count}"
       },
       {
-        name = format("AWS_ACCESS_KEY_ID%s", length(var.authentication_override.access_key_id) == 0 ? "_DISABLED" : "")
+        name  = format("AWS_ACCESS_KEY_ID%s", length(var.authentication_override.access_key_id) == 0 ? "_DISABLED" : "")
         value = var.authentication_override.access_key_id
       },
       {
-        name = format("AWS_SECRET_ACCESS_KEY%s", length(var.authentication_override.secret_access_key) == 0 ? "_DISABLED" : "")
+        name  = format("AWS_SECRET_ACCESS_KEY%s", length(var.authentication_override.secret_access_key) == 0 ? "_DISABLED" : "")
         value = var.authentication_override.secret_access_key
       }
     ]
@@ -106,7 +112,6 @@ resource "aws_batch_job_definition" "generator" {
   })
 
   timeout {
-    // 2.5h for each language
-    attempt_duration_seconds = 150 * 60 * length(split(",", var.generator_options.languages))
+    attempt_duration_seconds = local.generator_timeout
   }
 }

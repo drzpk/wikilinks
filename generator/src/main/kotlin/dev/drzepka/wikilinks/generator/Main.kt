@@ -7,10 +7,12 @@ import dev.drzepka.wikilinks.generator.version.UpdateChecker
 import java.io.File
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
+import kotlin.time.Duration.Companion.seconds
 
 
 private val workingDirectory = File(Configuration.workingDirectory)
 private val updateChecker = UpdateChecker(workingDirectory)
+private val generatorStatus = GeneratorStatus.fromDirectory(workingDirectory, Configuration.generatorActiveMaxAge?.seconds)
 
 fun main(args: Array<String>) {
     if (!workingDirectory.isDirectory)
@@ -21,7 +23,7 @@ fun main(args: Array<String>) {
     println("Max heap: ${availableHeap()}")
     println()
 
-    if (isGeneratorActive()) {
+    if (generatorStatus.isGeneratorActive()) {
         println("Previous generator instance is still working")
         exitProcess(1)
     }
@@ -38,7 +40,7 @@ fun main(args: Array<String>) {
         return
     }
 
-    setGeneratorActive(true)
+    generatorStatus.setGeneratorActive(true)
     for (versionUpdate in versionUpdates) {
         val status = startGenerator(versionUpdate.key, versionUpdate.value)
         if (status)
@@ -100,7 +102,7 @@ private fun startGenerator(language: DumpLanguage, version: String): Boolean {
 private fun registerShutdownHook() {
     val thread = thread(start = false) {
         println("\nShutting down the generator")
-        setGeneratorActive(false)
+        generatorStatus.setGeneratorActive(false)
     }
     Runtime.getRuntime().addShutdownHook(thread)
 }
