@@ -1,7 +1,7 @@
 locals {
   generator_job_cpu_count = 2
-  // 2.5h for each language
-  generator_timeout       = 150 * 60 * length(split(",", var.generator_options.languages))
+  // 3h for each language
+  generator_timeout       = 180 * 60 * length(split(",", var.generator_options.languages))
 }
 
 resource "aws_batch_compute_environment" "generator" {
