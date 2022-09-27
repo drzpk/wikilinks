@@ -18,17 +18,24 @@ fun cmdLineSearch(args: Array<String>) {
     val startPage = args.getOrNull(0)?.toIntOrNull()
     val targetPage = args.getOrNull(1)?.toIntOrNull()
     if (startPage == null || targetPage == null) {
-        println("Usage: <start page> <target page>")
+        println("Usage: <start page> <target page> [language]")
         exit(1)
     }
 
-    searchAndPrint(startPage, targetPage)
+    searchAndPrint(startPage, targetPage, getLanguage(args.getOrNull(2)))
 }
 
-fun searchAndPrint(startPage: Int, targetPage: Int) {
+private fun getLanguage(raw: String?): DumpLanguage {
+    if (raw != null)
+        return DumpLanguage.fromString(raw) ?: throw IllegalArgumentException("Unsupported language: $raw")
+
+    return DumpLanguage.EN
+}
+
+private fun searchAndPrint(startPage: Int, targetPage: Int, language: DumpLanguage) {
     println("Searching for paths between pages: $startPage -> $targetPage")
 
-    val result = search(startPage, targetPage)
+    val result = search(startPage, targetPage, language)
     val paths = result.first
 
     if (paths.isNotEmpty()) {
@@ -41,12 +48,12 @@ fun searchAndPrint(startPage: Int, targetPage: Int) {
     println("\nSearch duration: ${result.second / 1000.0} seconds")
 }
 
-fun search(startPage: Int, targetPage: Int): Pair<List<Path>, Long> {
+private fun search(startPage: Int, targetPage: Int, language: DumpLanguage): Pair<List<Path>, Long> {
     startKoin {
         modules(coreModule())
     }
 
     return runBlocking {
-        searchService.simpleSearch(DumpLanguage.EN, startPage, targetPage)
+        searchService.simpleSearch(language, startPage, targetPage)
     }
 }
