@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "dev.drzepka.wikilinks"
-version = "1.3.0-SNAPSHOT"
+version = "1.3.0"
 
 allprojects {
     tasks.register("printConfigurations") {
