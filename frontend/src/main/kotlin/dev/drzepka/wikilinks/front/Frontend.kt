@@ -7,7 +7,6 @@ import dev.drzepka.wikilinks.front.component.SearchComponent
 import dev.drzepka.wikilinks.front.component.header.HeaderComponent
 import dev.drzepka.wikilinks.front.component.searchresult.SearchResultComponent
 import dev.drzepka.wikilinks.front.core.Router
-import dev.drzepka.wikilinks.front.model.SearchQuery
 import dev.drzepka.wikilinks.front.model.State
 import dev.drzepka.wikilinks.front.model.displayName
 import dev.drzepka.wikilinks.front.service.MockLanguageService
@@ -21,9 +20,7 @@ import io.kvision.panel.ContainerType
 import io.kvision.panel.responsiveGridPanel
 import io.kvision.panel.root
 import kotlinx.browser.document
-import kotlinx.browser.window
 import org.w3c.dom.HTMLMetaElement
-import org.w3c.dom.url.URLSearchParams
 
 class Frontend : Application() {
     init {
@@ -61,36 +58,6 @@ class Frontend : Application() {
         return mapOf(
             "state" to state
         )
-    }
-
-    fun getSearchQuery(): SearchQuery? {
-        val params = URLSearchParams(window.location.search)
-        val source = params.get(QUERY_SOURCE)
-        val target = params.get(QUERY_TARGET)
-        val language = params.get("QUERY_LANGUAGE")?.let { DumpLanguage.fromString(it) }
-
-        return if (source != null && target != null)
-            SearchQuery(source, target, language)
-        else null
-    }
-
-    fun putSearchQuery(query: SearchQuery) {
-        val params = URLSearchParams(window.location.search)
-        params.set(QUERY_SOURCE, query.sourcePage)
-        params.set(QUERY_TARGET, query.targetPage)
-
-        val url = "${window.location.pathname}?$params"
-        window.history.pushState(null, "", url)
-    }
-
-    fun clearSearchQuery() {
-        val params = URLSearchParams(window.location.search)
-        params.delete(QUERY_SOURCE)
-        params.delete(QUERY_TARGET)
-
-        val query = "?$params".let { if (it == "?") "" else it }
-        val url = "${window.location.pathname}$query"
-        window.history.pushState(null, "", url)
     }
 
     private fun createState(): State {
@@ -155,7 +122,5 @@ class Frontend : Application() {
 
     companion object {
         private const val USE_MOCKS = false
-        private const val QUERY_SOURCE = "source"
-        private const val QUERY_TARGET = "target"
     }
 }
