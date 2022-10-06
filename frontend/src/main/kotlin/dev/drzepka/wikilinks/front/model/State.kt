@@ -119,10 +119,12 @@ class State(
     }
 
     private fun handleException(throwable: Throwable) {
-        val info = if (throwable is ResponseException)
+        val info = if (throwable is ResponseException) {
             ErrorInfo(throwable.response.message)
-        else
+        } else {
+            console.error(throwable)
             ErrorInfo("Unknown error occurred")
+        }
 
         searchResult.setState(null)
         error.setState(info)

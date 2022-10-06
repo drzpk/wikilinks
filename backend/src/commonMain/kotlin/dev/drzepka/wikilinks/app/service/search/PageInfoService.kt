@@ -5,7 +5,6 @@ import dev.drzepka.wikilinks.app.model.PageCacheHit
 import dev.drzepka.wikilinks.app.model.PageInfoResult
 import dev.drzepka.wikilinks.app.utils.http
 import dev.drzepka.wikilinks.common.config.CommonConfiguration
-import dev.drzepka.wikilinks.common.model.Path
 import dev.drzepka.wikilinks.common.model.dump.DumpLanguage
 import dev.drzepka.wikilinks.common.model.searchresult.PageInfo
 import io.ktor.client.call.*
@@ -24,16 +23,7 @@ import kotlin.time.measureTimedValue
 class PageInfoService(private val cacheService: PageCacheService) {
     private val log = KotlinLogging.logger {}
 
-    suspend fun collectInfo(language: DumpLanguage, paths: Collection<Path>): PageInfoResult {
-        val uniquePageIds = paths
-            .asSequence()
-            .flatMap { it.pages }
-            .toSet()
-
-        return getPagesInfo(language, uniquePageIds)
-    }
-
-    private suspend fun getPagesInfo(language: DumpLanguage, pageIds: Collection<Int>): PageInfoResult {
+    suspend fun getPagesInfo(language: DumpLanguage, pageIds: Collection<Int>): PageInfoResult {
         val cacheHits = cacheService.getCache(language, pageIds)
         val pagesToDownload = pageIds - cacheHits.keys
         var cacheHitRatio = cacheHits.size.toFloat() / pageIds.size

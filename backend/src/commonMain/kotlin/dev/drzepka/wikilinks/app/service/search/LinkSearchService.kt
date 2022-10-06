@@ -131,7 +131,8 @@ class LinkSearchService(
         }
 
         val paths = pathTimedValue.value
-        val pageInfoResult = pageInfoService.collectInfo(language, paths)
+        val pageIds = getUniquePageIds(paths, sourcePage, targetPage)
+        val pageInfoResult = pageInfoService.getPagesInfo(language, pageIds)
 
         val totalDuration = totalDurationMark.elapsedNow()
         val searchDuration = SearchDuration(
@@ -151,6 +152,11 @@ class LinkSearchService(
             language.toDumpInfo()
         )
     }
+
+    private fun getUniquePageIds(paths: Collection<Path>, sourcePage: Int, targetPage: Int): Collection<Int> = paths
+        .asSequence()
+        .flatMap { it.pages }
+        .toSet() + setOf(sourcePage, targetPage)
 
     private suspend fun DumpLanguage.toDumpInfo(): LanguageInfo = LanguageInfo(
         this,
