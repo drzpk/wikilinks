@@ -14,13 +14,13 @@ dependencies {
     implementation("org.anarres:parallelgzip:1.0.5")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-apache:$ktorVersion")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.3")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3")
-    implementation("software.amazon.awssdk:s3:2.17.250")
-    implementation("software.amazon.awssdk:sso:2.17.250")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.0")
+    implementation("software.amazon.awssdk:s3:2.20.68")
+    implementation("software.amazon.awssdk:sso:2.20.69")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.2")
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
 }
 
@@ -38,9 +38,19 @@ application {
     mainClass.set("dev.drzepka.wikilinks.generator.MainKt")
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
 jib {
     from {
-        image = "openjdk:11.0.15-jre-slim-buster"
+        image = "eclipse-temurin:17-jre-focal"
     }
     to {
         image = "$imagePrefix/generator"
@@ -50,7 +60,7 @@ jib {
         ).filter { it.isNotBlank() }.toSet()
     }
     container {
-        creationTime = "USE_CURRENT_TIMESTAMP"
+        creationTime.set("USE_CURRENT_TIMESTAMP")
     }
 }
 

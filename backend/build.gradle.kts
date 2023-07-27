@@ -13,7 +13,13 @@ kotlin {
     /* Targets configuration omitted. 
     *  To find out how to configure the targets, please follow the link:
     *  https://kotlinlang.org/docs/reference/building-mpp-with-gradle.html#setting-up-targets */
-    jvm {}
+    jvm {
+        java {
+            toolchain {
+                languageVersion.set(JavaLanguageVersion.of(17))
+            }
+        }
+    }
     linuxX64 {
         binaries {
             executable {
@@ -48,7 +54,7 @@ kotlin {
 
         val linuxX64Main by getting {
             dependencies {
-                implementation("com.squareup.sqldelight:native-driver:1.5.3")
+                implementation("com.squareup.sqldelight:native-driver:1.5.5")
                 implementation("io.github.microutils:kotlin-logging-linuxx64:2.1.23")
                 implementation("io.ktor:ktor-client-curl:$ktorVersion")
                 implementation("io.ktor:ktor-server-core:$ktorVersion")
@@ -58,7 +64,7 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
-                api("com.squareup.sqldelight:sqlite-driver:1.5.3")
+                api("com.squareup.sqldelight:sqlite-driver:1.5.5")
                 implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.17.2")
                 implementation("io.github.microutils:kotlin-logging-jvm:2.1.23")
                 implementation("io.ktor:ktor-client-apache:$ktorVersion")

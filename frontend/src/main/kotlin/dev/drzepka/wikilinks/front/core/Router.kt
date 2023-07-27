@@ -7,7 +7,6 @@ import dev.drzepka.wikilinks.front.model.State
 import io.kvision.navigo.Match
 import io.kvision.navigo.NavigateOptions
 import io.kvision.routing.Routing
-import io.kvision.routing.routing
 import org.w3c.dom.url.URLSearchParams
 
 object Router : RouteState {
@@ -16,10 +15,11 @@ object Router : RouteState {
     private const val QUERY_LANGUAGE = "language"
 
     private lateinit var state: State
+    private lateinit var routing: Routing
 
     fun initialize(state: State) {
-        Routing.init(root = "/", useHash = false)
         this.state = state
+        routing = Routing.init(root = "/", useHash = false)
 
         routing
             .on("/", this::rootRoute)
@@ -27,7 +27,7 @@ object Router : RouteState {
             .resolve()
     }
 
-    fun getLanguageRoute(language: DumpLanguage): DeferredRoute = DeferredRoute("/${language.value}")
+    fun getLanguageRoute(language: DumpLanguage): DeferredRoute = DeferredRoute(routing, "/${language.value}")
 
     override fun putSearchQuery(query: SearchQuery) = doPutSearchQuery(query)
 
@@ -65,7 +65,7 @@ object Router : RouteState {
     }
 }
 
-class DeferredRoute(val url: String) {
+class DeferredRoute(private val routing: Routing, val url: String) {
     fun navigate() {
         routing.navigate(url)
     }

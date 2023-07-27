@@ -12,7 +12,7 @@ val coroutinesVersion: String by System.getProperties()
 val ktorVersion: String by System.getProperties()
 
 enum class JibConfiguration(val baseImage: String, val classifier: String) {
-    JVM("openjdk:11.0.15-jre-slim-buster", "jvm"),
+    JVM("eclipse-temurin:17-jre-focal", "jvm"),
     NATIVE("${System.getProperty("imagePrefix")}/app-base:1.1", "native"),
     NONE("", "")
 }
@@ -33,9 +33,9 @@ dependencies {
     backendJvmRuntimeClasspath(project(mapOf("path" to ":backend", "configuration" to "exposedJvmRuntimeClasspath")))
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
-    testImplementation("org.testcontainers:testcontainers:1.17.3")
+    testImplementation("org.testcontainers:testcontainers:1.18.0")
     testImplementation("org.testcontainers:mockserver:1.17.3")
-    testImplementation("org.mock-server:mockserver-client-java:5.13.2")
+    testImplementation("org.mock-server:mockserver-client-java:5.15.0")
     testImplementation("org.testcontainers:junit-jupiter:1.17.3")
     testImplementation("org.apache.logging.log4j:log4j-core:2.18.0")
     testImplementation("org.apache.logging.log4j:log4j-slf4j-impl:2.18.0")
@@ -60,7 +60,7 @@ jib {
         ).filter { it.isNotBlank() }.toSet()
     }
     container {
-        creationTime = "USE_CURRENT_TIMESTAMP"
+        creationTime.set("USE_CURRENT_TIMESTAMP")
         workingDirectory = "/app"
         entrypoint = listOf("/app/$entrypointFileName")
 
@@ -102,9 +102,9 @@ jib {
                 }
             }
         }
-        permissions = mapOf(
-            "/app/$entrypointFileName" to "755"
-        )
+        permissions.apply {
+            put("/app/$entrypointFileName", "755")
+        }
     }
 }
 
